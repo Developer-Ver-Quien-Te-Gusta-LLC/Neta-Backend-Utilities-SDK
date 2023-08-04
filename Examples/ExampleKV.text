@@ -1,0 +1,69 @@
+Great, you have a pretty comprehensive file there. You are getting keys and values, supporting a concept of user segments and also weights per segment. You also seem to support a scenario of non-segmented key/values which is requested in the first point.
+
+Now, let's create some examples for keys and values:
+
+For 1) keys and values without segments:
+
+javascript
+Copy code
+{
+  "my-key-1": "Hello, World!",
+  "my-key-2": 42,
+  "my-key-3": {
+    "message": "Welcome to our service",
+    "status": "active"
+  }
+}
+In this example, keys "my-key-1", "my-key-2", and "my-key-3" are keys without segments. They hold simple values: a string, a number, and an object, respectively.
+
+For 2) keys with values per segment:
+
+javascript
+Copy code
+{
+  "my-key-4": {
+    "ABEnabled": true,
+    "Default": "Default Value",
+    "Variants": {
+      "segment1": "Hello, Segment 1!",
+      "segment2": "Hello, Segment 2!",
+      "segment3": "Hello, Segment 3!"
+    }
+  }
+}
+In this example, the key "my-key-4" has different values depending on the segment. When a user is in "segment1", they would get "Hello, Segment 1!" as a value, and so forth.
+
+For 3) keys with values and weights per segment:
+
+javascript
+Copy code
+{
+  "my-key-5": {
+    "ABEnabled": true,
+    "Default": "Default Value",
+    "Variants": {
+      "segment1": {
+        "Weights": {
+          "Value 1": 0.3,
+          "Value 2": 0.7
+        }
+      },
+      "segment2": {
+        "Weights": {
+          "Value A": 0.5,
+          "Value B": 0.2,
+          "Value C": 0.3
+        }
+      },
+      "segment3": {
+        "Weights": {
+          "Option X": 0.6,
+          "Option Y": 0.4
+        }
+      }
+    }
+  }
+}
+In this example, the key "my-key-5" has different values depending on the segment and the value given to the user is selected based on its weight. So, if a user is in "segment1", they would have a 30% chance to get "Value 1" and a 70% chance to get "Value 2".
+
+These examples should provide a clear idea of how to set keys and values with and without segments and weights.
