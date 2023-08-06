@@ -111,7 +111,7 @@ async function CheckPlayerValidity(username) {
 // Set the index and status of the subscriptions users has active after use
 async function FetchFriendsWithSubsActive(username) {
   if (!CheckPlayerValidity(username)) {
-    return { Success: false, data: "User does not exist" };
+    return { success: false, data: "User does not exist" };
   }
   try {
     // Get the user
@@ -155,14 +155,14 @@ async function FetchFriendsWithSubsActive(username) {
 async function InviteFriends(username) {
   //TODO
   if (!CheckPlayerValidity(username)) {
-    return { Success: false, data: "User does not exist" };
+    return { success: false, data: "User does not exist" };
   }
 }
 
 async function GetRecommendationsOnboarding(username, pagelimit, pagenumber) {
   // Check user validity first
   if (!(await CheckPlayerValidity(username))) {
-    return { Success: false, error: "User does not exist" };
+    return { success: false, error: "User does not exist" };
   }
 
   // Calculate offset
@@ -201,7 +201,7 @@ async function GetRecommendationsOnboarding(username, pagelimit, pagenumber) {
   if (invited != false) Result.concat(invited[0].inviter);
 
   // Return both the result and the next page number for paging
-  return { Success: true, data: Result, nextPage: pagenumber + 1 };
+  return { success: true, data: Result, nextPage: pagenumber + 1 };
 }
 
 // Get Recommendations for friends while in the explore section (after onboarding)
@@ -213,7 +213,7 @@ async function GetRecommendationsExploreSection(username, page) {
 
   // Check user validity first
   if (!(await CheckPlayerValidity(username))) {
-    return { Success: false, error: "User does not exist" };
+    return { success: false, error: "User does not exist" };
   }
 
   const data = await g
@@ -280,7 +280,7 @@ async function GetRecommendationsExploreSection(username, page) {
 async function GetRecommendationsQuestions(username) {
   // Check user validity first
   if (!(await CheckPlayerValidity(username))) {
-    return { Success: false, error: "User does not exist" };
+    return { success: false, error: "User does not exist" };
   }
 
   // Fetch all the required data in a single traversal using union step

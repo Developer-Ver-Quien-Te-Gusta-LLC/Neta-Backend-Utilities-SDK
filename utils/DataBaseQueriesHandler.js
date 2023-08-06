@@ -181,7 +181,7 @@ async function AddFriendRelationInNeptune(phoneNumber, friend) {
         ServiceBus.handleTransactionError("graphdb", req.query);
       }
 
-      return { Success: true, data: response.result.data }; // Return the success response
+      return { success: true, data: response.result.data }; // Return the success response
     });
   } catch (encryptionerror) {
     return encryptionerror;
@@ -270,7 +270,7 @@ async function listFriends(userId) {
         ServiceBus.handleTransactionError("graphdb", req.query);
       }
 
-      return { Success: true, data: response.result.data }; // Return the success response
+      return { success: true, data: response.result.data }; // Return the success response
     });
   } catch (encryptionerror) {
     return encryptionerror;
@@ -338,7 +338,7 @@ async function removeFriendsRelation(phoneNumber, friend) {
         ServiceBus.handleTransactionError("graphdb", req.query);
       }
 
-      return { Success: true, data: response.result.data }; // Return the success response
+      return { success: true, data: response.result.data }; // Return the success response
     });
   } catch (encryptionerror) {
     return encryptionerror;

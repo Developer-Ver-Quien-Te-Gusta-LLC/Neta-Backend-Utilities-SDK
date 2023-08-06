@@ -177,7 +177,7 @@ async function FetchDevice(username){
         const deviceID = data.UserAttributes.find(attr => attr.Name === 'custom:deviceID');
 
 
-        return({ Success: true, deviceType: deviceType.Value, deviceID: deviceID.Value });
+        return({ success: true, deviceType: deviceType.Value, deviceID: deviceID.Value });
       }
     });
   } catch (error) {
@@ -201,7 +201,7 @@ async function FetchUserPrefs(username) {
         return({ error:'Unable to fetch user attributes' });
       } else {
         const prefs = data.UserAttributes.find(attr => attr.Name === 'custom:userPrefs');
-        return({ Success: true, prefs: prefs.Value });
+        return({ success: true, prefs: prefs.Value });
       }
     });
   } catch (error) {
