@@ -63,7 +63,7 @@ async function SendNotification(userId, payload) {
   if (userStatus == true) {
     publishAlbyMessage(userId, payload);
   } else {
-    const userToken = await getDataFromScyalla("Users", userId, "Token");
+    const userToken = await getDataFromScyalla("Users", userId, "token");
     publishFCMMessage(userToken, JSON.stringify(payload));
   }
 }
