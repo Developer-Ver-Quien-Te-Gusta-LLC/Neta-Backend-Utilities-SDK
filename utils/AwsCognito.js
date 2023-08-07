@@ -1,5 +1,5 @@
-const AWS = require("aws-sdk");
-const multer = require("multer"); // For file upload
+import AWS from "aws-sdk";
+import multer from 'multer'; // For file upload
 
 if (!process.env.prod) {
   AWS.config.update({
@@ -29,7 +29,7 @@ const s3 = new AWS.S3({
 const cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
 
 //function to create Cognito User with given attributes
-async function CreateCognitoUser(
+/*async function CreateCognitoUser(
   username,
   firstName,
   lastName,
@@ -69,7 +69,7 @@ async function CreateCognitoUser(
       }
     );
   });
-}
+}*/
 
 ///
 /// Replace bukket name with something determined from AWS KMS
@@ -89,11 +89,11 @@ async function UpdateCognitoUserPFP(username, pfp) {
     if (err) {
       console.log(err);
     }
-    UpdateCognitoUser(username, data.Location);
+    UpdateCognitoUserData(username, data.Location);
   });
 }
  //Update user pfp link in cognito
-async function UpdateCognitoUserPFP(name, link) {
+async function UpdateCognitoUserData(name, link) {
   var params = {
     UserAttributes: [
       // array of attributes
@@ -237,8 +237,8 @@ async function SetSubscription(username, subscription){
 
 //#endregion
 
-module.exports = {
-  CreateCognitoUser,
+export {
+ // CreateCognitoUser,
   UpdateCognitoUserPFP,
   DeleteCognitoUser,
   UpdateDeviceID,

@@ -1,11 +1,12 @@
-const cassandra = require('cassandra-driver');
-import{FetchFromSecrets,getKV} from "../NetaUtilitiesSDK";
+import{Client}from'cassandra-driver';
+import{FetchFromSecrets} from "./AwsSecrets.js";
+import { getKV } from "./KV.js";
 async function initializeClient() {
     const contactPoints = await FetchFromSecrets("contactPoints");
     const localDataCenter = await FetchFromSecrets("localDataCenter");
     const keyspace = await FetchFromSecrets("keyspace");
 
-    return new cassandra.Client({
+    return new Client({
         contactPoints: [contactPoints],
         localDataCenter: localDataCenter,
         keyspace: keyspace,
@@ -52,4 +53,4 @@ async function FetchChannelId(phoneNumber, fetchEncryptionKey = false) {
     return user.AlbyTopicName;
 }
 
-module.exports = {FetchChannelId};
+export {FetchChannelId};

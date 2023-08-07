@@ -1,4 +1,4 @@
-const gremlin = require("gremlin");
+import gremlin from 'gremlin';
 const traversal = gremlin.process.AnonymousTraversalSource.traversal;
 const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
 const Graph = gremlin.structure.Graph;
@@ -8,10 +8,12 @@ const g = graph
   .traversal()
   .withRemote(new DriverRemoteConnection("wss://hostname:port/gremlin", "{}"));
   
-const cassandra = require("cassandra-driver");
-import{IsUserInvited,getKV,FetchFromSecrets} from "../index.js";
 
-const cassandra = require("cassandra-driver");
+import{IsUserInvited} from "./InviteHandler.js";
+import { FetchFromSecrets } from "./AwsSecrets.js";
+import { getKV } from "./KV.js";
+
+import cassandra from 'cassandra-driver';
 let client;
 
 async function fetchCassandra() {
@@ -375,10 +377,7 @@ async function GetRecommendationsQuestions(username) {
   return Result;
 }
 
-module.exports = {
-  forceFetchQuestions,
-  awnserPoll,
-  fetchQuestions,
+export {
   ExtractUsersFromJson,
   WeightArraysUsingProbability,
   InviteFriends,

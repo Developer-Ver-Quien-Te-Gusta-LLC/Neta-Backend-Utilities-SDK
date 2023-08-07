@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken");
-const {SendEvent} = require('./Analytics.js')
+import{decode}from"jsonwebtoken";
+import {SendEvent} from './Analytics.js';
 
 //#region JWT Authentication
 async function GetUserDataFromJWT(req) {
@@ -20,4 +20,4 @@ async function GetUserDataFromJWT(req) {
 }
 //#endregion
 
-module.exports = { GetUserDataFromJWT };
+export{ GetUserDataFromJWT };

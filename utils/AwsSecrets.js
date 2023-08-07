@@ -1,15 +1,5 @@
-const AWS = require("aws-sdk");
-const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
-/*import {
-  SecretsManagerClient,
-  GetSecretValueCommand,
-} from "@aws-sdk/client-secrets-manager";*/
-
-
-/// NOTE: Introduce one "prod" flag, if true omit all these statments
-/// this flag must exist at project root (not a local variable withint his file) and
-/// when its true, there is an assumption that ECS grants the task permissions and the SDK
-/// automatically reads it from env. variables
+import AWS from "aws-sdk";
+import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 
 //for testing locally
 const prod = false;
@@ -61,4 +51,4 @@ async function FetchFromSecrets(key) {
   }
 }
 
-module.exports ={FetchFromSecrets};
+export {FetchFromSecrets};

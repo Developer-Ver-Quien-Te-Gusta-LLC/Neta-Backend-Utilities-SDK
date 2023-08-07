@@ -1,9 +1,11 @@
 import {
   FetchFromSecrets,
-  FetchChannelId,
-  getDataFromScyalla,
-  encrypt,
-} from "../index.js";
+} from "./AwsSecrets.js"
+
+import{FetchChannelId} from "./AlbyToken.js";
+import{getDataFromScyalla} from "./DataBaseQueriesHandler.js";
+import { encrypt } from "./AwsEncryption.js";
+
 var ably;
 async function fetchAlby() {
   alby = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
@@ -67,5 +69,4 @@ async function SendNotification(userId, payload) {
     publishFCMMessage(userToken, JSON.stringify(payload));
   }
 }
-
-module.exports = { SendNotification };
+export { SendNotification };

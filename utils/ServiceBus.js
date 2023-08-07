@@ -2,7 +2,8 @@ const secrets = require("./AwsSecrets");
 const cassandra = require("cassandra-driver");
 
 var queueURL;
-import{CreateScyllaUser,CreateCognitoUser,CreateNeptuneUser} from "../index.js";
+
+import{CreateScyllaUser,CreateCognitoUser,createNeptuneUser} from "./UserCreation.js";
 
 const { contains } = require("cheerio/lib/static");
 
@@ -98,4 +99,4 @@ async function fetchRequestsFromSQS(queueURL) { //TODO: fetch max requests from 
 
 //#endregion
 
-module.exports = {handleTransactionError,fetchRequestsFromSQS};
+export {handleTransactionError,fetchRequestsFromSQS};

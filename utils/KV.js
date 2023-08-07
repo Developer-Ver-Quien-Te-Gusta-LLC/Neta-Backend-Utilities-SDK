@@ -1,28 +1,24 @@
-// kv.js
+import kvclient from "cloudflare-workers-kv";
+import axios from "axios";
+import { TextEncoder, TextDecoder } from "util";
+import { Client } from "cassandra-driver";
+import {FetchFromSecrets} from "./AwsSecrets.js";
+import fetch from "node-fetch";
+import cassandra from "cassandra-driver";
+import { URLSearchParams } from "url";
 
-const kvclient = require("cloudflare-workers-kv");
-const axios = require("axios");
-const { TextEncoder, TextDecoder } = require("util");
-const { Client } = require('cassandra-driver');
-const secrets = require("./AwsSecrets");
-const express = require('express');
-const app = express();
 
-global.fetch = require('node-fetch');
-var util = require('util');
+global.fetch = fetch;
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
-
-const cassandra = require('cassandra-driver');
-
 
 let dbClient;
 var isClientConnected = false;
 
-async function SetupClients(){
-  const contactPoints = await secrets.FetchFromSecrets("contactPoints");
-  const localDataCenter = await secrets.FetchFromSecrets("localDataCenter");
-  const keyspace = await secrets.FetchFromSecrets("keyspace");
+async function SetupClients() {
+  const contactPoints = await FetchFromSecrets("contactPoints");
+  const localDataCenter = await FetchFromSecrets("localDataCenter");
+  const keyspace = await FetchFromSecrets("keyspace");
   const dbClient = new cassandra.Client({
     contactPoints: [contactPoints],
     localDataCenter: localDataCenter,
@@ -31,11 +27,11 @@ async function SetupClients(){
 
   dbClient.connect();
 
-  const variableBinding = await secrets.FetchFromSecrets("KVvariableBinding");
-  const namespaceId = await secrets.FetchFromSecrets("KVnamespaceId");
-  const accountId = await secrets.FetchFromSecrets("KVaccountId");
-  const email = await secrets.FetchFromSecrets("KVemail");
-  const apiKey = await secrets.FetchFromSecrets("KVApiKey");
+  const variableBinding = await FetchFromSecrets("KVvariableBinding");
+  const namespaceId = await FetchFromSecrets("KVnamespaceId");
+  const accountId = await FetchFromSecrets("KVaccountId");
+  const email = await FetchFromSecrets("KVemail");
+  const apiKey = await FetchFromSecrets("KVApiKey");
 
   kvclient.init({
     variableBinding: variableBinding,
@@ -50,14 +46,15 @@ async function SetupClients(){
 }
 SetupClients();
 
-
 /// altered to support destructuring
 async function getKV(...keys) {
-  return keys.length > 1 ? await GetValuesFromKV(keys) : await GetValueFromKV(keys[0]);
+  return keys.length > 1
+    ? await GetValuesFromKV(keys)
+    : await GetValueFromKV(keys[0]);
 }
 
 async function GetValueFromKV(key, PhoneNumber) {
-   return GetValuesFromKV([key], PhoneNumber)
+  return GetValuesFromKV([key], PhoneNumber);
 }
 
 async function GetValuesFromKV(keys, PhoneNumber) {
@@ -67,9 +64,9 @@ async function GetValuesFromKV(keys, PhoneNumber) {
     await new Promise((resolve) => setTimeout(resolve, 100)); // Adjust the time interval as needed.
   }
   const data = await kvclient.get(keys);
- 
-  let  fetchedValues;
-  if(Array.isArray(data)){
+
+  let fetchedValues;
+  if (Array.isArray(data)) {
     fetchedValues = data.map((dataItem) => JSON.parse(dataItem));
 
     const returnValues = await Promise.allSettled(
@@ -90,24 +87,20 @@ async function GetValuesFromKV(keys, PhoneNumber) {
         }
       })
     );
-  }
-  else{
-   if(data.Default==null && data!=null){
-    console.log(data,keys);
-    return data;
-   }
-   else{
-    
-    if(data.ABEnabled && data.Variants){
-      const variant = await DetermineVariant(data, keys, PhoneNumber);
-      console.log(variant.value,keys);
-      return variant.value;
+  } else {
+    if (data.Default == null && data != null) {
+      console.log(data, keys);
+      return data;
+    } else {
+      if (data.ABEnabled && data.Variants) {
+        const variant = await DetermineVariant(data, keys, PhoneNumber);
+        console.log(variant.value, keys);
+        return variant.value;
+      } else {
+        console.log(data.Default, keys);
+        return data.Default;
+      }
     }
-    else{
-      console.log(data.Default,keys);
-      return data.Default;
-    }
-   }
   }
 
   return returnValues;
@@ -126,16 +119,21 @@ function assignByWeight(weights) {
 }
 async function DetermineVariant(data, _key, PhoneNumber) {
   if (!data.ABEnabled) return { key: "default", value: data.Default }; // Check if AB testing is enabled
-  
+
   const variantKeys = Object.keys(data.Variants);
-  const variantPromises = variantKeys.map(variantKey => isUserInVariant(variantKey, PhoneNumber));
+  const variantPromises = variantKeys.map((variantKey) =>
+    isUserInVariant(variantKey, PhoneNumber)
+  );
   const variantResults = await Promise.allSettled(variantPromises);
-  
+
   for (let i = 0; i < variantResults.length; i++) {
     if (variantResults[i]) {
       const variantValue = data.Variants[variantKeys[i]];
       if (variantValue.Weights) {
-        return { key: variantKeys[i], value: assignByWeight(variantValue.Weights) };
+        return {
+          key: variantKeys[i],
+          value: assignByWeight(variantValue.Weights),
+        };
       }
       return { key: variantKeys[i], value: variantValue };
     }
@@ -158,7 +156,7 @@ async function isUserInVariant(variantID, username) {
     headers: {
       accept: "application/json",
       "content-type": "application/x-www-form-urlencoded",
-      authorization: await secrets.FetchFromSecrets("mixpanelBasicAuth"),
+      authorization: await FetchFromSecrets("mixpanelBasicAuth"),
     },
     data: encodedParams,
   };
@@ -171,13 +169,7 @@ async function isUserInVariant(variantID, username) {
   }
 }
 
-
 async function SetKV(key, value) {
   await kvclient.put(key, value);
 }
-module.exports = {
-  GetValueFromKV,
-  isUserInVariant,
-  SetKV,
-  getKV
-};
+export { GetValueFromKV, isUserInVariant, SetKV, getKV };

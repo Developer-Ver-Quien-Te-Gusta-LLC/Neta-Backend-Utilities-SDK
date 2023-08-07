@@ -1,10 +1,7 @@
-const gremlin = require("gremlin");
-
-const AWS = require("aws-sdk");
-const cassandra = require("cassandra-driver");
-
-let client;
-import{FetchFromSecrets} from "../index.js";
+import gremlin from 'gremlin';
+import AWS from 'aws-sdk';
+import cassandra from 'cassandra-driver';
+import { FetchFromSecrets } from './AwsSecrets.js';
 
 async function fetchCassandra() {
   client = new cassandra.Client({
@@ -18,19 +15,19 @@ async function fetchCassandra() {
 fetchCassandra();
 
 
-NeptuneConnection = {
+/*NeptuneConnection = {
   endpoint: await FetchFromSecrets("your-neptune-endpoint"),
   port: "default-Neptune-port", // shouldn't this be from secrets?
-  region: await FetchFromSecrets("neptune-region"),
-};
+  region: process.env.AWS_REGION,
+};*/
 
-if (!process.env.prod) {
+/*if (!process.env.prod) {
   AWS.config.update({
-    region: await FetchFromSecrets("region"),
+    region: process.env.AWS_REGION,
     accessKeyId: await FetchFromSecrets("AccessKey"),
     secretAccessKey: await FetchFromSecrets("SecretKey"),
   });
-} // use credentials if not in prod , else use IAM role for ec2 instance
+} // use credentials if not in prod , else use IAM role for ec2 instance*/
 
 const cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
 const userPoolId = await FetchFromSecrets("UserPoolID"); // Insert your user pool id here
@@ -346,7 +343,7 @@ async function removeFriendsRelation(phoneNumber, friend) {
 }
 
 
-module.exports = {
+export {
   FetchTopFriendsAndPolls,
   getDataFromNeptune,
   getDataFromScyalla,

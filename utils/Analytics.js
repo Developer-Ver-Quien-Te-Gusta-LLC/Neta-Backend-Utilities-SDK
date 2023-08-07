@@ -1,4 +1,4 @@
-var Mixpanel = require("mixpanel");
+import Mixpanel from 'mixpanel';
 var mixpanel = Mixpanel.init("9ecd22e50f6805adb3e4df907baf149a"); /// USE AWS KMS
 
 async function SendEvent(event_name, phoneNumber,value) {
@@ -9,4 +9,4 @@ async function SendEvent(event_name, phoneNumber,value) {
   });
 }
 
-module.exports = { SendEvent };
+export { SendEvent };

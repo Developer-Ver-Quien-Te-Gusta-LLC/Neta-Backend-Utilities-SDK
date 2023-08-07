@@ -21,7 +21,8 @@ const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
 const Graph = gremlin.structure.Graph;
 
 
-import{handleTransactionCompletion,OnUserCreationFailed,handleTransactionError} from "../index.js";
+import{handleTransactionError} from "./ServiceBus.js";
+import{OnUserCreationFailed,handleTransactionCompletion} from "./UserCreationTransactionHandling.js";
 //Create a user profile in Mixpanel
 async function CreateMixPanelUser(username, firstname, lastname, geohash) {
   mixpanel.people.set(username, {
@@ -237,7 +238,7 @@ async function unenroll(highschoolName) {
 }
 
 
-module.exports = {
+export {
   CreateMixPanelUser,
   CreateScyllaUser,
   createNeptuneUser,

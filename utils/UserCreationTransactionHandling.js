@@ -9,10 +9,10 @@
 ///
 
 
-const cassandra = require("cassandra-driver");
+import cassandra from "cassandra-driver";
 const region = process.env.AWS_REGION;
 
-import{FetchFromSecrets} from "../index.js";
+import{FetchFromSecrets} from "./AwsSecrets.js";
 
 const client = new cassandra.Client({
   contactPoints: [await FetchFromSecrets("contactPoints")], // change to your ScyllaDB host
@@ -103,7 +103,7 @@ channel.publish("event", JSON.stringify(albySuccessObj), (err) => {
   }
 }*/
 
-module.exports = {
+export {
   handleTransactionCompletion,
  // checkForTransactionErrors,
  OnUserCreationFailed,
