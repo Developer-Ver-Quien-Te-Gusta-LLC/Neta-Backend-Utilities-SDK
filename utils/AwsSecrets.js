@@ -7,8 +7,7 @@ const prod = false;
 if (!prod) {
   AWS.config.update({
     region: "us-east-1",
-    accessKeyId: "AKIAUZGKQ2WWGMSRPFNJ",
-    secretAccessKey: "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",
+    
   });
 
   console.log("not prod");

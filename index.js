@@ -14,12 +14,11 @@ import {ExtractUsersFromJson,WeightArraysUsingProbability,InviteFriends,FetchFri
 import {handleTransactionError,fetchRequestsFromSQS} from "./utils/ServiceBus.js";
 import {CreateMixPanelUser,CreateScyllaUser,createNeptuneUser,CreateCognitoUser,} from "./utils/UserCreation.js";
 import { handleTransactionCompletion,OnUserCreationFailed} from "./utils/UserCreationTransactionHandling.js";
-
-module.exports = {
+console.log("Backend SDK initialized");
+export {
   FetchChannelId,
   SendEvent,
   GetUserDataFromJWT,
-  CreateCognitoUser,
   UpdateCognitoUserPFP,
   DeleteCognitoUser,
   UpdateDeviceID,
@@ -44,14 +43,12 @@ module.exports = {
   AddFriendRelationInNeptune,
   removeFriendsRelation,
   listFriends,
-  GenerateInviteLink,
   IsUserInvited,
   GetValueFromKV,
   isUserInVariant,
   SetKV,
   getKV,
   SendNotification,
-  fetchActivity,
   ExtractUsersFromJson,
   WeightArraysUsingProbability,
   InviteFriends,

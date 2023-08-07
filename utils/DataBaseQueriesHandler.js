@@ -2,24 +2,30 @@ import gremlin from 'gremlin';
 import AWS from 'aws-sdk';
 import cassandra from 'cassandra-driver';
 import { FetchFromSecrets } from './AwsSecrets.js';
-
+var userPoolId,NeptuneConnection,client;
 async function fetchCassandra() {
-  client = new cassandra.Client({
-    contactPoints: await FetchFromSecrets("contactPoints"),
-    localDataCenter: await FetchFromSecrets("localDataCenter"),
-    keyspace: await FetchFromSecrets("keyspace"),
-  });
 
-  return client;
+  const contactPoints = await FetchFromSecrets("contactPoints");
+    const localDataCenter = await FetchFromSecrets("localDataCenter");
+    const keyspace = await FetchFromSecrets("keyspace");
+
+    client = new cassandra.Client({
+        contactPoints: [contactPoints],
+        localDataCenter: localDataCenter,
+        keyspace:keyspace,
+    });
+  await client.connect();
+  userPoolId = await FetchFromSecrets("UserPoolID"); // Insert your user pool id here
+
+  NeptuneConnection = {
+  endpoint: await FetchFromSecrets("NeptuneEndpoint"),
+  port: await FetchFromSecrets("NeptunePort"), 
+  region: process.env.AWS_REGION,
+};
+
+ 
 }
 fetchCassandra();
-
-
-/*NeptuneConnection = {
-  endpoint: await FetchFromSecrets("your-neptune-endpoint"),
-  port: "default-Neptune-port", // shouldn't this be from secrets?
-  region: process.env.AWS_REGION,
-};*/
 
 /*if (!process.env.prod) {
   AWS.config.update({
@@ -30,7 +36,7 @@ fetchCassandra();
 } // use credentials if not in prod , else use IAM role for ec2 instance*/
 
 const cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
-const userPoolId = await FetchFromSecrets("UserPoolID"); // Insert your user pool id here
+ 
 
 const Neptune = new AWS.Neptune();
 const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;

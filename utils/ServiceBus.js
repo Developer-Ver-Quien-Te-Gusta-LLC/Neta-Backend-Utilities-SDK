@@ -1,34 +1,36 @@
-const secrets = require("./AwsSecrets");
-const cassandra = require("cassandra-driver");
+import {FetchFromSecrets}  from "./AwsSecrets.js";
+import cassandra from 'cassandra-driver';
 
 var queueURL;
 
 import{CreateScyllaUser,CreateCognitoUser,createNeptuneUser} from "./UserCreation.js";
 
-const { contains } = require("cheerio/lib/static");
 
-const AWS = require("aws-sdk");
+import AWS from 'aws-sdk';
 const sqs = new AWS.SQS();
 
-async function SetupClients(){
-contactPoints = await secrets.FetchFromSecrets("contactPoints");
-localDataCenter = await secrets.FetchFromSecrets("localDataCenter");
-keyspace = await secrets.FetchFromSecrets("keyspace");
-const client = new cassandra.Client({
-  contactPoints: [contactPoints], // change to your ScyllaDB host
-  localDataCenter: localDataCenter, // change to your data center
-  keyspace: keyspace, // change to your keyspace
-});
+var client;
+async function SetupClients() {
+  const contactPoints = await FetchFromSecrets("contactPoints");
+  const localDataCenter = await FetchFromSecrets("localDataCenter");
+  const keyspace = await FetchFromSecrets("keyspace");
+  client = new cassandra.Client({
+    contactPoints: [contactPoints], // change to your ScyllaDB host
+    localDataCenter: localDataCenter, // change to your data center
+    keyspace: keyspace, // change to your keyspace
+  });
+
+  await client.connect((err) => {
+    if (err) {
+      console.error("Error connecting to ScyllaDB:", err);
+      return;
+    }
+  });
 }
 
 SetupClients();
 
-client.connect((err) => {
-  if (err) {
-    console.error("Error connecting to ScyllaDB:", err);
-    return;
-  }
-});
+
 
 async function CheckRetry(phoneNumber, transactionId) {
   // Define retry limit

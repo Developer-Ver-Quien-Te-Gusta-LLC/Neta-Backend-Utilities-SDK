@@ -1,18 +1,43 @@
-const cassandra = require("cassandra-driver"); // To connect to ScyllaDB
+import cassandra from 'cassandra-driver';
+import Ably from 'ably';
+import{FetchFromSecrets} from "./AwsSecrets.js";
+var ably;
+async function fetchAlby() {
+  ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
+  await ably.connection.once("connected");
+}
+fetchAlby();
 
-const ably = new Ably.Realtime.Promise(secrets.FetchFromSecrets("AblyAPIKey"));
-await ably.connection.once("connected");
+import gremlin from 'gremlin';
+import AWS from 'aws-sdk';
+import https from "https";
+let NeptuneConnection,client,userPoolId;
+async function fetchCassandra() {
+  const contactPoints = await FetchFromSecrets("contactPoints");
+  const localDataCenter = await FetchFromSecrets("localDataCenter");
+  const keyspace = await FetchFromSecrets("keyspace");
 
-const AWS = require("aws-sdk");
-const gremlin = require("gremlin");
-const https = require("https");
+  client = new cassandra.Client({
+    contactPoints: [contactPoints],
+    localDataCenter: localDataCenter,
+    keyspace: keyspace,
+  });
+  await client.connect();
+  userPoolId = await FetchFromSecrets("UserPoolID"); // Insert your user pool id here
 
-NeptuneConnection = {
-  endpoint: "netausers.cluster-c4hup8h6ndrb.us-east-1.neptune.amazonaws.com",
-  port: "8182",
-  region: "us-east-1",
-};
-
+  const [NeptuneEndpoint, NeptunePort] = await Promise.all([
+    FetchFromSecrets("NeptuneEndpoint"),
+    FetchFromSecrets("NeptunePort"),
+  ]);
+  
+  const NeptuneConnection = {
+    endpoint: NeptuneEndpoint,
+    port: NeptunePort,
+    region: process.env.AWS_REGION,
+  };
+  
+}
+fetchCassandra();
 const httpAgent = new https.Agent({
   rejectUnauthorized: false, // for local development, use 'true' in production
 });
@@ -169,7 +194,7 @@ async function CreateCognitoUser(req) {
     new AWS.CognitoIdentityServiceProvider();
 
   const createUserParams = {
-    UserPoolId: "us-east-1_I4JrZH7m7",
+    UserPoolId: userPoolId,
     Username: phoneNumber,
     TemporaryPassword: password,
     UserAttributes: [

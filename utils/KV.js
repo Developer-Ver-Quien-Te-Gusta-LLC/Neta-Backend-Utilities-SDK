@@ -59,7 +59,7 @@ async function GetValueFromKV(key, PhoneNumber) {
 
 async function GetValuesFromKV(keys, PhoneNumber) {
   while (!isClientConnected) {
-    console.log("attempting connection to KV client...");
+    //console.log("attempting connection to KV client...");
     // Wait for a short period of time before checking the condition again.
     await new Promise((resolve) => setTimeout(resolve, 100)); // Adjust the time interval as needed.
   }

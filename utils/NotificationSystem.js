@@ -5,22 +5,21 @@ import {
 import{FetchChannelId} from "./AlbyToken.js";
 import{getDataFromScyalla} from "./DataBaseQueriesHandler.js";
 import { encrypt } from "./AwsEncryption.js";
-
+import Ably from 'ably';
 var ably;
 async function fetchAlby() {
-  alby = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
+  ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
   await ably.connection.once("connected");
 }
 fetchAlby();
 console.log("Connected to Ably!");
 
-const fcm = require("firebase-admin");
+import * as fcm from 'firebase-admin';
+//import serviceAccount from './credentials/creds.json';
 
-var serviceAccount = require("./credentials/creds.json");
-
-admin.initializeApp({
+/*admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-});
+});*/
 
 async function publishAlbyMessage(user_id, message) {
   const temp = await FetchChannelId(user_id, true); //await DataHandler.getDataFromScyalla("Users", user_id, "AlbyTopicName");
@@ -60,7 +59,7 @@ async function publishFCMMessage(userToken, message) {
 }
 
 async function SendNotification(userId, payload) {
-  const userStatus = await getDataFromScyalla("Users", userId, "OnlineStatus");
+  const userStatus = await getDataFromScyalla("Users", userId, "Online");
 
   if (userStatus == true) {
     publishAlbyMessage(userId, payload);

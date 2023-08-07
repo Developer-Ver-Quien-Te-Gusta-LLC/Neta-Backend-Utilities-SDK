@@ -17,13 +17,17 @@ import cassandra from 'cassandra-driver';
 let client;
 
 async function fetchCassandra() {
-  client = new cassandra.Client({
-    contactPoints: await FetchFromSecrets("contactPoints"),
-    localDataCenter: await FetchFromSecrets("localDataCenter"),
-    keyspace: await FetchFromSecrets("keyspace"),
-  });
+  const contactPoints = await FetchFromSecrets("contactPoints");
+    const localDataCenter = await FetchFromSecrets("localDataCenter");
+    const keyspace = await FetchFromSecrets("keyspace");
 
-  return client;
+    client = new cassandra.Client({
+        contactPoints: [contactPoints],
+        localDataCenter: localDataCenter,
+        keyspace:keyspace,
+    });
+
+    await client.connect();
 }
 fetchCassandra();
 
@@ -50,13 +54,13 @@ async function fetchWeights() {
   ]);
 
   // Destructure weights for each category
-  [SameGradeWeightOnboarding, SameGradeWeightExplore, SameGradeWeightQuestions] = SameGradeWeights;
+ /* [SameGradeWeightOnboarding, SameGradeWeightExplore, SameGradeWeightQuestions] = SameGradeWeights;
   [SameHighSchoolWeightOnboarding, SameHighSchoolWeightExplore, SameHighSchoolWeightQuestions] = SameHighSchoolWeights;
   [FriendsWeightOnboarding, FriendsWeightExplore, FriendsWeightQuestions] = FriendsWeights;
   [FriendsOfFriendsWeightOnboarding, FriendsOfFriendsWeightExplore, FriendsOfFriendsWeightQuestions] = FriendsOfFriendsWeights;
   [EmojiContactsWeightOnboarding, EmojiContactsWeightExplore, EmojiContactsWeightQuestions] = EmojiContactsWeights;
   [ContactsWeightOnboarding, ContactsWeightExplore, ContactsWeightQuestions] = ContactsWeights;
-  [TopFriendsWeightsQuestions] = TopFriendsWeights;
+  [TopFriendsWeightsQuestions] = TopFriendsWeights;*/
 }
 
 fetchWeights(); // fetch the weights as soon as the module is imported
