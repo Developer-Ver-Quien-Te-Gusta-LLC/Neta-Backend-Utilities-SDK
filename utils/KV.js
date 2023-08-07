@@ -12,7 +12,7 @@ global.TextDecoder = TextDecoder;
 
 let dbClient;
 var isClientConnected = false;
-
+//#region Setup
 async function SetupClients() {
   const contactPoints = await FetchFromSecrets("contactPoints");
   const localDataCenter = await FetchFromSecrets("localDataCenter");
@@ -43,6 +43,7 @@ async function SetupClients() {
   isClientConnected = true;
 }
 SetupClients();
+//#endregion
 
 /// altered to support destructuring
 async function getKV(...keys) {
@@ -62,7 +63,6 @@ async function GetValuesFromKV(keys, PhoneNumber) {
     await new Promise((resolve) => setTimeout(resolve, 100)); // Adjust the time interval as needed.
   }
   const data = await kvclient.get(keys);
-
   let fetchedValues;
   if (Array.isArray(data)) {
     fetchedValues = data.map((dataItem) => JSON.parse(dataItem));
@@ -100,7 +100,6 @@ async function GetValuesFromKV(keys, PhoneNumber) {
       }
     }
   }
-
   return returnValues;
 }
 
@@ -170,4 +169,14 @@ async function isUserInVariant(variantID, username) {
 async function SetKV(key, value) {
   await kvclient.put(key, value);
 }
+
+async function testVariantWithoutDefault() {
+
+
+  const result = await getKV("button_color_test"); // Replace with actual phone number or unique identifier
+  console.log('Variant Test Without Default:', result);
+}
+
+testVariantWithoutDefault();
+
 export { GetValueFromKV, isUserInVariant, SetKV, getKV };
