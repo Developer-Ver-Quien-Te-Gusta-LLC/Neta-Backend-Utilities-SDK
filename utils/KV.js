@@ -152,7 +152,7 @@ async function DetermineVariant(data, _key, PhoneNumber) {
   
   const variantKeys = Object.keys(data.Variants);
   const variantPromises = variantKeys.map(variantKey => isUserInVariant(variantKey, PhoneNumber));
-  const variantResults = await Promise.all(variantPromises);
+  const variantResults = await Promise.allSettled(variantPromises);
   
   for (let i = 0; i < variantResults.length; i++) {
     if (variantResults[i]) {
@@ -184,7 +184,7 @@ async function GetValuesFromKV(keys, PhoneNumber) {
   if(Array.isArray(data)){
     fetchedValues = data.map((dataItem) => JSON.parse(dataItem));
 
-    const returnValues = await Promise.all(
+    const returnValues = await Promise.allSettled(
       fetchedValues.map(async (fetchedValue, index) => {
         if (fetchedValue.Default == null && fetchedValue != null) {
           return fetchedValue;

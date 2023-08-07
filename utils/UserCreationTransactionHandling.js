@@ -1,7 +1,7 @@
 ///
 /// This function is internal-facing and thottled heavily. It creates all of the services
 /// used in this application either syncronously or asyncrounsly (value taken from AWS KMS).
-/// If v=async, then each service exists seperately duplicated in each region and is queud up all at once using Promise.all
+/// If v=async, then each service exists seperately duplicated in each region and is queud up all at once using Promise.allSettled
 /// otherwise use a single service that creates all syncronously.
 
 ///

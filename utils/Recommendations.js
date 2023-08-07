@@ -37,7 +37,7 @@ let SameGradeWeightOnboarding, SameGradeWeightExplore, SameGradeWeightQuestions,
 
 async function fetchWeights() {
   // Fetch all weights concurrently
-  const [SameGradeWeights, SameHighSchoolWeights, FriendsWeights, FriendsOfFriendsWeights, EmojiContactsWeights, ContactsWeights,TopFriendsWeights] = await Promise.all([
+  const [SameGradeWeights, SameHighSchoolWeights, FriendsWeights, FriendsOfFriendsWeights, EmojiContactsWeights, ContactsWeights,TopFriendsWeights] = await Promise.allSettled([
     getKV(["SameGradeWeightOnboarding", "SameGradeWeightExplore", "SameGradeWeightQuestions"]),
     getKV(["SameHighSchoolWeightOnboarding", "SameHighSchoolWeightExplore", "SameHighSchoolWeightQuestions"]),
     getKV(["FriendsWeightOnboarding", "FriendsWeightExplore", "FriendsWeightQuestions"]),
@@ -323,7 +323,7 @@ async function GetRecommendationsQuestions(username) {
   const FetchTopFriendsQuery = 'SELECT topFriends FROM users WHERE phoneNumber = ?';
   const TopFriends = await client.execute(FetchTopFriendsQuery, [username], { prepare: true }); //TODO: make sure it returns an array when route testing
   
-  const GetTopFriendCountQuery = 'SELECT friends_count FROM topJesse WHERE phoneNumber =? AND friendPhoneNumber =? ';
+  const GetTopFriendCountQuery = 'SELECT friends_count FROM topFriendsAndPolls WHERE phoneNumber =? AND friendPhoneNumber =? ';
   let TopFriendsWeights;
   let TopFriendPhoneNumberArray;
   let i=0;
