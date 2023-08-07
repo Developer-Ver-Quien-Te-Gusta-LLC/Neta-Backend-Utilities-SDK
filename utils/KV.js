@@ -1,11 +1,9 @@
 import kvclient from "cloudflare-workers-kv";
 import axios from "axios";
 import { TextEncoder, TextDecoder } from "util";
-import { Client } from "cassandra-driver";
 import {FetchFromSecrets} from "./AwsSecrets.js";
 import fetch from "node-fetch";
 import cassandra from "cassandra-driver";
-import { URLSearchParams } from "url";
 
 
 global.fetch = fetch;
