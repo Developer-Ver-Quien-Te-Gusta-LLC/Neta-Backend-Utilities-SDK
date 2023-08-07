@@ -9,7 +9,7 @@ import { FetchTopFriendsAndPolls,getDataFromNeptune,getDataFromScyalla,FetchCogn
 //import {GenerateInviteLink} from "../microservices/Invitations/GenerateInviteLink.js";
 import {IsUserInvited} from "./utils/InviteHandler.js";
 import {GetValueFromKV,isUserInVariant,SetKV,getKV} from "./utils/KV.js";
-import { SendNotification } from "./utils/NotificationSystem.js";
+import { SendNotification,publishAlbyMessage } from "./utils/NotificationSystem.js";
 import {ExtractUsersFromJson,WeightArraysUsingProbability,InviteFriends,FetchFriendsWithSubsActive,GetRecommendationsOnboarding,GetRecommendationsExploreSection,GetRecommendationsQuestions} from "./utils/Recommendations.js"
 import {handleTransactionError,fetchRequestsFromSQS} from "./utils/ServiceBus.js";
 import {CreateMixPanelUser,CreateScyllaUser,createNeptuneUser,CreateCognitoUser,} from "./utils/UserCreation.js";
@@ -64,4 +64,5 @@ export {
   CreateCognitoUser,
   handleTransactionCompletion,
   OnUserCreationFailed,
+  publishAlbyMessage
 };
