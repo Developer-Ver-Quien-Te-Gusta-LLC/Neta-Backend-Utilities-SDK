@@ -15,6 +15,7 @@ fetchAlby();
 console.log("Connected to Ably!");
 
 import * as fcm from 'firebase-admin';
+import { SendNotificationInApp } from "../index.js";
 //import serviceAccount from './credentials/creds.json';
 
 /*admin.initializeApp({
@@ -58,14 +59,23 @@ async function publishFCMMessage(userToken, message) {
     });
 }
 
+async function SendNotificationPush(userId, payload) {
+  await publishFCMMessage(userToken, JSON.stringify(payload));
+}
+
+async function SendNotificationInApp(userId, payload) {
+  await publishAlbyMessage(userId, payload);
+}
+
+
 async function SendNotification(userId, payload) {
   const userStatus = await getDataFromScyalla("Users", userId, "Online");
 
   if (userStatus == true) {
-    publishAlbyMessage(userId, payload);
+    await publishAlbyMessage(userId, payload);
   } else {
     const userToken = await getDataFromScyalla("Users", userId, "token");
-    publishFCMMessage(userToken, JSON.stringify(payload));
+    await publishFCMMessage(userToken, JSON.stringify(payload));
   }
 }
-export { SendNotification ,publishAlbyMessage};
+export { SendNotification ,publishAlbyMessage, SendNotificationPush, SendNotificationInApp };
