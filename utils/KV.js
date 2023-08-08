@@ -2,39 +2,26 @@ const kvclient = require("cloudflare-workers-kv");
 const axios = require("axios");
 const { TextEncoder, TextDecoder } = require("util");
 const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
-var fetch;
-import("node-fetch").then((_fetch) => {
-  fetch = _fetch;
-  global.fetch = fetch;
-});
 
-const cassandra = require("cassandra-driver");
 
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
 
-let dbClient;
+
+global.TextEncoder = require('util').TextEncoder;
+global.TextDecoder = require('util').TextDecoder;
+
 var isClientConnected = false;
 //#region Setup
 async function SetupClients() {
-  const contactPoints = await FetchFromSecrets("contactPoints");
-  const localDataCenter = await FetchFromSecrets("localDataCenter");
-  const keyspace = await FetchFromSecrets("keyspace");
-  const dbClient = new cassandra.Client({
-    contactPoints: [contactPoints],
-    localDataCenter: localDataCenter,
-    keyspace: keyspace,
+  await import('node-fetch').then((fetchModule) => {
+    global.fetch = fetchModule.default;
   });
-
-  dbClient.connect();
-
   const variableBinding = await FetchFromSecrets("KVvariableBinding");
   const namespaceId = await FetchFromSecrets("KVnamespaceId");
   const accountId = await FetchFromSecrets("KVaccountId");
   const email = await FetchFromSecrets("KVemail");
   const apiKey = await FetchFromSecrets("KVApiKey");
 
-  kvclient.init({
+  await kvclient.init({
     variableBinding: variableBinding,
     namespaceId: namespaceId,
     accountId: accountId,
@@ -65,11 +52,16 @@ async function GetValuesFromKV(keys, PhoneNumber) {
     // Wait for a short period of time before checking the condition again.
     await new Promise((resolve) => setTimeout(resolve, 100)); // Adjust the time interval as needed.
   }
-  const data = await kvclient.get(keys);
+ 
+  var data = [];
+  for(i =0;i<keys.length;i++){
+    const FetchedValue = await kvclient.get(keys[i]);
+    data.push(FetchedValue);
+  }
+  console.log(data);
   let fetchedValues;
   if (Array.isArray(data)) {
     fetchedValues = data.map((dataItem) => JSON.parse(dataItem));
-
     const returnValues = await Promise.allSettled(
       fetchedValues.map(async (fetchedValue, index) => {
         if (fetchedValue.Default == null && fetchedValue != null) {
@@ -89,7 +81,7 @@ async function GetValuesFromKV(keys, PhoneNumber) {
       })
     );
   } else {
-    if (data.Default == null && data != null) {
+    if (data != null && data.Default == null) {
       console.log(data, keys);
       return data;
     } else {
@@ -103,7 +95,7 @@ async function GetValuesFromKV(keys, PhoneNumber) {
       }
     }
   }
-  return returnValues;
+  return data;
 }
 
 function assignByWeight(weights) {
@@ -173,5 +165,11 @@ async function SetKV(key, value) {
   await kvclient.put(key, value);
 }
 
+async function data(){
+  const _data = await GetValuesFromKV(["otpTTL", "OTPLength"]);
+  //console.log(_data)
+}
+
+data();
 
 module.exports = { GetValueFromKV, isUserInVariant, SetKV, getKV };
