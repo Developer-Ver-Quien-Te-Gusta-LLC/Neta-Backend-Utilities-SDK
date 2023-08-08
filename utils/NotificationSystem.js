@@ -34,6 +34,8 @@ async function publishAlbyMessage(user_id, message) {
   const channel = ably.channels.get(topicName);
   if (!channel) channel = alby.channels.create(topicName);
 
+  if (typeof(message) == "object") message = JSON.stringify(message)
+
   const EncryptedMessage = await encrypt(message, encryptionKey);
   await channel.publish(JSON.stringify(EncryptedMessage));
 
@@ -44,7 +46,7 @@ async function publishFCMMessage(userToken, message) {
   const payload = {
     notification: {
       title: "tbd",
-      body: JSON.stringify(message),
+      body: typeof(message) == "object" ? message : JSON.stringify(message),
     },
   };
 
