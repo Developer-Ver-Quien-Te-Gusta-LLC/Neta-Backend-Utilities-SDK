@@ -1,11 +1,23 @@
 import Mixpanel from 'mixpanel';
-var mixpanel = Mixpanel.init("9ecd22e50f6805adb3e4df907baf149a"); /// USE AWS KMS
+import FetchFromSecrets from './AwsSecrets'
 
-async function SendEvent(event_name, phoneNumber,value) {
-  mixpanel.track(event_name, {
+let mixpanel;
+async function init () {
+  mixpanel = Mixpanel.init(await FetchFromSecrets("MixpanelClientSecret")); // NOTE: Store this securely
+}
+
+async function SendEvent(event_name, phoneNumber, value, time) {
+  const eventData = {
     distinct_id: phoneNumber,
-    value //TODO : fetch all values from 'value' and add them to this json , also support multiple types of values 
+    ...value
+  };
 
+  mixpanel.import(event_name, time, eventData, (err) => {
+    if (err) {
+      console.error('Failed to send event:', err);
+    } else {
+      console.log('Event sent successfully!');
+    }
   });
 }
 
