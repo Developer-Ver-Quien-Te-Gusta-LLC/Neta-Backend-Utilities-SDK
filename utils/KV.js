@@ -172,4 +172,4 @@ async function data(){
 
 data();
 
-module.exports = { GetValueFromKV, isUserInVariant, SetKV, getKV };
+module.exports = { GetValueFromKV,GetValuesFromKV, isUserInVariant, SetKV, getKV };
