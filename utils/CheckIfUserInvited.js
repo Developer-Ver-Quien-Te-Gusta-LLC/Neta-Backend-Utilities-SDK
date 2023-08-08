@@ -1,4 +1,5 @@
-import{IsUserInvited} from "./InviteHandler.js";
+const { IsUserInvited } = require("./InviteHandler.js");
+
 //Client facing function to check if a user is invited , done while onboarding
  async function CheckForInvite (phone_number)  {
     var inviteStatus = IsUserInvited(phone_number);
@@ -6,4 +7,4 @@ import{IsUserInvited} from "./InviteHandler.js";
 }
 
 
-export {CheckForInvite};
+module.exports =  {CheckForInvite};

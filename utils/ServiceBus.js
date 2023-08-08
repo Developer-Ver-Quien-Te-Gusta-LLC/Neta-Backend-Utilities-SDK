@@ -1,12 +1,12 @@
-import {FetchFromSecrets}  from "./AwsSecrets.js";
-import cassandra from 'cassandra-driver';
+const { FetchFromSecrets } = require("./AwsSecrets.js");
+const cassandra = require('cassandra-driver');
 
 var queueURL;
 
-import{CreateScyllaUser,CreateCognitoUser,createNeptuneUser} from "./UserCreation.js";
+const UserCreation = require("./UserCreation.js");
 
+const AWS = require('aws-sdk');
 
-import AWS from 'aws-sdk';
 const sqs = new AWS.SQS();
 
 var client;
@@ -67,14 +67,14 @@ async function handleTransactionError(service, data) {
     /// send the data back to this specfic service
    
     if(service == "scylla") {
-      CreateScyllaUser(data);
+      UserCreation.CreateScyllaUser(data);
     }
     else if(service == "cognito") {
-      CreateCognitoUser(data);
+      UserCreation.CreateCognitoUser(data);
     }
 
     else if(service == "graphdb") {
-      CreateNeptuneUser(data);
+      UserCreation.CreateNeptuneUser(data);
     }
 
   }
@@ -101,4 +101,4 @@ async function fetchRequestsFromSQS(queueURL) { //TODO: fetch max requests from 
 
 //#endregion
 
-export {handleTransactionError,fetchRequestsFromSQS};
+module.exports = {handleTransactionError,fetchRequestsFromSQS};

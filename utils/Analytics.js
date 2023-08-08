@@ -1,10 +1,10 @@
-import Mixpanel from 'mixpanel';
+const Mixpanel = require('mixpanel');
 const { v4: uuidv4 } = require('uuid');
-import FetchFromSecrets from './AwsSecrets'
+const FetchFromSecrets = require('./AwsSecrets').FetchFromSecrets;
 
 let mixpanel;
 async function init () {
-  mixpanel = Mixpanel.init(await FetchFromSecrets("MixpanelClientSecret")); // NOTE: Store this securely
+  //mixpanel = Mixpanel.init(await FetchFromSecrets("MixpanelClientSecret")); // NOTE: Store this securely
 }
 init()
 
@@ -23,4 +23,4 @@ async function SendEvent(event_name, phoneNumber, value, time) {
   });
 }
 
-export { SendEvent };
+module.exports = { SendEvent };

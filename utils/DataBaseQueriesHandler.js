@@ -1,7 +1,8 @@
-import gremlin from 'gremlin';
-import AWS from 'aws-sdk';
-import cassandra from 'cassandra-driver';
-import { FetchFromSecrets } from './AwsSecrets.js';
+const gremlin = require('gremlin');
+const AWS = require('aws-sdk');
+const cassandra = require('cassandra-driver');
+const  FetchFromSecrets  = require('./AwsSecrets.js').FetchFromSecrets;
+
 var userPoolId,NeptuneConnection,client;
 async function fetchCassandra() {
 
@@ -349,7 +350,7 @@ async function removeFriendsRelation(phoneNumber, friend) {
 }
 
 
-export {
+module.exports= {
   FetchTopFriendsAndPolls,
   getDataFromNeptune,
   getDataFromScyalla,

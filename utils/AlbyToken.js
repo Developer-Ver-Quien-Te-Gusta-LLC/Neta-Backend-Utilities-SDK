@@ -1,6 +1,7 @@
-import{Client}from'cassandra-driver';
-import{FetchFromSecrets} from "./AwsSecrets.js";
-import { getKV } from "./KV.js";
+const { Client } = require('cassandra-driver');
+const { FetchFromSecrets } = require("./AwsSecrets.js").FetchFromSecrets;
+const { getKV } = require("./KV.js").getKV;
+
 async function initializeClient() {
     const contactPoints = await FetchFromSecrets("contactPoints");
     const localDataCenter = await FetchFromSecrets("localDataCenter");
@@ -53,4 +54,4 @@ async function FetchChannelId(phoneNumber, fetchEncryptionKey = false) {
     return user.AlbyTopicName;
 }
 
-export {FetchChannelId};
+module.exports= {FetchChannelId};

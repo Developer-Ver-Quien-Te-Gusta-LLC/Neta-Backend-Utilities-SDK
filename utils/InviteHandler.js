@@ -1,4 +1,5 @@
-import{ExecuteCustomScyllaQuery} from "./DataBaseQueriesHandler.js";
+const { ExecuteCustomScyllaQuery } = require("./DataBaseQueriesHandler.js").ExecuteCustomScyllaQuery;
+
 async function IsUserInvited(confirmedInvitees) {
   if (!Array.isArray(confirmedInvitees) || confirmedInvitees.length === 0) {
     return false;
@@ -17,4 +18,4 @@ async function IsUserInvited(confirmedInvitees) {
   else return false;
 }
 
-export  { IsUserInvited };
+module.exports =  { IsUserInvited };

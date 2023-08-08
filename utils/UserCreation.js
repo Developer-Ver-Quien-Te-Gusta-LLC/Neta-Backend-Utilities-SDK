@@ -1,16 +1,20 @@
-import cassandra from 'cassandra-driver';
-import Ably from 'ably';
-import{FetchFromSecrets} from "./AwsSecrets.js";
+const cassandra = require('cassandra-driver');
+const Ably = require('ably');
+const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
+
 var ably;
+
 async function fetchAlby() {
   ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
   await ably.connection.once("connected");
 }
+
 fetchAlby();
 
-import gremlin from 'gremlin';
-import AWS from 'aws-sdk';
-import https from "https";
+const gremlin = require('gremlin');
+const AWS = require('aws-sdk');
+const https = require("https");
+
 let NeptuneConnection,client,userPoolId;
 async function fetchCassandra() {
   const contactPoints = await FetchFromSecrets("contactPoints");
@@ -45,9 +49,9 @@ const Neptune = new AWS.Neptune();
 const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
 const Graph = gremlin.structure.Graph;
 
-
-import{handleTransactionError} from "./ServiceBus.js";
-import{OnUserCreationFailed,handleTransactionCompletion} from "./UserCreationTransactionHandling.js";
+const handleTransactionError = require("./ServiceBus.js").handleTransactionError;
+const OnUserCreationFailed = require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
+const handleTransactionCompletion = require("./UserCreationTransactionHandling.js").handleTransactionCompletion;
 //Create a user profile in Mixpanel
 async function CreateMixPanelUser(username, firstname, lastname, geohash) {
   mixpanel.people.set(username, {
@@ -263,7 +267,7 @@ async function unenroll(highschoolName) {
 }
 
 
-export {
+module.exports= {
   CreateMixPanelUser,
   CreateScyllaUser,
   createNeptuneUser,

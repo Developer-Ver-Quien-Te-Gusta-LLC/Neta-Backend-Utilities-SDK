@@ -9,25 +9,14 @@
 ///
 
 
-import cassandra from "cassandra-driver";
+const cassandra = require("cassandra-driver");
 const region = process.env.AWS_REGION;
 
-import{FetchFromSecrets} from "./AwsSecrets.js";
+const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
+const ScyllaSetup = require("./SetupCassandra.js");
+var client;
 
-const client = new cassandra.Client({
-  contactPoints: [await FetchFromSecrets("contactPoints")], // change to your ScyllaDB host
-  localDataCenter: await FetchFromSecrets("localDataCenter"), // change to your data center
-  keyspace: await FetchFromSecrets("keyspace"), // change to your keyspace
-});
-
-client.connect((err) => {
-  if (err) {
-    console.error("Error connecting to ScyllaDB:", err);
-    return;
-  }
-});
-
-
+ScyllaSetup.SetupCassandraClient(client);
 
 // This function will be invoked by each service via SNS Topic
 async function handleTransactionCompletion(phoneNumber, transactionId, encryptionKey) {
@@ -103,7 +92,7 @@ channel.publish("event", JSON.stringify(albySuccessObj), (err) => {
   }
 }*/
 
-export {
+module.exports= {
   handleTransactionCompletion,
  // checkForTransactionErrors,
  OnUserCreationFailed,

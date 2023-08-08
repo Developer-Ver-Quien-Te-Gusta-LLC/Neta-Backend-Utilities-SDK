@@ -1,5 +1,6 @@
-import {cassandra} from "cassandra-driver";
-import { FetchFromSecrets } from "./AwsSecrets.js";
+const  cassandra  = require("cassandra-driver");
+const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
+
 
 
 async function SetupCassandraClient(client) {
@@ -17,4 +18,4 @@ async function SetupCassandraClient(client) {
   return client;
 }
 
-export{SetupCassandraClient};
+module.exports={SetupCassandraClient};

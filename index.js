@@ -1,72 +1,74 @@
-import { FetchChannelId } from "./utils/AlbyToken.js";
-import { SendEvent } from "./utils/Analytics.js";
-import { GetUserDataFromJWT } from "./utils/AuthHandler.js";
-import { UpdateCognitoUserPFP,DeleteCognitoUser,UpdateDeviceID,FetchDevice,FetchUserPrefs,SetSubscription } from "./utils/AwsCognito.js";
-import {encrypt,decrypt} from "./utils/AwsEncryption.js"
-import { FetchFromSecrets } from "./utils/AwsSecrets.js";
-import { CheckForInvite } from "./utils/CheckIfUserInvited.js";
-import { FetchTopFriendsAndPolls,getDataFromNeptune,getDataFromScyalla,FetchCognitoData,InsertDataInScylla,UpdateDataInNeptune,UpdateDataInScyallaDB,UpdateDataInScyllaDBTTL,FetchTopPolls,FetchTopFriends,ExecuteCustomScyllaQuery,AddFriendRelationInNeptune,removeFriendsRelation,listFriends} from "./utils/DataBaseQueriesHandler.js"
-//import {GenerateInviteLink} from "../microservices/Invitations/GenerateInviteLink.js";
-import {IsUserInvited} from "./utils/InviteHandler.js";
-import {GetValueFromKV,isUserInVariant,SetKV,getKV} from "./utils/KV.js";
-import { SendNotification,SendNotificationInApp, SendNotificationPush, publishAlbyMessage } from "./utils/NotificationSystem.js";
-import {ExtractUsersFromJson,WeightArraysUsingProbability,InviteFriends,FetchFriendsWithSubsActive,GetRecommendationsOnboarding,GetRecommendationsExploreSection,GetRecommendationsQuestions} from "./utils/Recommendations.js"
-import {handleTransactionError,fetchRequestsFromSQS} from "./utils/ServiceBus.js";
-import {CreateMixPanelUser,CreateScyllaUser,createNeptuneUser,CreateCognitoUser,} from "./utils/UserCreation.js";
-import { handleTransactionCompletion,OnUserCreationFailed} from "./utils/UserCreationTransactionHandling.js";
-import { SetupCassandraClient } from "./utils/SetupCassandra.js";
+var AlbyToken = require("./utils/AlbyToken.js");
+var Analytics = require("./utils/Analytics.js");
+var AuthHandler = require("./utils/AuthHandler.js");
+var AwsCognito = require("./utils/AwsCognito.js");
+var AwsEncryption = require("./utils/AwsEncryption.js");
+var AwsSecrets = require("./utils/AwsSecrets.js");
+var CheckIfUserInvited = require("./utils/CheckIfUserInvited.js");
+var DataBaseQueriesHandler = require("./utils/DataBaseQueriesHandler.js");
+//var Invitations = require("../microservices/Invitations/GenerateInviteLink.js");
+var InviteHandler = require("./utils/InviteHandler.js");
+var KV = require("./utils/KV.js");
+var NotificationSystem = require("./utils/NotificationSystem.js");
+var Recommendations = require("./utils/Recommendations.js");
+var ServiceBus = require("./utils/ServiceBus.js");
+var UserCreation = require("./utils/UserCreation.js");
+var UserCreationTransactionHandling = require("./utils/UserCreationTransactionHandling.js");
+var SetupCassandra = require("./utils/SetupCassandra.js");
+
 console.log("Backend SDK initialized");
-export {
-  FetchChannelId,
-  SendEvent,
-  GetUserDataFromJWT,
-  UpdateCognitoUserPFP,
-  DeleteCognitoUser,
-  UpdateDeviceID,
-  FetchDevice,
-  FetchUserPrefs,
-  SetSubscription,
-  encrypt,
-  decrypt,
-  FetchFromSecrets,
-  CheckForInvite,
-  FetchTopFriendsAndPolls,
-  getDataFromNeptune,
-  getDataFromScyalla,
-  FetchCognitoData,
-  InsertDataInScylla,
-  UpdateDataInNeptune,
-  UpdateDataInScyallaDB,
-  UpdateDataInScyllaDBTTL,
-  FetchTopPolls,
-  FetchTopFriends,
-  ExecuteCustomScyllaQuery,
-  AddFriendRelationInNeptune,
-  removeFriendsRelation,
-  listFriends,
-  IsUserInvited,
-  GetValueFromKV,
-  isUserInVariant,
-  SetKV,
-  getKV,
-  SendNotification,
-  SendNotificationInApp,
-  SendNotificationPush,
-  ExtractUsersFromJson,
-  WeightArraysUsingProbability,
-  InviteFriends,
-  FetchFriendsWithSubsActive,
-  GetRecommendationsOnboarding,
-  GetRecommendationsExploreSection,
-  GetRecommendationsQuestions,
-  handleTransactionError,
-  fetchRequestsFromSQS,
-  CreateMixPanelUser,
-  CreateScyllaUser,
-  createNeptuneUser,
-  CreateCognitoUser,
-  handleTransactionCompletion,
-  OnUserCreationFailed,
-  publishAlbyMessage,
-  SetupCassandraClient
+
+module.exports = {
+  FetchChannelId: AlbyToken.FetchChannelId,
+  SendEvent: Analytics.SendEvent,
+  GetUserDataFromJWT: AuthHandler.GetUserDataFromJWT,
+  UpdateCognitoUserPFP: AwsCognito.UpdateCognitoUserPFP,
+  DeleteCognitoUser: AwsCognito.DeleteCognitoUser,
+  UpdateDeviceID: AwsCognito.UpdateDeviceID,
+  FetchDevice: AwsCognito.FetchDevice,
+  FetchUserPrefs: AwsCognito.FetchUserPrefs,
+  SetSubscription: AwsCognito.SetSubscription,
+  encrypt: AwsEncryption.encrypt,
+  decrypt: AwsEncryption.decrypt,
+  FetchFromSecrets: AwsSecrets.FetchFromSecrets,
+  CheckForInvite: CheckIfUserInvited.CheckForInvite,
+  FetchTopFriendsAndPolls: DataBaseQueriesHandler.FetchTopFriendsAndPolls,
+  getDataFromNeptune: DataBaseQueriesHandler.getDataFromNeptune,
+  getDataFromScyalla: DataBaseQueriesHandler.getDataFromScyalla,
+  FetchCognitoData: DataBaseQueriesHandler.FetchCognitoData,
+  InsertDataInScylla: DataBaseQueriesHandler.InsertDataInScylla,
+  UpdateDataInNeptune: DataBaseQueriesHandler.UpdateDataInNeptune,
+  UpdateDataInScyallaDB: DataBaseQueriesHandler.UpdateDataInScyallaDB,
+  UpdateDataInScyllaDBTTL: DataBaseQueriesHandler.UpdateDataInScyllaDBTTL,
+  FetchTopPolls: DataBaseQueriesHandler.FetchTopPolls,
+  FetchTopFriends: DataBaseQueriesHandler.FetchTopFriends,
+  ExecuteCustomScyllaQuery: DataBaseQueriesHandler.ExecuteCustomScyllaQuery,
+  AddFriendRelationInNeptune: DataBaseQueriesHandler.AddFriendRelationInNeptune,
+  removeFriendsRelation: DataBaseQueriesHandler.removeFriendsRelation,
+  listFriends: DataBaseQueriesHandler.listFriends,
+  IsUserInvited: InviteHandler.IsUserInvited,
+  GetValueFromKV: KV.GetValueFromKV,
+  isUserInVariant: KV.isUserInVariant,
+  SetKV: KV.SetKV,
+  getKV: KV.getKV,
+  SendNotification: NotificationSystem.SendNotification,
+  SendNotificationInApp: NotificationSystem.SendNotificationInApp,
+  SendNotificationPush: NotificationSystem.SendNotificationPush,
+  ExtractUsersFromJson: Recommendations.ExtractUsersFromJson,
+  WeightArraysUsingProbability: Recommendations.WeightArraysUsingProbability,
+  InviteFriends: Recommendations.InviteFriends,
+  FetchFriendsWithSubsActive: Recommendations.FetchFriendsWithSubsActive,
+  GetRecommendationsOnboarding: Recommendations.GetRecommendationsOnboarding,
+  GetRecommendationsExploreSection: Recommendations.GetRecommendationsExploreSection,
+  GetRecommendationsQuestions: Recommendations.GetRecommendationsQuestions,
+  handleTransactionError: ServiceBus.handleTransactionError,
+  fetchRequestsFromSQS: ServiceBus.fetchRequestsFromSQS,
+  CreateMixPanelUser: UserCreation.CreateMixPanelUser,
+  CreateScyllaUser: UserCreation.CreateScyllaUser,
+  createNeptuneUser: UserCreation.createNeptuneUser,
+  CreateCognitoUser: UserCreation.CreateCognitoUser,
+  handleTransactionCompletion: UserCreationTransactionHandling.handleTransactionCompletion,
+  OnUserCreationFailed: UserCreationTransactionHandling.OnUserCreationFailed,
+  publishAlbyMessage: NotificationSystem.publishAlbyMessage,
+  SetupCassandraClient: SetupCassandra.SetupCassandraClient
 };

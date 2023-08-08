@@ -1,5 +1,6 @@
-import AWS from "aws-sdk";
-import multer from 'multer'; // For file upload
+const AWS = require("aws-sdk");
+const multer = require('multer'); // For file upload
+
 
 if (!process.env.prod) {
   AWS.config.update({
@@ -237,7 +238,7 @@ async function SetSubscription(username, subscription){
 
 //#endregion
 
-export {
+module.exports = {
  // CreateCognitoUser,
   UpdateCognitoUserPFP,
   DeleteCognitoUser,

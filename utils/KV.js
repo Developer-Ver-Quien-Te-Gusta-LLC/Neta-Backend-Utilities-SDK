@@ -1,10 +1,13 @@
-import kvclient from "cloudflare-workers-kv";
-import axios from "axios";
-import { TextEncoder, TextDecoder } from "util";
-import {FetchFromSecrets} from "./AwsSecrets.js";
-import fetch from "node-fetch";
-import cassandra from "cassandra-driver";
+const kvclient = require("cloudflare-workers-kv");
+const axios = require("axios");
+const { TextEncoder, TextDecoder } = require("util");
+const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
+var fetch;
+import('node-fetch').then(_fetch => {
+  fetch = _fetch;
+});
 
+const cassandra = require("cassandra-driver");
 
 global.fetch = fetch;
 global.TextEncoder = TextEncoder;
@@ -170,13 +173,5 @@ async function SetKV(key, value) {
   await kvclient.put(key, value);
 }
 
-async function testVariantWithoutDefault() {
 
-
-  const result = await getKV("button_color_test"); // Replace with actual phone number or unique identifier
-  console.log('Variant Test Without Default:', result);
-}
-
-testVariantWithoutDefault();
-
-export { GetValueFromKV, isUserInVariant, SetKV, getKV };
+module.exports = { GetValueFromKV, isUserInVariant, SetKV, getKV };

@@ -1,11 +1,10 @@
-import {
-  FetchFromSecrets,
-} from "./AwsSecrets.js"
+const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
+const  FetchChannelId  = require("./AlbyToken.js").FetchChannelId;
+const  getDataFromScyalla  = require("./DataBaseQueriesHandler.js").getDataFromScyalla;
+const { encrypt } = require("./AwsEncryption.js").encrypt;
 
-import{FetchChannelId} from "./AlbyToken.js";
-import{getDataFromScyalla} from "./DataBaseQueriesHandler.js";
-import { encrypt } from "./AwsEncryption.js";
-import Ably from 'ably';
+const Ably = require('ably');
+
 var ably;
 async function fetchAlby() {
   ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
@@ -13,9 +12,7 @@ async function fetchAlby() {
 }
 fetchAlby();
 console.log("Connected to Ably!");
-
-import * as fcm from 'firebase-admin';
-import { SendNotificationInApp } from "../index.js";
+const fcm = require('firebase-admin');
 //import serviceAccount from './credentials/creds.json';
 
 /*admin.initializeApp({
@@ -80,4 +77,4 @@ async function SendNotification(userId, payload) {
     await publishFCMMessage(userToken, JSON.stringify(payload));
   }
 }
-export { SendNotification ,publishAlbyMessage, SendNotificationPush, SendNotificationInApp };
+module.exports = { SendNotification ,publishAlbyMessage, SendNotificationPush, SendNotificationInApp };

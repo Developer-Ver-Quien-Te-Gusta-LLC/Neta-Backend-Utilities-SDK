@@ -1,5 +1,6 @@
-import AWS from "aws-sdk";
-import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+const AWS = require("aws-sdk");
+const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
+
 
 //for testing locally
 const prod = false;
@@ -50,4 +51,4 @@ async function FetchFromSecrets(key) {
   }
 }
 
-export {FetchFromSecrets};
+module.exports = {FetchFromSecrets};
