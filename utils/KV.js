@@ -58,7 +58,7 @@ async function GetValuesFromKV(keys, PhoneNumber) {
     const FetchedValue = await kvclient.get(keys[i]);
     data.push(FetchedValue);
   }
-  console.log(data);
+  //console.log(data);
   let fetchedValues;
   if (Array.isArray(data)) {
     fetchedValues = data.map((dataItem) => JSON.parse(dataItem));
@@ -82,15 +82,15 @@ async function GetValuesFromKV(keys, PhoneNumber) {
     );
   } else {
     if (data != null && data.Default == null) {
-      console.log(data, keys);
+    //  console.log(data, keys);
       return data;
     } else {
       if (data.ABEnabled && data.Variants) {
         const variant = await DetermineVariant(data, keys, PhoneNumber);
-        console.log(variant.value, keys);
+       // console.log(variant.value, keys);
         return variant.value;
       } else {
-        console.log(data.Default, keys);
+       // console.log(data.Default, keys);
         return data.Default;
       }
     }
