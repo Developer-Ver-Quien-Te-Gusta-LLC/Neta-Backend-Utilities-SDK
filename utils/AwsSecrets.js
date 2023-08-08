@@ -1,17 +1,6 @@
 const AWS = require("aws-sdk");
 const SecretsManager = new AWS.SecretsManager({ region: "us-east-1" });
 
-//for testing locally
-const prod = false;
-
-if (!prod) {
-  AWS.config.update({
-    region: "us-east-1",
-  });
-
-  console.log("not prod");
-}
-
 //fetch the accessid with the given key using AWS Secrets Manager
 async function FetchFromSecrets(key) {
   let response;
