@@ -14,6 +14,7 @@ import {ExtractUsersFromJson,WeightArraysUsingProbability,InviteFriends,FetchFri
 import {handleTransactionError,fetchRequestsFromSQS} from "./utils/ServiceBus.js";
 import {CreateMixPanelUser,CreateScyllaUser,createNeptuneUser,CreateCognitoUser,} from "./utils/UserCreation.js";
 import { handleTransactionCompletion,OnUserCreationFailed} from "./utils/UserCreationTransactionHandling.js";
+import { SetupCassandraClient } from "./utils/SetupCassandra.js";
 console.log("Backend SDK initialized");
 export {
   FetchChannelId,
@@ -64,5 +65,6 @@ export {
   CreateCognitoUser,
   handleTransactionCompletion,
   OnUserCreationFailed,
-  publishAlbyMessage
+  publishAlbyMessage,
+  SetupCassandraClient
 };
