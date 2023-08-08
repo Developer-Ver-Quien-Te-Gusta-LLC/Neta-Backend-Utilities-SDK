@@ -3,13 +3,13 @@ const axios = require("axios");
 const { TextEncoder, TextDecoder } = require("util");
 const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
 var fetch;
-import('node-fetch').then(_fetch => {
+import("node-fetch").then((_fetch) => {
   fetch = _fetch;
+  global.fetch = fetch;
 });
 
 const cassandra = require("cassandra-driver");
 
-global.fetch = fetch;
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
