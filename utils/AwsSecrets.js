@@ -1,6 +1,6 @@
 const AWS = require("aws-sdk");
 const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
-
+require('@aws-sdk/lib/maintenance_mode_message').suppress = true;
 
 //for testing locally
 const prod = false;

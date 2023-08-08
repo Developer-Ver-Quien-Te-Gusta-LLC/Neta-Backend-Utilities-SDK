@@ -1,7 +1,7 @@
 const AWS = require("aws-sdk");
 const multer = require('multer'); // For file upload
 
-
+require('aws-sdk/lib/maintenance_mode_message').suppress = true;
 if (!process.env.prod) {
   AWS.config.update({
     region: "us-east-1",
