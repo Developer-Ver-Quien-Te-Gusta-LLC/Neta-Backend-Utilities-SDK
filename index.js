@@ -51,6 +51,7 @@ module.exports = {
   isUserInVariant: KV.isUserInVariant,
   SetKV: KV.SetKV,
   getKV: KV.getKV,
+  GetValuesFromKV:KV.GetValuesFromKV,
   SendNotification: NotificationSystem.SendNotification,
   SendNotificationInApp: NotificationSystem.SendNotificationInApp,
   SendNotificationPush: NotificationSystem.SendNotificationPush,
