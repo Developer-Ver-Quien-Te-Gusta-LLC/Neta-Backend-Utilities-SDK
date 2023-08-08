@@ -1,4 +1,5 @@
 import Mixpanel from 'mixpanel';
+const { v4: uuidv4 } = require('uuid');
 import FetchFromSecrets from './AwsSecrets'
 
 let mixpanel;
@@ -9,7 +10,7 @@ init()
 
 async function SendEvent(event_name, phoneNumber, value, time) {
   const eventData = {
-    distinct_id: phoneNumber,
+    distinct_id: !phoneNumber ? uuidv4() : phoneNumber,
     ...value
   };
 
