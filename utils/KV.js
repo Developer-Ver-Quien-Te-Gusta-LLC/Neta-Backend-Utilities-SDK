@@ -165,11 +165,4 @@ async function SetKV(key, value) {
   await kvclient.put(key, value);
 }
 
-async function data(){
-  const _data = await GetValuesFromKV(["otpTTL", "OTPLength"]);
-  //console.log(_data)
-}
-
-data();
-
 module.exports = { GetValueFromKV,GetValuesFromKV, isUserInVariant, SetKV, getKV };
