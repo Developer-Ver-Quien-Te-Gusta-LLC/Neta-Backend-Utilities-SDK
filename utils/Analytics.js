@@ -5,6 +5,7 @@ let mixpanel;
 async function init () {
   mixpanel = Mixpanel.init(await FetchFromSecrets("MixpanelClientSecret")); // NOTE: Store this securely
 }
+init()
 
 async function SendEvent(event_name, phoneNumber, value, time) {
   const eventData = {
