@@ -1,6 +1,5 @@
 const AWS = require("aws-sdk");
-const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
-
+const SecretsManager = new AWS.SecretsManager({ region: "us-east-1" });
 
 //for testing locally
 const prod = false;
@@ -8,25 +7,20 @@ const prod = false;
 if (!prod) {
   AWS.config.update({
     region: "us-east-1",
-    
   });
 
   console.log("not prod");
 }
-
-const client = new SecretsManagerClient(AWS.config);
 
 //fetch the accessid with the given key using AWS Secrets Manager
 async function FetchFromSecrets(key) {
   let response;
 
   try {
-    response = await client.send(
-      new GetSecretValueCommand({
-        SecretId: key,
-        VersionStage: "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified
-      })
-    );
+    response = await SecretsManager.getSecretValue({
+      SecretId: key,
+      VersionStage: "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified
+    }).promise();
   } catch (error) {
     throw error;
   }
@@ -37,7 +31,7 @@ async function FetchFromSecrets(key) {
     const firstKey = Object.keys(returnData)[0];
     const firstValue = returnData[firstKey];
 
-    return firstValue  // return the secret
+    return firstValue; // return the secret
   } else {
     // if SecretString is undefined
     let buff = Buffer.from(response.SecretBinary, "base64");
@@ -46,9 +40,9 @@ async function FetchFromSecrets(key) {
 
     const returnData = JSON.parse(secret);
     const firstKey = Object.keys(returnData)[0];
-    const firstValue = data[firstKey];
-    return firstValue  // return the secret
+    const firstValue = returnData[firstKey]; // Fixed reference to correct variable
+    return firstValue; // return the secret
   }
 }
 
-module.exports = {FetchFromSecrets};
+module.exports = { FetchFromSecrets };
