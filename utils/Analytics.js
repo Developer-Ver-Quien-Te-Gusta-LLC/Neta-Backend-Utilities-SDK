@@ -4,7 +4,7 @@ const FetchFromSecrets = require('./AwsSecrets').FetchFromSecrets;
 
 let mixpanel;
 async function init () {
-  //mixpanel = Mixpanel.init(await FetchFromSecrets("MixpanelClientSecret")); // NOTE: Store this securely
+  mixpanel = Mixpanel.init(await FetchFromSecrets("MixpanelClientSecret")); // NOTE: Store this securely
 }
 init()
 
