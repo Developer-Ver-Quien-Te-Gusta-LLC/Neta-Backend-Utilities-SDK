@@ -4,7 +4,7 @@
   "description": "## What does this folder contain? * Any ambiguous function or code that is used repeteteivly across this project.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
