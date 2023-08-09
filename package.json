@@ -1,6 +1,6 @@
 {
   "name": "neta-backend-utilities-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "## What does this folder contain? * Any ambiguous function or code that is used repeteteivly across this project.",
   "main": "index.js",
   "scripts": {
