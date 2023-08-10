@@ -1,4 +1,4 @@
-const { FetchFromSecrets } = require("./AwsSecrets.js");
+const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
 const cassandra = require('cassandra-driver');
 
 var queueURL;
@@ -59,25 +59,21 @@ async function CheckRetry(phoneNumber, transactionId) {
 }
 
 async function handleTransactionError(service, data) {
-  if (!(await CheckRetry(data.transactionId))){
+  if (!(await CheckRetry(data.transactionId))) {
     //TODO: Delete The Entire User and reset retries for next attempy
-     return;
-    }
-    /// service = "scylla", "cognito", "graphdb"
-    /// send the data back to this specfic service
-   
-    if(service == "scylla") {
-      UserCreation.CreateScyllaUser(data);
-    }
-    else if(service == "cognito") {
-      UserCreation.CreateCognitoUser(data);
-    }
-
-    else if(service == "graphdb") {
-      UserCreation.CreateNeptuneUser(data);
-    }
-
+    return;
   }
+  /// service = "scylla", "cognito", "graphdb"
+  /// send the data back to this specfic service
+
+  if (service == "scylla") {
+    UserCreation.CreateScyllaUser(data);
+  } else if (service == "cognito") {
+    UserCreation.CreateCognitoUser(data);
+  } else if (service == "graphdb") {
+    UserCreation.CreateNeptuneUser(data);
+  }
+}
 
 
 //#region Fetching params stored in SQS , completely different from error handling

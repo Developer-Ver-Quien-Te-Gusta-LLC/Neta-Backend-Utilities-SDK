@@ -15,7 +15,6 @@ var ServiceBus = require("./utils/ServiceBus.js");
 var UserCreation = require("./utils/UserCreation.js");
 var UserCreationTransactionHandling = require("./utils/UserCreationTransactionHandling.js");
 var SetupCassandra = require("./utils/SetupCassandra.js");
-
 console.log("Backend SDK initialized");
 
 module.exports = {
