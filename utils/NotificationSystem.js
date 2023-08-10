@@ -12,12 +12,22 @@ async function fetchAlby() {
 }
 fetchAlby();
 console.log("Connected to Ably!");
-const fcm = require('firebase-admin');
-//import serviceAccount from './credentials/creds.json';
+const fcm = require("firebase-admin");
 
-/*admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});*/
+let Credentials;
+async function SetupFCM() {
+  //import serviceAccount from './credentials/creds.json';
+  Credentials = await FetchFromSecrets("FCMAccountCredentials");
+  Credentials = JSON.parse(Credentials);
+  fcm.initializeApp({
+    credential: fcm.credential.cert(Credentials),
+  });
+}
+
+SetupFCM();
+
+
+
 
 async function publishAlbyMessage(user_id, message) {
   const temp = await FetchChannelId(user_id, true); //await DataHandler.getDataFromScyalla("Users", user_id, "AlbyTopicName");
