@@ -1,14 +1,6 @@
 const AWS = require("aws-sdk");
 const multer = require('multer'); // For file upload
 
-if (!process.env.prod) {
-  AWS.config.update({
-    region: "us-east-1",
-    accessKeyId: "AKIAUZGKQ2WWGMSRPFNJ",
-    secretAccessKey: "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",
-  });
-}
-
 // Configure multer to use memory storage (the file will be saved in a Buffer)
 const upload = multer({
   storage: multer.memoryStorage(),
