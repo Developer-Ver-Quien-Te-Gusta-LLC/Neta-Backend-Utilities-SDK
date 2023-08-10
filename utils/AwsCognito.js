@@ -11,11 +11,7 @@ const upload = multer({
 
 // Initialize the Amazon S3 client
 // use AWS KMS
-const s3 = new AWS.S3({
-  accessKeyId: "AKIAUZGKQ2WWGMSRPFNJ",
-  secretAccessKey: "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",
-  region: "us-east-1",
-});
+const s3 = new AWS.S3();
 
 //#region Aws Cognito User Creation
 const cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
