@@ -14,6 +14,7 @@ async function SetupCassandraClient(client) {
   });
 
   await client.connect();
+  console.log("Cassandra Client Connected");
 
   return client;
 }
