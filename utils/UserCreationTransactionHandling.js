@@ -7,12 +7,6 @@
 ///
 /// Assign user a 'pollIndex' that is inclusive 0 -> num(polls)
 ///
-
-
-const cassandra = require("cassandra-driver");
-const region = process.env.AWS_REGION;
-
-const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 const ScyllaSetup = require("./SetupCassandra.js");
 var client;
 
