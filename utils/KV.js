@@ -5,13 +5,10 @@ const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 
 global.TextEncoder = require("util").TextEncoder;
 global.TextDecoder = require("util").TextDecoder;
-
+global.fetch = require('node-fetch');
 var isClientConnected = false;
 //#region Setup
 async function SetupClients() {
-  await import("node-fetch").then((fetchModule) => {
-    global.fetch = fetchModule.default;
-  });
   const variableBinding = await FetchFromSecrets("KVvariableBinding");
   const namespaceId = await FetchFromSecrets("KVnamespaceId");
   const accountId = await FetchFromSecrets("KVaccountId");
