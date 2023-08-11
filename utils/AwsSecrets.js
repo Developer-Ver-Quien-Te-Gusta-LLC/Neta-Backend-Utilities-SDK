@@ -20,7 +20,7 @@ async function FetchFromSecrets(key) {
     const returnData = JSON.parse(response.SecretString);
     const firstKey = Object.keys(returnData)[0];
     const firstValue = returnData[firstKey];
-    console.log("Fetched"+firstValue);
+    console.log("Fetched"+key);
     return firstValue; // return the secret
   } else {
     // if SecretString is undefined
@@ -31,7 +31,7 @@ async function FetchFromSecrets(key) {
     const returnData = JSON.parse(secret);
     const firstKey = Object.keys(returnData)[0];
     const firstValue = returnData[firstKey]; // Fixed reference to correct variable
-    console.log("Fetched"+firstValue);
+    console.log("Fetched"+key);
     return firstValue; // return the secret
   }
 }
