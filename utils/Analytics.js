@@ -4,12 +4,12 @@ const FetchFromSecrets = require('./AwsSecrets').FetchFromSecrets;
 
 let mixpanel;
 async function init () {
-  mixpanel = Mixpanel.init(await FetchFromSecrets("MixpanelClientSecret")); // NOTE: Store this securely
+ // mixpanel = Mixpanel.init(await FetchFromSecrets("MixpanelClientSecret")); // NOTE: Store this securely
 }
 init()
 
 async function SendEvent(event_name, phoneNumber, value, time) {
-  const eventData = {
+ /* const eventData = {
     distinct_id: !phoneNumber ? uuidv4() : phoneNumber,
     ...value
   };
@@ -20,7 +20,7 @@ async function SendEvent(event_name, phoneNumber, value, time) {
     } else {
       console.log('Event sent successfully!');
     }
-  });
+  });*/
 }
 
 module.exports = { SendEvent };
