@@ -11,6 +11,7 @@ async function FetchFromSecrets(key) {
       VersionStage: "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified
     }).promise();
   } catch (error) {
+    console.log("failed to fetch"+key)
     throw error;
   }
 
