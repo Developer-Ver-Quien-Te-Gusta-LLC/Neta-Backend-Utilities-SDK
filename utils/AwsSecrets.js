@@ -2,38 +2,40 @@ const AWS = require("aws-sdk");
 const SecretsManager = new AWS.SecretsManager();
 
 //fetch the accessid with the given key using AWS Secrets Manager
-async function FetchFromSecrets(key) {
+async function FetchFromSecrets(secretKey, dataKey = 0) {
   let response;
-  console.log("Trying To Fetch"+key);
+  console.log("Trying To Fetch " + secretKey);
+
   try {
     response = await SecretsManager.getSecretValue({
-      SecretId: key,
+      SecretId: secretKey,
       VersionStage: "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified
     }).promise();
   } catch (error) {
-    console.log("failed to fetch"+key)
+    console.log("Failed to fetch " + secretKey);
     throw error;
   }
 
+  let parsedSecret;
+  
   if (response.SecretString) {
-    //console.log(response.SecretString);
-    const returnData = JSON.parse(response.SecretString);
-    const firstKey = Object.keys(returnData)[0];
-    const firstValue = returnData[firstKey];
-    console.log("Fetched"+key);
-    return firstValue; // return the secret
+    parsedSecret = JSON.parse(response.SecretString);
   } else {
     // if SecretString is undefined
     let buff = Buffer.from(response.SecretBinary, "base64");
     let secret = buff.toString("ascii");
-    //console.log(secret);
+    parsedSecret = JSON.parse(secret);
+  }
 
-    const returnData = JSON.parse(secret);
-    const firstKey = Object.keys(returnData)[0];
-    const firstValue = returnData[firstKey]; // Fixed reference to correct variable
-    console.log("Fetched"+key);
-    return firstValue; // return the secret
+  const keyValue = parsedSecret[dataKey]; // use the provided key or the default of 0
+  
+  if (keyValue) {
+    console.log("Fetched " + secretKey);
+    return keyValue;
+  } else {
+    throw new Error(`Failed to find data with key ${dataKey} in secret ${secretKey}`);
   }
 }
+
 
 module.exports = { FetchFromSecrets };

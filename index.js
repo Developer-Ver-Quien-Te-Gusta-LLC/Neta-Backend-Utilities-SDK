@@ -21,7 +21,6 @@ module.exports = {
   FetchChannelId: AlbyToken.FetchChannelId,
   SendEvent: Analytics.SendEvent,
   GetUserDataFromJWT: AuthHandler.GetUserDataFromJWT,
-  UpdateCognitoUserPFP: AwsCognito.UpdateCognitoUserPFP,
   DeleteCognitoUser: AwsCognito.DeleteCognitoUser,
   UpdateDeviceID: AwsCognito.UpdateDeviceID,
   FetchDevice: AwsCognito.FetchDevice,

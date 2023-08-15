@@ -63,46 +63,6 @@ const cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
 /// Replace bukket name with something determined from AWS KMS
 ///
 
-//Upload pfp to s3 
-async function UpdateCognitoUserPFP(username, pfp) {
-  const params = {
-    Bucket: "netapfps", // Replace with your S3 bucket name
-    Key: pfp.originalname, // Use file original name as S3 key
-    Body: pfp.buffer,
-    ContentType: pfp.mimetype,
-    ACL: "public-read", // This will make your uploaded files publicly readable
-  };
-
-  s3.upload(params, function (err, data) {
-    if (err) {
-      console.log(err);
-    }
-    UpdateCognitoUserData(username, data.Location);
-  });
-}
- //Update user pfp link in cognito
-async function UpdateCognitoUserData(name, link) {
-  var params = {
-    UserAttributes: [
-      // array of attributes
-      {
-        Name: "custom:pfp",
-        Value: link,
-      },
-    ],
-    UserPoolId: "netausers",
-    Username: name,
-  };
-
-  cognitoidentityserviceprovider.adminUpdateUserAttributes(
-    params,
-    function (err, data) {
-      if (err) console.log(err, err.stack); // an error occurred
-      else console.log(data); // successful response
-    }
-  );
-}
-
 //Delete cognito user
 async function DeleteCognitoUser(username) {
   const deleteUserParams = {

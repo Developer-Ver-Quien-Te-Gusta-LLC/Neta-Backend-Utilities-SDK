@@ -210,7 +210,7 @@ async function CreateCognitoUser(req) {
       { Name: "custom:takeBreak", Value: "false" },
       { Name: "custom:nameInpolls", Value: "everyone" },
       { Name: "custom:subscription", Value: "false" },
-      { Name: "custom:pfp", Value: "null" },
+      //{ Name: "custom:pfp", Value: "null" },
     ],
     MessageAction: "SUPPRESS", // Suppressing welcome message
   };
