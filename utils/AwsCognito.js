@@ -187,7 +187,7 @@ async function SetSubscription(username, subscription){
 
 module.exports = {
  // CreateCognitoUser,
-  UpdateCognitoUserPFP,
+  //UpdateCognitoUserPFP,
   DeleteCognitoUser,
   UpdateDeviceID,
   FetchDevice,

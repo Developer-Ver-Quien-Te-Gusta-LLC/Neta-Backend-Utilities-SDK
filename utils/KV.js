@@ -5,7 +5,11 @@ const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 
 global.TextEncoder = require("util").TextEncoder;
 global.TextDecoder = require("util").TextDecoder;
-global.fetch = require('node-fetch');
+
+import('node-fetch').then(nodeFetch => {
+  global.fetch = nodeFetch;
+});
+
 var isClientConnected = false;
 //#region Setup
 async function SetupClients() {
