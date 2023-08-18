@@ -98,10 +98,12 @@ async function CreateScyllaUser(req) {
         lastPollTime, 
         pollIndex,
         numberOfStars,
-        platform
+        platform,
+        gender,
+        school,
         
       ) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
     `;
     const params = [
       username,
@@ -117,6 +119,8 @@ async function CreateScyllaUser(req) {
       lastPollTime,
       -1,
       platform,
+      req.query.gender,
+      req.query.school
     ];
     try {
       await client.execute(query, params, { prepare: true });
