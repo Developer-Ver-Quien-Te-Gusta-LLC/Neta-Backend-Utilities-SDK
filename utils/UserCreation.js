@@ -149,7 +149,7 @@ async function CreateScyllaUser(req) {
 
 //Create a user in Neptune
 async function createNeptuneUser(req) {
-  var { username, phoneNumber, highschool, grade, age, gender } = req.query;
+  var { username, phoneNumber, highschool, grade, age, gender,fname,lname } = req.query;
   if(!grade) grade = null;
   if(!gender) gender = null;
   try {
@@ -162,6 +162,8 @@ async function createNeptuneUser(req) {
           .property('grade', grade)
           .property('age', age)
           .property('gender', gender)
+          .property('fname', fname)
+          .property('lname', lname)
       `; // Create a query to create a user in Neptune
 
     gremlinQuery(query, {
@@ -171,6 +173,8 @@ async function createNeptuneUser(req) {
       grade,
       age,
       gender,
+      fname,
+      lname
     }).then(async (response) => {
       if (!response.success) {
         await handleTransactionError("neptune", req); //recursive 3 times , else return false
