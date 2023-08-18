@@ -9,18 +9,18 @@ async function init () {
 init()
 
 async function SendEvent(event_name, phoneNumber, value, time) {
- /* const eventData = {
+  const eventData = {
     distinct_id: !phoneNumber ? uuidv4() : phoneNumber,
     ...value
   };
 
-  mixpanel.import(event_name, time, eventData, (err) => {
+  Mixpanel.import(event_name, time, eventData, (err) => {
     if (err) {
       console.error('Failed to send event:', err);
     } else {
       console.log('Event sent successfully!');
     }
-  });*/
+  });
 }
 
 module.exports = { SendEvent };
