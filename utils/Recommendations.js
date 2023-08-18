@@ -165,14 +165,14 @@ async function InviteFriends(username) {
   }
 }
 
-async function GetRecommendationsOnboarding(username, pagelimit, pagenumber) {
+async function GetRecommendationsOnboarding(username, pagelimit) {
   // Check user validity first
   if (!(await CheckPlayerValidity(username))) {
     return { success: false, error: "User does not exist" };
   }
 
   // Calculate offset
-  const offset = pagelimit * (pagenumber - 1);
+ // const offset = pagelimit * (pagenumber - 1);
 
   const data = await g
     .V()
@@ -180,8 +180,8 @@ async function GetRecommendationsOnboarding(username, pagelimit, pagenumber) {
     .union(
       __.out("contactsList").in("phoneNumber").range(offset, offset + pagelimit),
       __.out("emojicontactsList").in("phoneNumber").range(offset, offset + pagelimit),
-      __.out("highSchool").range(offset, offset + pagelimit),
-      __.out("highSchool").in("highSchool").has("User", "grade", __.values("grade")).range(offset, offset + pagelimit)
+      __.out("highSchool"),
+      __.out("highSchool").in("highSchool").has("User", "grade", __.values("grade"))
     )
     .valueMap("username")
     .toList();
