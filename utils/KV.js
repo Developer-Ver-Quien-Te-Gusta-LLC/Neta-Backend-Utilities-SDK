@@ -1,14 +1,12 @@
 const kvclient = require("cloudflare-workers-kv");
 const axios = require("axios");
-const { TextEncoder, TextDecoder } = require("util");
+global.fetch = require('node-fetch');
 const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 
 global.TextEncoder = require("util").TextEncoder;
 global.TextDecoder = require("util").TextDecoder;
 
-import('node-fetch').then(nodeFetch => {
-  global.fetch = nodeFetch;
-});
+
 
 var isClientConnected = false;
 //#region Setup
