@@ -1,4 +1,5 @@
 const AWS = require("aws-sdk");
+AWS.config.update({ region: 'us-east-1' });
 const SecretsManager = new AWS.SecretsManager();
 
 //fetch the accessid with the given key using AWS Secrets Manager
