@@ -19,6 +19,8 @@ console.log("Backend SDK initialized");
 
 module.exports = {
   FetchChannelId: AlbyToken.FetchChannelId,
+  FetchChannelIdPre : AlbyToken.FetchChannelIdPre,
+  FetchChannelIdPost : AlbyToken.FetchChannelIdPost,
   SendEvent: Analytics.SendEvent,
   GetUserDataFromJWT: AuthHandler.GetUserDataFromJWT,
   DeleteCognitoUser: AwsCognito.DeleteCognitoUser,
