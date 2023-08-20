@@ -10,12 +10,9 @@ async function fetchAlby() {
 }
 
 fetchAlby();
-
-const gremlin = require('gremlin');
 const AWS = require('aws-sdk');
-const https = require("https");
 
-let NeptuneConnection,client,userPoolId;
+let client,userPoolId;
 async function fetchCassandra() {
   const contactPoints = await FetchFromSecrets("contactPoints");
   const localDataCenter = await FetchFromSecrets("localDataCenter");
@@ -28,26 +25,37 @@ async function fetchCassandra() {
   });
   await client.connect();
   userPoolId = await FetchFromSecrets("UserPoolID"); // Insert your user pool id here
+}
+fetchCassandra();
 
+const gremlin = require("gremlin");
+const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
+const Graph = gremlin.structure.Graph;
+var g;
+async function SetupGremlin() {
   const [NeptuneEndpoint, NeptunePort] = await Promise.all([
     FetchFromSecrets("NeptuneEndpoint"),
     FetchFromSecrets("NeptunePort"),
   ]);
-  
-  const NeptuneConnection = {
-    endpoint: NeptuneEndpoint,
-    port: NeptunePort,
-    region: process.env.AWS_REGION,
-  };
-  
+  dc = new DriverRemoteConnection(
+    "wss://"+NeptuneEndpoint+":"+NeptunePort+"/gremlin",
+    {}
+  );
+
+  const graph = new Graph();
+  g = graph.traversal().withRemote(dc);
+  await g.V().limit(1).count().next().
+  then(data => {
+      console.log(data);
+      dc.close();
+  }).catch(error => {
+      console.log('ERROR', error);
+      dc.close();
+  });
+  console.log("Connected to Neptune");
 }
-fetchCassandra();
-const httpAgent = new https.Agent({
-  rejectUnauthorized: false, // for local development, use 'true' in production
-});
-const Neptune = new AWS.Neptune();
-const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
-const Graph = gremlin.structure.Graph;
+
+SetupGremlin();
 
 const handleTransactionError = require("./ServiceBus.js").handleTransactionError;
 const OnUserCreationFailed = require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
@@ -61,16 +69,7 @@ async function CreateMixPanelUser(username, firstname, lastname, geohash) {
   });
 }
 
-/// add
-/*
-  firstName,
-      lastName,
-      phoneNumber,
-      highschool,
-      gender,
-      age,
-      grade,
-*/
+
 async function CreateScyllaUser(req) {
   const school = req.query.school;
   const username = req.query.username;
@@ -147,13 +146,12 @@ async function CreateScyllaUser(req) {
   }
 }
 
-//Create a user in Neptune
+
 async function createNeptuneUser(req) {
   var { username, phoneNumber, highschool, grade, age, gender,fname,lname } = req.query;
   if(!grade) grade = null;
   if(!gender) gender = null;
   try {
-    /// NOTE: sanitize iputs to avoid "SQL-injection" attacks
     const query = `
         g.addV('User')
           .property('username', username)
@@ -273,6 +271,7 @@ async function unenroll(highschoolName) {
     console.error(err);
   }
 }
+
 
 
 module.exports= {

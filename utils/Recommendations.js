@@ -9,30 +9,12 @@ const g = graph
   .withRemote(new DriverRemoteConnection("wss://hostname:port/gremlin", "{}"));
 
 const { IsUserInvited } = require("./InviteHandler.js");
-const { FetchFromSecrets } = require("./AwsSecrets.js");
 const { getKV } = require("./KV.js");
+const cassandra = require("./SetupCassandra.js");
 
-const cassandra = require('cassandra-driver');
-
+//Setup scylla Client
 let client;
-
-async function fetchCassandra() {
-  const contactPoints = await FetchFromSecrets("contactPoints");
-    const localDataCenter = await FetchFromSecrets("localDataCenter");
-    const keyspace = await FetchFromSecrets("keyspace");
-
-    client = new cassandra.Client({
-        contactPoints: [contactPoints],
-        localDataCenter: localDataCenter,
-        keyspace:keyspace,
-    });
-
-    await client.connect();
-}
-fetchCassandra();
-
-
-
+cassandra.SetupCassandraClient(client).then(CassandraClient => client = CassandraClient);
 
 let SameGradeWeightOnboarding, SameGradeWeightExplore, SameGradeWeightQuestions,
     SameHighSchoolWeightOnboarding, SameHighSchoolWeightExplore, SameHighSchoolWeightQuestions,
@@ -52,19 +34,9 @@ async function fetchWeights() {
     getKV(["ContactsWeightOnboarding", "ContactsWeightExplore", "ContactsWeightQuestions"]),
     getKV(["TopFriendsWeightsQuestions"])
   ]);
-
-  // Destructure weights for each category
- /* [SameGradeWeightOnboarding, SameGradeWeightExplore, SameGradeWeightQuestions] = SameGradeWeights;
-  [SameHighSchoolWeightOnboarding, SameHighSchoolWeightExplore, SameHighSchoolWeightQuestions] = SameHighSchoolWeights;
-  [FriendsWeightOnboarding, FriendsWeightExplore, FriendsWeightQuestions] = FriendsWeights;
-  [FriendsOfFriendsWeightOnboarding, FriendsOfFriendsWeightExplore, FriendsOfFriendsWeightQuestions] = FriendsOfFriendsWeights;
-  [EmojiContactsWeightOnboarding, EmojiContactsWeightExplore, EmojiContactsWeightQuestions] = EmojiContactsWeights;
-  [ContactsWeightOnboarding, ContactsWeightExplore, ContactsWeightQuestions] = ContactsWeights;
-  [TopFriendsWeightsQuestions] = TopFriendsWeights;*/
 }
-
 fetchWeights(); // fetch the weights as soon as the module is imported
-//#endregion
+
 
 //Returns Users from json
 function ExtractUsersFromJson(json) {
@@ -171,20 +143,12 @@ async function GetRecommendationsOnboarding(username, pagelimit) {
     return { success: false, error: "User does not exist" };
   }
 
-  // Calculate offset
- // const offset = pagelimit * (pagenumber - 1);
+ const sameSchoolUsers = await executeGremlinQuery(QUERY_FOR_SAME_SCHOOL, username);
+ const sameSchoolAndGradeUsers = await executeGremlinQuery(QUERY_FOR_SAME_SCHOOL_AND_GRADE, username);
+ const usersInContactList = await executeGremlinQuery(QUERY_FOR_CONTACT_LIST, username);
+ const usersFavoriteList = await executeGremlinQuery(QUERY_FOR_FAVORITE_LIST, username);
+  
 
-  const data = await g
-    .V()
-    .has("User", "username", username)
-    .union(
-      __.out("contactsList").in("phoneNumber").range(offset, offset + pagelimit),
-      __.out("emojicontactsList").in("phoneNumber").range(offset, offset + pagelimit),
-      __.out("highSchool"),
-      __.out("highSchool").in("highSchool").has("User", "grade", __.values("grade"))
-    )
-    .valueMap("username")
-    .toList();
 
   const UsersInContactsResult = ExtractUsersFromJson(data[0]);
   const UsersInContactsWithEmojisResult = ExtractUsersFromJson(data[1]);
