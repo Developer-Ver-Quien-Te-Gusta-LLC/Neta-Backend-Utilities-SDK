@@ -19,7 +19,7 @@ async function initializeClient() {
 }
 
 /// included for redundancy purposes
-async function FetchChannelId(result, phoneNumber, fetchEncryptionKey = false) {
+async function FetchChannelId(phoneNumber, fetchEncryptionKey = false) {
     const client = await initializeClient();
     const AlbyChannelIdExpir = await getKV("AlbyChannelIdExpir");
 
