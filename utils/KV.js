@@ -2,7 +2,7 @@ const kvclient = require("cloudflare-workers-kv");
 const axios = require("axios");
 
 const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
-global.fetch = require('node-fetch@2');
+global.fetch = require('node-fetch');
 global.TextEncoder = require("util").TextEncoder;
 global.TextDecoder = require("util").TextDecoder;
 
