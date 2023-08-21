@@ -41,17 +41,8 @@ async function SetupGremlin() {
     "wss://"+NeptuneEndpoint+":"+NeptunePort+"/gremlin",
     {}
   );
-
   const graph = new Graph();
   g = graph.traversal().withRemote(dc);
-  await g.V().limit(1).count().next().
-  then(data => {
-      console.log(data);
-      dc.close();
-  }).catch(error => {
-      console.log('ERROR', error);
-      dc.close();
-  });
   console.log("Connected to Neptune");
 }
 
@@ -152,37 +143,23 @@ async function createNeptuneUser(req) {
   if(!grade) grade = null;
   if(!gender) gender = null;
   try {
-    const query = `
-        g.addV('User')
-          .property('username', username)
-          .property('phoneNumber', phoneNumber)
-          .property('highschool', highschool)
-          .property('grade', grade)
-          .property('age', age)
-          .property('gender', gender)
-          .property('fname', fname)
-          .property('lname', lname)
-      `; // Create a query to create a user in Neptune
-
-    gremlinQuery(query, {
-      username,
-      phoneNumber,
-      highschool,
-      grade,
-      age,
-      gender,
-      fname,
-      lname
-    }).then(async (response) => {
-      if (!response.success) {
-        await handleTransactionError("neptune", req); //recursive 3 times , else return false
-      }
-      await handleTransactionCompletion(
-        req.transactionId,
-        req.phoneNumber
-      );
-      return true; // Return the success response
-    });
+    await g
+      .addV("User")
+      .property("username", username)
+      .property("phoneNumber", phoneNumber)
+      .property("highschool", highschool)
+      .property("grade", grade)
+      .property("age", age)
+      .property("gender", gender)
+      .property("fname", fname)
+      .property("lname", lname)
+      .then(async (response) => {
+        if (!response.success) {
+          await handleTransactionError("neptune", req); //recursive 3 times , else return false
+        }
+        await handleTransactionCompletion(req.transactionId, req.phoneNumber);
+        return true; // Return the success response
+      });
   } catch (encryptionerror) {
     await handleTransactionError("neptune", req); //recursive 3 times , else return false
     await OnUserCreationFailed(req.transactionId);
