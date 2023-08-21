@@ -298,27 +298,26 @@ async function GetRecommendationsExploreSection(username, page,pagesize,contacts
 
 // Get Recommendations for friends in the questions section
 // returns only 4 users
-async function GetRecommendationsQuestions(username,contactsList,FavcontactsList,pagesize,page) {
+async function GetRecommendationsQuestions(username,contactsList,FavcontactsList,pagesize) {
 
  // Check user validity first
   if (!(await CheckPlayerValidity(username))) {
     return { success: false, error: "User does not exist" };
   }
-  // Calculate the offset
-  const offset = (page - 1) * pagesize;
+
 
   const contactsUsers = await g
   .V()
   .hasLabel("User")
   .has("phoneNumber", within(contactsList))
-  .range(offset, offset + pagesize)
+  .range( pagesize)
   .toList();
 
   const emojicontactsUsers = await g
   .V()
   .hasLabel("User")
   .has("phoneNumber", within(FavcontactsList))
-  .range(offset, offset + pagesize)
+  .range(pagesize)
   .toList();
 
   const schoolmates = await g
@@ -331,7 +330,7 @@ async function GetRecommendationsQuestions(username,contactsList,FavcontactsList
   .hasLabel("User")
   .has("highschool", within("school")) // Find all users with the saved school
   .values("username") // Fetch the username property of those users
-  .range(offset, offset + pagesize)
+  .range(pagesize)
   .toList(); // Convert to list
 
   const classmates = await g
@@ -347,13 +346,13 @@ async function GetRecommendationsQuestions(username,contactsList,FavcontactsList
   .where(both("highschool").where(eq("userInfo"))) // Filter users who have the same school
   .where(both("grade").where(eq("userInfo"))) // And the same grade
   .values("username") // Fetch the username property of those users
-  .range(offset, offset + pagesize)
+  .range(pagesize)
   .toList(); // Convert to list
 
   const friends = await g.V()
   .has("User", "username", username)
   .out("FRIENDS_WITH")
-  .range(offset, offset + pagesize)
+  .range(pagesize)
   .valueMap("username")
   .toList();
   
@@ -363,7 +362,7 @@ async function GetRecommendationsQuestions(username,contactsList,FavcontactsList
   .out("FRIENDS_WITH")
   .dedup()
   .where(P.neq("self"))
-  .range(offset, offset + pagesize)
+  .range(pagesize)
   .valueMap("username")
   .toList();
 
