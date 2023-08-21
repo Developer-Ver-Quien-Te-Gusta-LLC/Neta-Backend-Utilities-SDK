@@ -126,9 +126,10 @@ async function InsertDataInScylla(phoneNumber, data, value) {
 
 // Update data in ScyallaDB (for the given phone number)
 // data refers to the column name and value is the data to be inserted
-async function UpdateDataInScyallaDB(phoneNumber, data, value) {
-  const query = `UPDATE users SET ${data} = ${data} + ${value} WHERE phoneNumber = ?`; //ScyllaDB query to update data
-
+async function UpdateDataInScyallaDB(phoneNumber, data, value,table) {
+  var query;
+  if(table != undefined || table!=null) query = `UPDATE users SET ${data} = ${data} + ${value} WHERE phoneNumber = ?`; //ScyllaDB query to update data
+ else query = `UPDATE ${table} SET ${data} = ${data} + ${value} WHERE phoneNumber = ?`;
   try {
     await client.execute(query, [phoneNumber], { prepare: true });
   } catch (err) {
