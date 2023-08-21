@@ -126,10 +126,13 @@ async function CreateScyllaUser(req) {
       await client.execute(query, params, { prepare: true });
       await enroll(req.query.school);
       /// send first special inbox msg
-      await client.execute(
-        "INSERT INTO inbox (phoneNumber, index) VALUES (?, ?)",
-        [phoneNumber, -1]
-      );
+      const uid = uuidv4();
+    const query = `
+  INSERT INTO inbox 
+  (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, phoneNumbers, index) 
+  VALUES 
+  (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);
+`;
       await handleTransactionCompletion(
         req.transactionId,
         req.phoneNumber
