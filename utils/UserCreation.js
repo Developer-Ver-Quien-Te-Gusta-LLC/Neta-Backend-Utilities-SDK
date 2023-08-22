@@ -96,7 +96,7 @@ async function CreateScyllaUser(req) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
     `;
     const params = [
-      username,
+      null,
       phoneNumber,
       { list: friendList },
       { list: blockList },
@@ -113,9 +113,24 @@ async function CreateScyllaUser(req) {
       req.query.school
     ];
     try {
-      await client.execute(query, params, { prepare: true });
-      await enroll(req.query.school);
-      /// send first special inbox msg
+      await client.execute(query, params, { prepare: true }); /// submit main scylla query
+      await enroll(req.query.school); /// enroll in school
+      /// submit to username uniqueness service
+      const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
+        "ServiceBus_UsernameUniqueness"
+      );
+    
+      /// submit to /createScyllaUser
+      const params = {
+        Message: JSON.stringify({phoneNumber, requestedUsername : username}),
+        TopicArn: ARN, // replace with your SNS Topic ARN
+      };
+    
+      sns.publish(params, function (err, data) {
+        if (err) console.log(err, err.stack);
+        else console.log(data);
+      });
+      // submit initial imbox msg
       const uid = uuidv4();
     const query = `
   INSERT INTO inbox 

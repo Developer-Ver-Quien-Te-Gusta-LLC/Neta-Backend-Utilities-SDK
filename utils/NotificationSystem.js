@@ -26,6 +26,17 @@ async function SetupFCM() {
 
 SetupFCM();
 
+async function publishAlbyMessageNaive(user_id, message) {
+  var topicName = user_id
+
+  const channel = ably.channels.get(topicName);
+
+  if (typeof(message) == "object") message = JSON.stringify(message)
+  await channel.publish(message);
+
+  return { message: `Published a message to the topic: ${topicName}` };
+}
+
 
 
 
@@ -39,7 +50,6 @@ async function publishAlbyMessage(user_id, message) {
   }
 
   const channel = ably.channels.get(topicName);
-  if (!channel) channel = alby.channels.create(topicName);
 
   if (typeof(message) == "object") message = JSON.stringify(message)
 
@@ -87,4 +97,4 @@ async function SendNotification(userId, payload) {
     await publishFCMMessage(userToken, JSON.stringify(payload));
   }
 }
-module.exports = { SendNotification ,publishAlbyMessage, SendNotificationPush, SendNotificationInApp };
+module.exports = { SendNotification ,publishAlbyMessage, publishAlbyMessageNaive, SendNotificationPush, SendNotificationInApp };

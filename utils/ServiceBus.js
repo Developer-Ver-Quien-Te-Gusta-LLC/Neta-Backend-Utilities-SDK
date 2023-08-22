@@ -8,27 +8,13 @@ const UserCreation = require("./UserCreation.js");
 const AWS = require('aws-sdk');
 
 const sqs = new AWS.SQS();
+const {SetupCassandraClient} = require('./SetupCassandra.js')
+
 
 var client;
-async function SetupClients() {
-  const contactPoints = await FetchFromSecrets("contactPoints");
-  const localDataCenter = await FetchFromSecrets("localDataCenter");
-  const keyspace = await FetchFromSecrets("keyspace");
-  client = new cassandra.Client({
-    contactPoints: [contactPoints], // change to your ScyllaDB host
-    localDataCenter: localDataCenter, // change to your data center
-    keyspace: keyspace, // change to your keyspace
-  });
-
-  await client.connect((err) => {
-    if (err) {
-      console.error("Error connecting to ScyllaDB:", err);
-      return;
-    }
-  });
-}
-
-SetupClients();
+SetupCassandraClient(client).then(
+  (Cassandraclient) => (client = Cassandraclient)
+);
 
 
 

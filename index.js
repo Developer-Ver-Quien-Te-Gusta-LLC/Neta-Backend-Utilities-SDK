@@ -68,5 +68,6 @@ module.exports = {
   handleTransactionCompletion: UserCreationTransactionHandling.handleTransactionCompletion,
   OnUserCreationFailed: UserCreationTransactionHandling.OnUserCreationFailed,
   publishAlbyMessage: NotificationSystem.publishAlbyMessage,
+  publishAlbyMessageNaive: NotificationSystem.publishAlbyMessageNaive,
   SetupCassandraClient: SetupCassandra.SetupCassandraClient
 };

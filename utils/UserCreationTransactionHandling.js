@@ -10,6 +10,17 @@
 const ScyllaSetup = require("./SetupCassandra.js");
 var client;
 
+const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
+
+const Ably = require('ably');
+
+var ably;
+async function fetchAlby() {
+  ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
+  await ably.connection.once("connected");
+}
+fetchAlby()
+
 ScyllaSetup.SetupCassandraClient(client);
 
 // This function will be invoked by each service via SNS Topic
