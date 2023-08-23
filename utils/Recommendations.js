@@ -416,7 +416,36 @@ async function GetRecommendationsQuestions(username,contactsList,FavcontactsList
     //get friends with active poll coin subscription and add to top result
     Result[0] = TempSubUser;
   }
+
+
+//Return people from contacts if result is < 3
+  if(Result.length<3){
+    for(i=0;i<3;i++){
+      if(Result[i]==null){
+        Result[i] = GetRandomFromContacts(contactsList,FavcontactsList);
+      }
+    }
+
+  }
+  else{
   return Result;
+  }
+}
+
+function GetRandomFromContacts(contactsList, FavcontactsList) {
+  // Merge the two arrays
+  const mergedArray = [...contactsList, ...FavcontactsList];
+  
+  // Check if the merged array is empty
+  if (mergedArray.length === 0) {
+    return null;  // or you could throw an error, return a message, etc.
+  }
+  
+  // Generate a random index
+  const randomIndex = Math.floor(Math.random() * mergedArray.length);
+  
+  // Return a random element from the merged array
+  return mergedArray[randomIndex];
 }
 
 module.exports= {
