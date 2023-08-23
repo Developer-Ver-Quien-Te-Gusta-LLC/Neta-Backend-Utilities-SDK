@@ -123,7 +123,7 @@ async function InviteFriends(username) {
   }
 }
 
-async function GetRecommendationsOnboarding(username,contactsList,FavcontactsList,page,pagesize) {
+async function GetRecommendationsOnboarding(username,contactsList,FavcontactsList,page,pagesize,grade,highschool) {
   // Calculate the offset
   const offset = (page - 1) * pagesize;
   // Check user validity first
@@ -131,54 +131,14 @@ async function GetRecommendationsOnboarding(username,contactsList,FavcontactsLis
     return { success: false, error: "User does not exist" };
   }
 
-  const sameSchoolUsers = await g
-    .V()
-    .hasLabel("User")
-    .has("username", username) // Start with the user who has the given username
-    .values("highschool") // Fetch the highschool property of that user
-    .as("school") // Save the value in variable "school"
-    .V()
-    .hasLabel("User")
-    .has("highschool", within("school")) // Find all users with the saved school
-    .values("username") // Fetch the username property of those users
-    .range(offset, offset + pagesize)
-    .toList(); // Convert to list
-
-  const sameSchoolAndGradeUsers = await g
-    .V()
-    .hasLabel("User")
-    .has("username", givenUsername) // Start with the user who has the given username
-    .project("school", "grade") // Project the highschool and grade properties
-    .by(values("highschool"))
-    .by(values("grade"))
-    .as("userInfo") // Save the values in variable "userInfo"
-    .V()
-    .hasLabel("User")
-    .where(both("highschool").where(eq("userInfo"))) // Filter users who have the same school
-    .where(both("grade").where(eq("userInfo"))) // And the same grade
-    .values("username") // Fetch the username property of those users
-    .range(offset, offset + pagesize)
-    .toList(); // Convert to list
-
-  const usersInContactList = await g
-    .V()
-    .hasLabel("User")
-    .has("phoneNumber", within(contactsList))
-    .range(offset, offset + pagesize)
-    .toList();
-  const usersFavoriteList = await g
-    .V()
-    .hasLabel("User")
-    .has("phoneNumber", within(FavcontactsList))
-    .range(offset, offset + pagesize)
-    .toList();
-
-  const allUsers = [
-    ...sameSchoolUsers,
-    ...sameSchoolAndGradeUsers,
-    ...usersInContactList,
-    ...usersFavoriteList,
-  ];
+  const allUsers = await g.V()
+  .union(
+    __.V().hasLabel('User').has('phoneNumber', within(contactsList)).range(pagesize),
+    __.V().hasLabel('User').has('phoneNumber', within(FavcontactsList)).range(pagesize),
+    __.V().hasLabel('User').has('highschool', highschool).range(pagesize),
+    __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(pagesize)
+  )
+  .toList();
 
   const Result = WeightArraysUsingProbability(
     [allUsers],
@@ -198,7 +158,7 @@ async function GetRecommendationsOnboarding(username,contactsList,FavcontactsLis
 }
 
 // Get Recommendations for friends while in the explore section (after onboarding)
-async function GetRecommendationsExploreSection(username, page,pagesize,contactsList,FavcontactsList) {
+async function GetRecommendationsExploreSection(username, page,pagesize,contactsList,FavcontactsList,highschool,grade) {
   // Calculate the offset
   const offset = (page - 1) * pagesize;
 
@@ -206,76 +166,16 @@ async function GetRecommendationsExploreSection(username, page,pagesize,contacts
   if (!(await CheckPlayerValidity(username))) {
     return { success: false, error: "User does not exist" };
   }
-  const contactsUsers = await g
-  .V()
-  .hasLabel("User")
-  .has("phoneNumber", within(contactsList))
-  .range(offset, offset + pagesize)
+  const allUsers = await g.V()
+  .union(
+    __.V().hasLabel('User').has('phoneNumber', within(contactsList)).range(pagesize),
+    __.V().hasLabel('User').has('phoneNumber', within(FavcontactsList)).range(pagesize),
+    __.V().hasLabel('User').has('highschool', highschool).range(pagesize),
+    __.V().hasLabel('User').has('username', username).out('FRIENDS_WITH').range(pagesize).valueMap('username'),
+    __.V().hasLabel('User').has('username', username).out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).range(pagesize).valueMap('username'),
+    __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(pagesize)
+  )
   .toList();
-
-  const emojicontactsUsers = await g
-  .V()
-  .hasLabel("User")
-  .has("phoneNumber", within(FavcontactsList))
-  .range(offset, offset + pagesize)
-  .toList();
-
-  const schoolmates = await g
-  .V()
-  .hasLabel("User")
-  .has("username", username) // Start with the user who has the given username
-  .values("highschool") // Fetch the highschool property of that user
-  .as("school") // Save the value in variable "school"
-  .V()
-  .hasLabel("User")
-  .has("highschool", within("school")) // Find all users with the saved school
-  .values("username") // Fetch the username property of those users
-  .range(offset, offset + pagesize)
-  .toList(); // Convert to list
-
-  const classmates = await g
-  .V()
-  .hasLabel("User")
-  .has("username", givenUsername) // Start with the user who has the given username
-  .project("school", "grade") // Project the highschool and grade properties
-  .by(values("highschool"))
-  .by(values("grade"))
-  .as("userInfo") // Save the values in variable "userInfo"
-  .V()
-  .hasLabel("User")
-  .where(both("highschool").where(eq("userInfo"))) // Filter users who have the same school
-  .where(both("grade").where(eq("userInfo"))) // And the same grade
-  .values("username") // Fetch the username property of those users
-  .range(offset, offset + pagesize)
-  .toList(); // Convert to list
-
-  const friends = await g.V()
-  .has("User", "username", username)
-  .out("FRIENDS_WITH")
-  .range(offset, offset + pagesize)
-  .valueMap("username")
-  .toList();
-
-  const friendsOfFriends = await g.V()
-  .has("User", "username", username)
-  .out("FRIENDS_WITH")
-  .out("FRIENDS_WITH")
-  .dedup()
-  .where(P.neq("self"))
-  .range(offset, offset + pagesize)
-  .valueMap("username")
-  .toList();
-
- 
-
-  const allUsers = [
-    ...contactsUsers,
-    ...emojicontactsUsers,
-    ...schoolmates,
-    ...classmates,
-    ...friends,
-    ...friendsOfFriends,
-  ];
 
   const Result = WeightArraysUsingProbability(
     [
@@ -298,7 +198,7 @@ async function GetRecommendationsExploreSection(username, page,pagesize,contacts
 
 // Get Recommendations for friends in the questions section
 // returns only 4 users
-async function GetRecommendationsQuestions(username,contactsList,FavcontactsList,pagesize) {
+async function GetRecommendationsQuestions(username,contactsList,FavcontactsList,pagesize,highschool,grade) {
 
  // Check user validity first
   if (!(await CheckPlayerValidity(username))) {
@@ -306,65 +206,17 @@ async function GetRecommendationsQuestions(username,contactsList,FavcontactsList
   }
 
 
-  const contactsUsers = await g
-  .V()
-  .hasLabel("User")
-  .has("phoneNumber", within(contactsList))
-  .range( pagesize)
+  const allUsers = await g.V()
+  .union(
+    __.V().hasLabel('User').has('phoneNumber', within(contactsList)).range(pagesize),
+    __.V().hasLabel('User').has('phoneNumber', within(FavcontactsList)).range(pagesize),
+    __.V().hasLabel('User').has('highschool', highschool).range(pagesize),
+    __.V().hasLabel('User').has('username', username).out('FRIENDS_WITH').range(pagesize).valueMap('username'),
+    __.V().hasLabel('User').has('username', username).out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).range(pagesize).valueMap('username'),
+    __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(pagesize)
+  )
   .toList();
 
-  const emojicontactsUsers = await g
-  .V()
-  .hasLabel("User")
-  .has("phoneNumber", within(FavcontactsList))
-  .range(pagesize)
-  .toList();
-
-  const schoolmates = await g
-  .V()
-  .hasLabel("User")
-  .has("username", username) // Start with the user who has the given username
-  .values("highschool") // Fetch the highschool property of that user
-  .as("school") // Save the value in variable "school"
-  .V()
-  .hasLabel("User")
-  .has("highschool", within("school")) // Find all users with the saved school
-  .values("username") // Fetch the username property of those users
-  .range(pagesize)
-  .toList(); // Convert to list
-
-  const classmates = await g
-  .V()
-  .hasLabel("User")
-  .has("username", givenUsername) // Start with the user who has the given username
-  .project("school", "grade") // Project the highschool and grade properties
-  .by(values("highschool"))
-  .by(values("grade"))
-  .as("userInfo") // Save the values in variable "userInfo"
-  .V()
-  .hasLabel("User")
-  .where(both("highschool").where(eq("userInfo"))) // Filter users who have the same school
-  .where(both("grade").where(eq("userInfo"))) // And the same grade
-  .values("username") // Fetch the username property of those users
-  .range(pagesize)
-  .toList(); // Convert to list
-
-  const friends = await g.V()
-  .has("User", "username", username)
-  .out("FRIENDS_WITH")
-  .range(pagesize)
-  .valueMap("username")
-  .toList();
-  
-  const friendsOfFriends = await g.V()
-  .has("User", "username", username)
-  .out("FRIENDS_WITH")
-  .out("FRIENDS_WITH")
-  .dedup()
-  .where(P.neq("self"))
-  .range(pagesize)
-  .valueMap("username")
-  .toList();
 
   const FetchTopFriendsQuery = 'SELECT topFriends FROM users WHERE phoneNumber = ?';
   const TopFriends = await client.execute(FetchTopFriendsQuery, [username], { prepare: true }); //TODO: make sure it returns an array when route testing
@@ -383,15 +235,6 @@ async function GetRecommendationsQuestions(username,contactsList,FavcontactsList
 
   const TopFriendsToConsider = WeightArraysUsingProbability([TopFriendPhoneNumberArray],[TopFriendsWeights],false);
 
-
-  const allUsers = [
-    ...contactsUsers,
-    ...emojicontactsUsers,
-    ...schoolmates,
-    ...classmates,
-    ...friends,
-    ...friendsOfFriends,
-  ];
 
  
 
