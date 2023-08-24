@@ -153,106 +153,123 @@ async function getMutualFriends(username, otherUsername) {
 
   return mutualFriends.length;
 }
+
+async function InsertMutualCount(username,filteredList){
+  index = 0;
+  filteredList.forEach(async element => {
+    const mutualCount = await getMutualFriends(username,element.username);
+    filteredList[index].mutualCount = mutualCount;
+    index++;
+  });
+}
 //#endregion
 
 //#region Actual Fetching
-async function GetRecommendationsOnboarding(username,contactsList,FavcontactsList,page,pagesize,grade,highschool) {
+async function GetRecommendationsOnboarding(username,contactsList,FavcontactsList,page_peopleYouMayKnow,pagesize_PeopleYouMayKnow,page_peopleInContacts,pagesize_peopleInContacts,grade,highschool) {
   // Calculate the offset
-  const offset = (page - 1) * pagesize;
+  const offset_PeopleYouMayKnow = (page_peopleYouMayKnow - 1) * pagesize_PeopleYouMayKnow;
+  const offset_PeopleInContacts = (page_peopleInContacts-1)* pagesize_peopleInContacts;
   // Check user validity first
   if (!(await CheckPlayerValidity(username))) {
     return { success: false, error: "User does not exist" };
   }
+ // Fetch friends of the given user
+ const userFriends = await g.V()
+ .has('username', username)
+ .out('FRIENDS_WITH')
+ .values('username')
+ .toList();
 
-  const allUsers = await g.V()
+
+  const PeopleYouMayKnow = await g.V()
   .union(
-    __.V().hasLabel('User').has('phoneNumber', within(contactsList)).range(pagesize),
-    __.V().hasLabel('User').has('phoneNumber', within(FavcontactsList)).range(pagesize),
-    __.V().hasLabel('User').has('highschool', highschool).range(pagesize),
-    __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(pagesize)
+    __.V().hasLabel('User').has('highschool', highschool).range(offset_PeopleYouMayKnow,page_peopleYouMayKnow*pagesize_PeopleYouMayKnow),
+    __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(offset_PeopleYouMayKnow,page_peopleYouMayKnow*pagesize_PeopleYouMayKnow),
   )
   .toList();
 
-  const Result = WeightArraysUsingProbability(
-    [allUsers],
-    [
-      ContactsWeightOnboarding,
-      EmojiContactsWeightOnboarding,
-      SameHighSchoolWeightOnboarding,
-      SameGradeWeightOnboarding,
-    ],
-    false
-  );
+  const PeopleInContacts = await g.V()
+  .union(
+    __.V().hasLabel('User').has('phoneNumber', within(contactsList)).range(offset_PeopleInContacts,page_peopleInContacts*pagesize_peopleInContacts),
+    __.V().hasLabel('User').has('phoneNumber', within(FavcontactsList)).range(offset_PeopleInContacts,page_peopleInContacts*pagesize_peopleInContacts),
+  )
+  .toList();
+
+  const FilteredPeopleYouMayKnow = PeopleYouMayKnow.filter((user) => !userFriends.includes(user.username));
+  const FilteredPeopleInContacts = PeopleInContacts.filter((user) => !userFriends.includes(user.username));
+
   var invited = await IsUserInvited(username);
-  if (invited != false) Result.concat(invited[0].inviter);
+  if (invited) PeopleYouMayKnow.concat(invited[0].inviter);
 
   // Return both the result and the next page number for paging
-  return { success: true, data: Result, nextPage: pagenumber + 1 };
+  return {
+    success: true,
+    page_peopleYouMayKnow: page_peopleYouMayKnow,
+    People_You_May_Know: FilteredPeopleYouMayKnow,
+    page_peopleInContacts: page_peopleInContacts,
+    PeopleInContacts: FilteredPeopleInContacts,
+    invited:invited
+  };
 }
 
 // Get Recommendations for friends while in the explore section (after onboarding)
-async function GetRecommendationsExploreSection(username, page,pagesize,contactsList,FavcontactsList,highschool,grade) {
+async function GetRecommendationsExploreSection(username, page_FriendsOfFriends,page_SchoolUsers,pagesize_FriendsOfFriends,pagesize_SchoolUsers,highschool,grade) {
   // Calculate the offset
-  const offset = (page - 1) * pagesize;
-
+  const offset_FriendsOfFriends = (page_FriendsOfFriends-1 ) * pagesize_FriendsOfFriends;
+  const offset_SchoolUsers = (page_SchoolUsers-1) * pagesize_SchoolUsers;
   // Check user validity first
   if (!(await CheckPlayerValidity(username))) {
     return { success: false, error: "User does not exist" };
   }
-  const allUsers = await g.V()
+  // Fetch friends of the given user
+  const userFriends = await g.V()
+  .has('username', username)
+  .out('FRIENDS_WITH')
+  .values('username')
+  .toList();
+
+  const AllUsersInSchool = await g.V()
   .union(
-    __.V().hasLabel('User').has('phoneNumber', within(contactsList)).range(pagesize),
-    __.V().hasLabel('User').has('phoneNumber', within(FavcontactsList)).range(pagesize),
-    __.V().hasLabel('User').has('highschool', highschool).range(pagesize),
-    __.V().hasLabel('User').has('username', username).out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).range(pagesize).valueMap('username'),
-    __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(pagesize)
+  //  __.V().hasLabel('User').has('phoneNumber', within(contactsList)).range(pagesize_FriendsOfFriends),
+   // __.V().hasLabel('User').has('phoneNumber', within(FavcontactsList)).range(pagesize_FriendsOfFriends),
+    __.V().hasLabel('User').has('highschool', highschool).range(offset_FriendsOfFriends,page_FriendsOfFriends*pagesize_FriendsOfFriends),
+    __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(offset_FriendsOfFriends,page_FriendsOfFriends*pagesize_FriendsOfFriends)
   )
   .toList();
 
-    // Fetch friends of the given user
-    const userFriends = await g.V()
-    .has('username', username)
-    .out('FRIENDS_WITH')
-    .values('username')
+  const FriendsOfFriends = await g
+    .V()
+    .hasLabel("User")
+    .has("username", username)
+    .out("FRIENDS_WITH")
+    .out("FRIENDS_WITH")
+    .dedup()
+    .where(P.neq("self"))
+    .range(offset_SchoolUsers,page_SchoolUsers*pagesize_SchoolUsers)
+    .valueMap("username")
     .toList();
 
+   
+
   // Filter out the existing friends from allUsers
-  const nonFriendUsers = allUsers.filter((user) => !userFriends.includes(user.username));
 
+  const FilteredContactList = contactsList.filter((user)=> !userFriends.includes(user.phoneNumber));
+  const FilteredFavContactList = FavcontactsList.filter((user)=> !userFriends.includes(user.phoneNumber));
 
-  const usersWithMutuals = [];
+  const FilteredUsersInSchool = AllUsersInSchool.filter((user) => !userFriends.includes(user.username));
+  const FilteredFriendsofFriends = FriendsOfFriends.filter((user) => !userFriends.includes(user.username));
+  const FilteredInvitationRecommendations = [...new Set([...FilteredContactList,...FilteredFavContactList])];
 
-  for (const otherUser of nonFriendUsers) {
-    const otherUsername = otherUser.get('username'); // Assuming that the username can be extracted this way
-    let mutualCount = 0; // Initialize to 0
-
-    if (otherUsername !== username) { // Skip the mutual friend calculation for the main user
-      mutualCount = await getMutualFriends(username, otherUsername);
-    }
-
-    usersWithMutuals.push({
-      ...otherUser, // Assuming this works to merge the user object/data
-      mutualCount,
-    });
-  }
-
-  //TODO: proposed changes : remove weights from explore and onboarding lists
-  const Result = WeightArraysUsingProbability(
-    [
-      usersWithMutuals,
-    ],
-    [
-      ContactsWeightExplore,
-      EmojiContactsWeightExplore,
-      SameHighSchoolWeightExplore,
-      SameGradeWeightExplore,
-      FriendsWeightExplore,
-      FriendsOfFriendsWeightExplore,
-    ],
-    false
-  );
-
-  return { page, data: Result };
+  await InsertMutualCount(username,FilteredUsersInSchool);
+  await InsertMutualCount(username,FilteredFriendsofFriends);
+  
+  return {
+    page_FriendsOfFriends: page_FriendsOfFriends,
+    FriendsOfFriends: FilteredFriendsofFriends,
+    page_SchoolUsers: page_SchoolUsers,
+    UsersInSchool: FilteredUsersInSchool,
+    InvitationRecommendation: FilteredInvitationRecommendations,
+  };
 }
 
 
