@@ -1,3 +1,4 @@
+//#region vars and refs
 const gremlin = require('gremlin');
 const traversal = gremlin.process.AnonymousTraversalSource.traversal;
 const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
@@ -36,6 +37,8 @@ async function fetchWeights() {
   ]);
 }
 fetchWeights(); // fetch the weights as soon as the module is imported
+//#endregion
+//#region Helper Functions
 //Given a list of arrays and their weights , returns a weighted array 
 //if return four is true , returns only 4 users
 function WeightArraysUsingProbability(data, weights, returnfour) {
@@ -114,15 +117,45 @@ async function FetchFriendsWithSubsActive(username) {
   }
 }
 
-
-// InviteFriends function
-async function InviteFriends(username) {
-  //TODO
-  if (!CheckPlayerValidity(username)) {
-    return { success: false, data: "User does not exist" };
+function GetRandomFromContacts(contactsList, FavcontactsList) {
+  // Merge the two arrays
+  const mergedArray = [...contactsList, ...FavcontactsList];
+  
+  // Check if the merged array is empty
+  if (mergedArray.length === 0) {
+    return null;  // or you could throw an error, return a message, etc.
   }
+  
+  // Generate a random index
+  const randomIndex = Math.floor(Math.random() * mergedArray.length);
+  
+  // Return a random element from the merged array
+  return mergedArray[randomIndex];
 }
 
+async function getMutualFriends(username, otherUsername) {
+  // Find friends of the main user
+  const userFriends = await g.V()
+    .has('username', username)
+    .out('FRIENDS_WITH')
+    .values('username')
+    .toList();
+
+  // Find friends of the other user
+  const otherUserFriends = await g.V()
+    .has('username', otherUsername)
+    .out('FRIENDS_WITH')
+    .values('username')
+    .toList();
+
+  // Calculate mutual friends
+  const mutualFriends = userFriends.filter(friend => otherUserFriends.includes(friend));
+
+  return mutualFriends.length;
+}
+//#endregion
+
+//#region Actual Fetching
 async function GetRecommendationsOnboarding(username,contactsList,FavcontactsList,page,pagesize,grade,highschool) {
   // Calculate the offset
   const offset = (page - 1) * pagesize;
@@ -171,15 +204,42 @@ async function GetRecommendationsExploreSection(username, page,pagesize,contacts
     __.V().hasLabel('User').has('phoneNumber', within(contactsList)).range(pagesize),
     __.V().hasLabel('User').has('phoneNumber', within(FavcontactsList)).range(pagesize),
     __.V().hasLabel('User').has('highschool', highschool).range(pagesize),
-    __.V().hasLabel('User').has('username', username).out('FRIENDS_WITH').range(pagesize).valueMap('username'),
     __.V().hasLabel('User').has('username', username).out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).range(pagesize).valueMap('username'),
     __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(pagesize)
   )
   .toList();
 
+    // Fetch friends of the given user
+    const userFriends = await g.V()
+    .has('username', username)
+    .out('FRIENDS_WITH')
+    .values('username')
+    .toList();
+
+  // Filter out the existing friends from allUsers
+  const nonFriendUsers = allUsers.filter((user) => !userFriends.includes(user.username));
+
+
+  const usersWithMutuals = [];
+
+  for (const otherUser of nonFriendUsers) {
+    const otherUsername = otherUser.get('username'); // Assuming that the username can be extracted this way
+    let mutualCount = 0; // Initialize to 0
+
+    if (otherUsername !== username) { // Skip the mutual friend calculation for the main user
+      mutualCount = await getMutualFriends(username, otherUsername);
+    }
+
+    usersWithMutuals.push({
+      ...otherUser, // Assuming this works to merge the user object/data
+      mutualCount,
+    });
+  }
+
+  //TODO: proposed changes : remove weights from explore and onboarding lists
   const Result = WeightArraysUsingProbability(
     [
-      allUsers,
+      usersWithMutuals,
     ],
     [
       ContactsWeightExplore,
@@ -275,25 +335,10 @@ async function GetRecommendationsQuestions(username,contactsList,FavcontactsList
   }
 }
 
-function GetRandomFromContacts(contactsList, FavcontactsList) {
-  // Merge the two arrays
-  const mergedArray = [...contactsList, ...FavcontactsList];
-  
-  // Check if the merged array is empty
-  if (mergedArray.length === 0) {
-    return null;  // or you could throw an error, return a message, etc.
-  }
-  
-  // Generate a random index
-  const randomIndex = Math.floor(Math.random() * mergedArray.length);
-  
-  // Return a random element from the merged array
-  return mergedArray[randomIndex];
-}
+//#endregion 
 
 module.exports= {
   WeightArraysUsingProbability,
-  InviteFriends,
   FetchFriendsWithSubsActive,
   GetRecommendationsOnboarding,
   GetRecommendationsExploreSection,
