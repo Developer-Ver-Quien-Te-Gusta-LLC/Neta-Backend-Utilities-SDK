@@ -1,28 +1,18 @@
-const kvclient = require("cloudflare-workers-kv");
-const axios = require("axios");
+const admin = require('firebase-admin');
 
 const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
-global.fetch = require('node-fetch');
-global.TextEncoder = require("util").TextEncoder;
-global.TextDecoder = require("util").TextDecoder;
-
-
 
 var isClientConnected = false;
+
+let credentials;
 //#region Setup
 async function SetupClients() {
-  const variableBinding = await FetchFromSecrets("KVvariableBinding");
-  const namespaceId = await FetchFromSecrets("KVnamespaceId");
-  const accountId = await FetchFromSecrets("KVaccountId");
-  const email = await FetchFromSecrets("KVemail");
-  const apiKey = await FetchFromSecrets("KVApiKey");
+  
 
-  await kvclient.init({
-    variableBinding: variableBinding,
-    namespaceId: namespaceId,
-    accountId: accountId,
-    email: email,
-    apiKey: apiKey,
+  credentials = await FetchFromSecrets("FCMAccountCredentials");
+ 
+  admin.initializeApp({
+    credential: admin.credential.cert(credentials),
   });
 
   console.log("KV Client Connected");
@@ -46,7 +36,21 @@ async function getKV(...keys) {
   }
 }
 
-async function SetKV(key, value) {
-  await kvclient.put(key, value);
+async function fetchRemoteConfig(key) {
+  try {
+    // Fetch the remote config template
+    const template = await admin.remoteConfig().getTemplate();
+    const parameter = template.parameters[key];
+
+    if (parameter) {
+      console.log(`Value for key 'your_key' is: ${parameter.defaultValue.value}`);
+      return parameter.defaultValue.value;
+    } else {
+      console.log(`Key 'your_key' is not found in the remote config.`);
+    }
+  } catch (err) {
+    console.error('Error fetching remote config:', err);
+  }
 }
-module.exports = { getKV,SetKV };
+
+module.exports = { getKV:fetchRemoteConfig };
