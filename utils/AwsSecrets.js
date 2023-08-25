@@ -21,10 +21,16 @@ async function FetchFromSecrets(key) {
   if (response.SecretString) {
     //console.log(response.SecretString);
     const returnData = JSON.parse(response.SecretString);
-    const firstKey = Object.keys(returnData)[0];
-    const firstValue = returnData[firstKey];
-    //console.log("Fetched" + key);
-    return firstValue; // return the secret
+    if(Object.keys(returnData).length>1){
+      return returnData;
+    }
+    else{
+      const firstKey = Object.keys(returnData)[0];
+      const firstValue = returnData[firstKey];
+      //console.log("Fetched" + key);
+      return firstValue; // return the secret
+    }
+   
   } else {
     // if SecretString is undefined
     let buff = Buffer.from(response.SecretBinary, "base64");
