@@ -294,7 +294,7 @@ async function GetRecommendationsQuestions(username,contactsList,FavcontactsList
     __.V().hasLabel('User').has('username', username).out('FRIENDS_WITH').range(pagesize).valueMap('username'),
     __.V().hasLabel('User').has('username', username).out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).range(pagesize).valueMap('username'),
     __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(pagesize),
-    __.V().hasLabel('User').order().by('topPolls', decr).range(pagesize),
+    __.V().hasLabel('User').order().by('PollsCount', decr).range(pagesize),
   )
   .toList();
 
