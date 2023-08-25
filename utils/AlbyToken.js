@@ -2,13 +2,14 @@ const { Client } = require('cassandra-driver');
 const { FetchFromSecrets } = require("./AwsSecrets.js").FetchFromSecrets;
 const { getKV } = require("./KV.js").getKV;
 
-let client;
+let client, considerExpiryDate;
 
 async function initializeClient() {
     if (client == undefined) {
     const contactPoints = await FetchFromSecrets("contactPoints");
     const localDataCenter = await FetchFromSecrets("localDataCenter");
     const keyspace = await FetchFromSecrets("keyspace");
+    considerExpiryDate = await FetchChannelId("ConsiderExpiryDate") == "false" ? false : true
 
     return client = new Client({
         contactPoints: [contactPoints],
@@ -17,6 +18,7 @@ async function initializeClient() {
     });
 }
 }
+
 
 /// included for redundancy purposes
 async function FetchChannelId(phoneNumber, fetchEncryptionKey = false) {
@@ -32,7 +34,7 @@ async function FetchChannelId(phoneNumber, fetchEncryptionKey = false) {
         let user = result.rows[0];
 
         // If AlbyTopicName has expired or doesn't exist
-        if (!user.AlbyTopicName || !user.createdAt || (now - user.createdAt > AlbyChannelIdExpir * 1000)) { 
+        if (!user.AlbyTopicName || !user.createdAt || ((now - user.createdAt > AlbyChannelIdExpir * 1000) && considerExpiryDate)) { 
             user.AlbyTopicName = Math.random().toString(36).substring(2, 14); // generate random 12 character string
             user.createdAt = now;
             user.AlbyEncryptionKey = Math.random().toString(36).substring(2, 14); // generate random 12 character string
