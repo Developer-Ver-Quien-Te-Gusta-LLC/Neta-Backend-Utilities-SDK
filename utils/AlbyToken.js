@@ -21,7 +21,7 @@ async function initializeClient() {
 /// included for redundancy purposes
 async function FetchChannelId(phoneNumber, fetchEncryptionKey = false) {
     const client = await initializeClient();
-    const AlbyChannelIdExpir = await getKV("AlbyChannelIdExpir");
+    const AlbyChannelIdExpir = await FetchFromSecrets("AlbyChannelIdExpir");
 
     // Fetch AlbyTopicName and creation date from Cassandra
     const query = 'SELECT AlbyTopicName, createdAt, AlbyEncryptionKey FROM users WHERE phoneNumber = ?';
