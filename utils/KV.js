@@ -21,20 +21,7 @@ async function SetupClients() {
 SetupClients();
 //#endregion
 
-/// altered to support destructuring
-async function getKV(...keys) {
-  var data = [];
-  for (i = 0; i < keys.length; i++) {
-    const FetchedValue = await kvclient.get(keys[i]);
-    data.push(FetchedValue);
 
-    if (data.length > 1) {
-      return data;
-    } else {
-      return data[0];
-    }
-  }
-}
 
 async function fetchRemoteConfig(key) {
   try {
