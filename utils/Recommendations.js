@@ -263,12 +263,15 @@ async function GetRecommendationsExploreSection(username, page_FriendsOfFriends,
   await InsertMutualCount(username,FilteredUsersInSchool);
   await InsertMutualCount(username,FilteredFriendsofFriends);
   
+  const friendsCountQuery = "SELECT FriendsCount FROM users WHERE phoneNumber=?";
+  const FriendCount = await client.execute(friendsCountQuery,[phoneNumber],{prepare:true});
   return {
     page_FriendsOfFriends: page_FriendsOfFriends,
     FriendsOfFriends: FilteredFriendsofFriends,
     page_SchoolUsers: page_SchoolUsers,
     UsersInSchool: FilteredUsersInSchool,
     InvitationRecommendation: FilteredInvitationRecommendations,
+    TotalFriends:FriendCount
   };
 }
 
