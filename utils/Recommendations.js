@@ -276,85 +276,51 @@ async function GetRecommendationsExploreSection(username, page_FriendsOfFriends,
 }
 
 
-// Get Recommendations for friends in the questions section
-// returns only 4 users
-async function GetRecommendationsQuestions(username,contactsList,FavcontactsList,pagesize,highschool,grade) {
-
- // Check user validity first
+async function GetRecommendationsQuestions(username, pagesize, highschool, grade) {
+  // Check user validity first
   if (!(await CheckPlayerValidity(username))) {
-    return { success: false, error: "User does not exist" };
+      return { success: false, error: "User does not exist" };
   }
-
 
   const allUsers = await g.V()
-  .union(
-    __.V().hasLabel('User').has('phoneNumber', within(contactsList)).range(pagesize),
-    __.V().hasLabel('User').has('phoneNumber', within(FavcontactsList)).range(pagesize),
-    __.V().hasLabel('User').has('highschool', highschool).range(pagesize),
-    __.V().hasLabel('User').has('username', username).out('FRIENDS_WITH').range(pagesize).valueMap('username'),
-    __.V().hasLabel('User').has('username', username).out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).range(pagesize).valueMap('username'),
-    __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(pagesize),
-    __.V().hasLabel('User').order().by('PollsCount', decr).range(pagesize),
-  )
-  .toList();
+      .hasLabel('User').has('username', username)
+      .union(
+          // Contacts
+          __.out('HAS_CONTACT').property('weight', ContactsWeightQuestions),
 
+          // FavContacts
+          __.out('favContact').property('weight', EmojiContactsWeightQuestions),
 
-  const FetchTopFriendsQuery = 'SELECT topFriends FROM users WHERE phoneNumber = ?';
-  const TopFriends = await client.execute(FetchTopFriendsQuery, [username], { prepare: true }); //TODO: make sure it returns an array when route testing
-  
-  const GetTopFriendCountQuery = 'SELECT friends_count FROM topFriendsAndPolls WHERE phoneNumber =? AND friendPhoneNumber =? ';
-  let TopFriendsWeights;
-  let TopFriendPhoneNumberArray;
-  let i=0;
+          // Highschool friends
+          __.has('highschool', highschool).property('weight', SameHighSchoolWeightQuestions),
 
-  for(TopFriend in TopFriends){
-    const TopFriendCount =  await client.execute(GetTopFriendCountQuery, [username,TopFriends.result.rows[i].phoneNumber,pagelimit], { prepare: true });//TODO:use batch queries instead of repeating calls(do when testing routes)
-    TopFriendsWeights.push(TopFriendCount*TopFriendsWeightsQuestions);
-    TopFriendPhoneNumberArray.push(TopFriends.result.rows[i].phoneNumber);
-    i++;
+          // Friends
+          __.out('FRIENDS_WITH').property('weight', FriendsWeightQuestions),
+
+          // Friends of Friends
+          __.out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).property('weight', FriendsOfFriendsWeightQuestions),
+
+          // Same Grade
+          __.has('highschool', highschool).has('grade', grade).property('weight', SameGradeWeightQuestions),
+
+          // Poll count
+          __.order().by('PollsCount', decr).property('weight', TopFriendsWeightsQuestions),
+      )
+      .order().by('weight', decr)
+      .limit(pagesize)
+      .toList();
+
+  // If there are users with active poll coin subscriptions, you can adjust the list here...
+
+  // Return people from contacts if result is < 3
+  if (allUsers.length < 3) {
+      // Since we've already integrated contacts and favcontacts, we might use other criteria here
+      // or remove this logic entirely depending on what makes sense for your application
   }
 
-  const TopFriendsToConsider = WeightArraysUsingProbability([TopFriendPhoneNumberArray],[TopFriendsWeights],false);
-
-
- 
-
-  // Weigh the users using the probability fetched from KV
-  const Result = WeightArraysUsingProbability(
-    [
-      allUsers,
-    ],
-    [
-      ContactsWeightQuestions,
-      EmojiContactsWeightQuestions,
-      SameHighSchoolWeightQuestions,
-      SameGradeWeightQuestions,
-      FriendsWeightQuestions,
-      FriendsOfFriendsWeightQuestions,
-      TopFriendsWeightsQuestions
-    ],
-    true // Return only 4 users
-  );
-
-  if(FriendsWithSubsActiveResult.length > 0) {
-    //get friends with active poll coin subscription and add to top result
-    Result[0] = TempSubUser;
-  }
-
-
-//Return people from contacts if result is < 3
-  if(Result.length<3){
-    for(i=0;i<3;i++){
-      if(Result[i]==null){
-        Result[i] = GetRandomFromContacts(contactsList,FavcontactsList);
-      }
-    }
-
-  }
-  else{
-  return Result;
-  }
+  return allUsers;
 }
+
 
 //#endregion 
 
