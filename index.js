@@ -15,6 +15,7 @@ var ServiceBus = require("./utils/ServiceBus.js");
 var UserCreation = require("./utils/UserCreation.js");
 var UserCreationTransactionHandling = require("./utils/UserCreationTransactionHandling.js");
 var SetupCassandra = require("./utils/SetupCassandra.js");
+var Datadog = require("./Datadog.js")
 console.log("Backend SDK initialized");
 
 module.exports = {
@@ -49,6 +50,8 @@ module.exports = {
   IsUserInvited: InviteHandler.IsUserInvited,
   SetKV: KV.SetKV,
   getKV: KV.getKV,
+  measureRouteComputeLength : Datadog.measureRouteComputeLength,
+  logSanitizedRequest : Datadog.logSanitizedRequest,
   SendNotification: NotificationSystem.SendNotification,
   SendNotificationInApp: NotificationSystem.SendNotificationInApp,
   SendNotificationPush: NotificationSystem.SendNotificationPush,
