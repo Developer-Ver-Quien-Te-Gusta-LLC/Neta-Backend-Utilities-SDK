@@ -285,11 +285,12 @@ async function GetRecommendationsQuestions(username, pagesize, highschool, grade
   const allUsers = await g.V()
       .hasLabel('User').has('username', username)
       .union(
-          // Contacts
-          __.out('HAS_CONTACT').property('weight', ContactsWeightQuestions),
-
-          // FavContacts
-          __.out('favContact').property('weight', EmojiContactsWeightQuestions),
+          // Contacts and FavContacts merged
+          __.outE('HAS_CONTACT').choose(
+              __.has('fav', true),
+              __.inV().property('weight', EmojiContactsWeightQuestions), // treated as favContact
+              __.inV().property('weight', ContactsWeightQuestions)
+          ),
 
           // Highschool friends
           __.has('highschool', highschool).property('weight', SameHighSchoolWeightQuestions),
@@ -304,22 +305,20 @@ async function GetRecommendationsQuestions(username, pagesize, highschool, grade
           __.has('highschool', highschool).has('grade', grade).property('weight', SameGradeWeightQuestions),
 
           // Poll count
-          __.order().by('PollsCount', decr).property('weight', TopFriendsWeightsQuestions),
+          __.order().by('PollsCount', decr).property('weight', TopFriendsWeightsQuestions)
       )
       .order().by('weight', decr)
       .limit(pagesize)
+      .fold()
+      .coalesce(
+          __.unfold(),
+          __.V().hasLabel('User').has('username', username).out('HAS_CONTACT').limit(3)
+      )
       .toList();
-
-  // If there are users with active poll coin subscriptions, you can adjust the list here...
-
-  // Return people from contacts if result is < 3
-  if (allUsers.length < 3) {
-      // Since we've already integrated contacts and favcontacts, we might use other criteria here
-      // or remove this logic entirely depending on what makes sense for your application
-  }
 
   return allUsers;
 }
+
 
 
 //#endregion 
