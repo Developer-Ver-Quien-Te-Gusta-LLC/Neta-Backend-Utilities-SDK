@@ -1,5 +1,4 @@
 const AWSXRay = require('aws-xray-sdk-core');
-const { FetchFromSecrets } = require('./AwsSecrets');
 
 // Initialize AWS X-Ray
 AWSXRay.config([AWSXRay.plugins.EC2Plugin, AWSXRay.plugins.ECSPlugin]);
