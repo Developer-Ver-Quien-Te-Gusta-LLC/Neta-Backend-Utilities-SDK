@@ -1,13 +1,7 @@
-//#region vars and refs
-const gremlin = require('gremlin');
-const traversal = gremlin.process.AnonymousTraversalSource.traversal;
-const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
-const Graph = gremlin.structure.Graph;
 
-const graph = new Graph();
-const g = graph
-  .traversal()
-  .withRemote(new DriverRemoteConnection("wss://hostname:port/gremlin", "{}"));
+
+const {SetupGraphDB} = requie('./SetupGraphDB.js')
+let g = SetupGraphDB(g)
 
 const { IsUserInvited } = require("./InviteHandler.js");
 const { getKV } = require("./KV.js");

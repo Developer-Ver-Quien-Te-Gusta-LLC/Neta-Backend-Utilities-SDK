@@ -48,6 +48,7 @@ module.exports = {
   removeFriendsRelation: DataBaseQueriesHandler.removeFriendsRelation,
   listFriends: DataBaseQueriesHandler.listFriends,
   IsUserInvited: InviteHandler.IsUserInvited,
+  SetupGraphDB: require('./utils/SetupGraphDB.js').SetupGraphDB,
   SetKV: KV.SetKV,
   getKV: KV.getKV,
   measureRouteComputeLength : Datadog.measureRouteComputeLength,
