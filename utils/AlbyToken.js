@@ -60,15 +60,27 @@ async function FetchChannelId(phoneNumber, fetchEncryptionKey = false) {
     return user.AlbyTopicName;
 }
 
-async function FetchChannelIdPre(phoneNumber, fetchEncryptionKey = false) {
+async function FetchChannelIdPre(phoneNumber, fetchEncryptionKey = false, additionalKeysToFetch = null) {
     const client = await initializeClient();
     const AlbyChannelIdExpir = await getKV("AlbyChannelIdExpir");
 
-    // Fetch AlbyTopicName and creation date from Cassandra
-    const query = 'SELECT AlbyTopicName, createdAt, AlbyEncryptionKey FROM users WHERE phoneNumber = ?';
+    // Prepare the additional keys to fetch if provided
+    let additionalKeysString = '';
+    if (additionalKeysToFetch && Array.isArray(additionalKeysToFetch)) {
+        additionalKeysString = ', ' + additionalKeysToFetch.join(', ');
+    }
+
+    // Determine if we need to fetch the encryption key
+    let encryptionKeyString = fetchEncryptionKey ? ', AlbyEncryptionKey' : '';
+
+    // Construct the query string
+    const query = `SELECT AlbyTopicName, createdAt${encryptionKeyString}${additionalKeysString} FROM users WHERE phoneNumber = ?`;
+
+    // Execute the query
     const result = await client.execute(query, [phoneNumber]);
     return result;
 }
+
 
 async function FetchChannelIdPost(result, phoneNumber, fetchEncryptionKey = false) {
     let now = Date.now();
