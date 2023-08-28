@@ -284,6 +284,11 @@ async function GetRecommendationsQuestions(username, pagesize, highschool, grade
               __.has('fav', true),
               __.inV().property('weight', EmojiContactsWeightQuestions), // treated as favContact
               __.inV().property('weight', ContactsWeightQuestions)
+          )
+          .choose(
+              __.has('photo', true),
+              __.inV().property('weight', PhotoContactsWeightQuestions), // treated as favContact
+              __.inV().property('weight', ContactsWeightQuestions)
           ),
 
           // Highschool friends
@@ -301,17 +306,20 @@ async function GetRecommendationsQuestions(username, pagesize, highschool, grade
           // Poll count
           __.order().by('PollsCount', decr).property('weight', TopFriendsWeightsQuestions)
       )
-      .order().by('weight', decr)
-      .limit(pagesize)
-      .fold()
+      .local(
+          __.repeat(
+              __.sample(1).math('sin(random()) + _').is(P.gt(0))
+          ).times(4)  // Return 4 users every time
+      )
       .coalesce(
           __.unfold(),
-          __.V().hasLabel('User').has('username', username).out('HAS_CONTACT').limit(3)
+          __.V().hasLabel('User').has('username', username).out('HAS_CONTACT').limit(4)
       )
       .toList();
 
   return allUsers;
 }
+
 
 
 

@@ -28,25 +28,7 @@ async function fetchCassandra() {
 }
 fetchCassandra();
 
-const gremlin = require("gremlin");
-const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
-const Graph = gremlin.structure.Graph;
-var g;
-async function SetupGremlin() {
-  const [NeptuneEndpoint, NeptunePort] = await Promise.all([
-    FetchFromSecrets("NeptuneEndpoint"),
-    FetchFromSecrets("NeptunePort"),
-  ]);
-  dc = new DriverRemoteConnection(
-    "wss://"+NeptuneEndpoint+":"+NeptunePort+"/gremlin",
-    {}
-  );
-  const graph = new Graph();
-  g = graph.traversal().withRemote(dc);
-  console.log("Connected to Neptune");
-}
-
-SetupGremlin();
+var g = require('./SetupGraphDB.js').SetupGraphDB(g)
 
 const handleTransactionError = require("./ServiceBus.js").handleTransactionError;
 const OnUserCreationFailed = require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
@@ -155,13 +137,34 @@ async function CreateScyllaUser(req) {
   }
 }
 
+const CONCURRENT_PROMISES_LIMIT = 10;  // Adjust this value as needed
+
+// Utility function to handle a limited number of concurrent promises
+async function* asyncLimiter(generator) {
+  const activePromises = new Set();
+  
+  for (const promise of generator) {
+    if (activePromises.size >= CONCURRENT_PROMISES_LIMIT) {
+      await Promise.race(activePromises);
+    }
+    
+    activePromises.add(promise);
+    promise.then(() => activePromises.delete(promise)).catch(() => activePromises.delete(promise));
+
+    yield promise;
+  }
+
+  await Promise.allSettled(activePromises);
+}
 
 async function createNeptuneUser(req) {
-  var { username, phoneNumber, highschool, grade, age, gender,fname,lname } = req.query;
-  if(!grade) grade = null;
-  if(!gender) gender = null;
+  var { username, phoneNumber, highschool, grade, age, gender, fname, lname, favContacts, photoContacts, friendList, sameGrade, topPolls } = req.query;
+
+  if (!grade) grade = null;
+  if (!gender) gender = null;
+
   try {
-    await g
+    const userVertex = await g
       .addV("User")
       .property("username", username)
       .property("phoneNumber", phoneNumber)
@@ -171,19 +174,49 @@ async function createNeptuneUser(req) {
       .property("gender", gender)
       .property("fname", fname)
       .property("lname", lname)
-      .then(async (response) => {
-        if (!response.success) {
-          await handleTransactionError("neptune", req); //recursive 3 times , else return false
-        }
-        await handleTransactionCompletion(req.transactionId, req.phoneNumber);
-        return true; // Return the success response
-      });
-  } catch (encryptionerror) {
-    await handleTransactionError("neptune", req); //recursive 3 times , else return false
+      .next();
+
+    // Generator function for creating relationships
+    const relationshipGenerator = (function*() {
+      for (const contact of favContacts) {
+        yield g.V(userVertex).addE('HAS_CONTACT').property('fav', true).to(g.V().hasLabel('User').has('username', contact)).next();
+      }
+      for (const contact of photoContacts) {
+        yield g.V(userVertex).addE('HAS_CONTACT').property('photo', true).to(g.V().hasLabel('User').has('username', contact)).next();
+      }
+      for (const friend of friendList) {
+        yield g.V(userVertex).addE('FRIENDS_WITH').to(g.V().hasLabel('User').has('username', friend)).next();
+      }
+      for (const gradeFriend of sameGrade) {
+        yield g.V(userVertex).addE('HAS_SAME_GRADE').to(g.V().hasLabel('User').has('username', gradeFriend)).next();
+      }
+      for (const topPollUser of topPolls) {
+        yield g.V(userVertex).addE('HAS_TOP_POLL').to(g.V().hasLabel('User').has('username', topPollUser)).next();
+      }
+    })();
+
+    const results = [];
+    for await (const result of asyncLimiter(relationshipGenerator)) {
+      results.push(result);
+    }
+
+    // Handle errors, if any
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        console.error(`Error in promise ${index}:`, result.reason);
+      }
+    });
+
+    await handleTransactionCompletion(req.transactionId, req.phoneNumber);
+    return true; // Return the success response
+
+  } catch (error) {
+    await handleTransactionError("neptune", req);
     await OnUserCreationFailed(req.transactionId);
     return false;
   }
 }
+
 
 async function CreateCognitoUser(req) {
   var {
