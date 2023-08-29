@@ -218,50 +218,21 @@ async function createNeptuneUser(req) {
 }
 
 
-async function CreateCognitoUser(req) {
+async function CreateFirebaseUser(req) {
   var {
     username,
-    password,
-    reduceNotifications,
-    hideTopStars,
-    takeBreak,
-    nameInpolls,
-  } = req.params;
-  password = req.query.otp;
-  const cognitoidentityserviceprovider =
-    new AWS.CognitoIdentityServiceProvider();
-
-  const createUserParams = {
-    UserPoolId: userPoolId,
-    Username: phoneNumber,
-    TemporaryPassword: password,
-    UserAttributes: [
-      {
-        Name: "custom:reduceNotifications",
-        Value: "false",
-      },
-      { Name: "custom:hideTopStars", Value: "false" },
-      { Name: "custom:takeBreak", Value: "false" },
-      { Name: "custom:nameInpolls", Value: "everyone" },
-      { Name: "custom:subscription", Value: "false" },
-      //{ Name: "custom:pfp", Value: "null" },
-    ],
-    MessageAction: "SUPPRESS", // Suppressing welcome message
-  };
+    phoneNumber
+  } = req.query;
+  const password = req.query.otp;
+ 
 
   try {
-    const createUserResponse = await cognitoidentityserviceprovider
-      .adminCreateUser(createUserParams)
-      .promise();
-    // Set the password for the user to avoid "FORCE_CHANGE_PASSWORD" status
-    await cognitoidentityserviceprovider
-      .adminSetUserPassword({
-        UserPoolId: "us-east-1_I4JrZH7m7",
-        Username: phoneNumber,
-        Password: password,
-        Permanent: true,
-      })
-      .promise();
+    await admin.auth().createUser({
+      phoneNumber: phoneNumber,
+      password: password,
+      displayName: username,
+      disabled: false
+    })
     await handleTransactionCompletion(
       req.transactionId,
       req.phoneNumber
@@ -306,5 +277,5 @@ module.exports= {
   CreateMixPanelUser,
   CreateScyllaUser,
   createNeptuneUser,
-  CreateCognitoUser,
+  CreateFirebaseUser,
 };

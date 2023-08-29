@@ -68,7 +68,7 @@ module.exports = {
   CreateMixPanelUser: UserCreation.CreateMixPanelUser,
   CreateScyllaUser: UserCreation.CreateScyllaUser,
   createNeptuneUser: UserCreation.createNeptuneUser,
-  CreateCognitoUser: UserCreation.CreateCognitoUser,
+  CreateFirebaseUser: UserCreation.CreateFirebaseUser,
   handleTransactionCompletion: UserCreationTransactionHandling.handleTransactionCompletion,
   OnUserCreationFailed: UserCreationTransactionHandling.OnUserCreationFailed,
   publishAlbyMessage: NotificationSystem.publishAlbyMessage,
