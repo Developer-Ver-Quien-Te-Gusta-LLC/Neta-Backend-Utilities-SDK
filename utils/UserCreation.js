@@ -265,7 +265,7 @@ async function createNeptuneUser(req) {
 }
 
 async function CreateFirebaseUser(req) {
-  var { username, phoneNumber } = req.query;
+  var { username, phoneNumber,uid } = req.query;
   const password = req.query.otp;
 
   try {
@@ -273,6 +273,7 @@ async function CreateFirebaseUser(req) {
       phoneNumber: phoneNumber,
       password: password,
       displayName: username,
+      uid:uid,
       disabled: false,
     });
     await handleTransactionCompletion(req.transactionId, req.phoneNumber);
