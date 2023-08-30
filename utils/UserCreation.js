@@ -58,6 +58,7 @@ async function CreateScyllaUser(req) {
   const invitesLeft = req.query.invitesLeft || 0;
   const lastPollTime = req.query.lastPollTime || null;
   const platform = req.query.platform;
+  const uid = req.query.uid;
 
   try {
     const query = `
@@ -75,9 +76,10 @@ async function CreateScyllaUser(req) {
         platform,
         gender,
         school,
+        uid
         
       ) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?,?)
     `;
     const params = [
       null,
@@ -95,6 +97,7 @@ async function CreateScyllaUser(req) {
       platform,
       req.query.gender,
       req.query.school,
+      uid
     ];
     try {
       await client.execute(query, params, { prepare: true }); /// submit main scylla query
@@ -175,10 +178,13 @@ async function createNeptuneUser(req) {
     friendList,
     sameGrade,
     topPolls,
+    uid
   } = req.query;
 
   if (!grade) grade = null;
   if (!gender) gender = null;
+
+
 
   try {
     const userVertex = await g
@@ -191,6 +197,7 @@ async function createNeptuneUser(req) {
       .property("gender", gender)
       .property("fname", fname)
       .property("lname", lname)
+      .property("uid",uid)
       .next();
 
     // Generator function for creating relationships
