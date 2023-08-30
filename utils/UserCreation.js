@@ -1,7 +1,7 @@
-const cassandra = require('cassandra-driver');
-const Ably = require('ably');
-const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
-
+const cassandra = require("cassandra-driver");
+const Ably = require("ably");
+const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
+const AuthHandler = require("./AuthHandler.js");
 var ably;
 
 async function fetchAlby() {
@@ -10,9 +10,9 @@ async function fetchAlby() {
 }
 
 fetchAlby();
-const AWS = require('aws-sdk');
+const AWS = require("aws-sdk");
 
-let client,userPoolId;
+let client, userPoolId;
 async function fetchCassandra() {
   const contactPoints = await FetchFromSecrets("contactPoints");
   const localDataCenter = await FetchFromSecrets("localDataCenter");
@@ -28,11 +28,14 @@ async function fetchCassandra() {
 }
 fetchCassandra();
 
-var g = require('./SetupGraphDB.js').SetupGraphDB(g)
+var g = require("./SetupGraphDB.js").SetupGraphDB(g);
 
-const handleTransactionError = require("./ServiceBus.js").handleTransactionError;
-const OnUserCreationFailed = require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
-const handleTransactionCompletion = require("./UserCreationTransactionHandling.js").handleTransactionCompletion;
+const handleTransactionError =
+  require("./ServiceBus.js").handleTransactionError;
+const OnUserCreationFailed =
+  require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
+const handleTransactionCompletion =
+  require("./UserCreationTransactionHandling.js").handleTransactionCompletion;
 //Create a user profile in Mixpanel
 async function CreateMixPanelUser(username, firstname, lastname, geohash) {
   mixpanel.people.set(username, {
@@ -41,7 +44,6 @@ async function CreateMixPanelUser(username, firstname, lastname, geohash) {
     $geohash: geohash,
   });
 }
-
 
 async function CreateScyllaUser(req) {
   const school = req.query.school;
@@ -92,7 +94,7 @@ async function CreateScyllaUser(req) {
       -1,
       platform,
       req.query.gender,
-      req.query.school
+      req.query.school,
     ];
     try {
       await client.execute(query, params, { prepare: true }); /// submit main scylla query
@@ -101,29 +103,26 @@ async function CreateScyllaUser(req) {
       const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
         "ServiceBus_UsernameUniqueness"
       );
-    
+
       /// submit to /createScyllaUser
       const params = {
-        Message: JSON.stringify({phoneNumber, requestedUsername : username}),
+        Message: JSON.stringify({ phoneNumber, requestedUsername: username }),
         TopicArn: ARN, // replace with your SNS Topic ARN
       };
-    
+
       sns.publish(params, function (err, data) {
         if (err) console.log(err, err.stack);
         else console.log(data);
       });
       // submit initial imbox msg
       const uid = uuidv4();
-    const query = `
+      const query = `
   INSERT INTO inbox 
   (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, phoneNumbers, index) 
   VALUES 
   (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);
 `;
-      await handleTransactionCompletion(
-        req.transactionId,
-        req.phoneNumber
-      );
+      await handleTransactionCompletion(req.transactionId, req.phoneNumber);
       return true;
     } catch (err) {
       await handleTransactionError("scylla", req); //recursive 3 times , else return false
@@ -137,19 +136,21 @@ async function CreateScyllaUser(req) {
   }
 }
 
-const CONCURRENT_PROMISES_LIMIT = 10;  // Adjust this value as needed
+const CONCURRENT_PROMISES_LIMIT = 10; // Adjust this value as needed
 
 // Utility function to handle a limited number of concurrent promises
 async function* asyncLimiter(generator) {
   const activePromises = new Set();
-  
+
   for (const promise of generator) {
     if (activePromises.size >= CONCURRENT_PROMISES_LIMIT) {
       await Promise.race(activePromises);
     }
-    
+
     activePromises.add(promise);
-    promise.then(() => activePromises.delete(promise)).catch(() => activePromises.delete(promise));
+    promise
+      .then(() => activePromises.delete(promise))
+      .catch(() => activePromises.delete(promise));
 
     yield promise;
   }
@@ -158,7 +159,21 @@ async function* asyncLimiter(generator) {
 }
 
 async function createNeptuneUser(req) {
-  var { username, phoneNumber, highschool, grade, age, gender, fname, lname, favContacts, photoContacts, friendList, sameGrade, topPolls } = req.query;
+  var {
+    username,
+    phoneNumber,
+    highschool,
+    grade,
+    age,
+    gender,
+    fname,
+    lname,
+    favContacts,
+    photoContacts,
+    friendList,
+    sameGrade,
+    topPolls,
+  } = req.query;
 
   if (!grade) grade = null;
   if (!gender) gender = null;
@@ -177,21 +192,43 @@ async function createNeptuneUser(req) {
       .next();
 
     // Generator function for creating relationships
-    const relationshipGenerator = (function*() {
+    const relationshipGenerator = (function* () {
       for (const contact of favContacts) {
-        yield g.V(userVertex).addE('HAS_CONTACT').property('fav', true).to(g.V().hasLabel('User').has('username', contact)).next();
+        yield g
+          .V(userVertex)
+          .addE("HAS_CONTACT")
+          .property("fav", true)
+          .to(g.V().hasLabel("User").has("username", contact))
+          .next();
       }
       for (const contact of photoContacts) {
-        yield g.V(userVertex).addE('HAS_CONTACT').property('photo', true).to(g.V().hasLabel('User').has('username', contact)).next();
+        yield g
+          .V(userVertex)
+          .addE("HAS_CONTACT")
+          .property("photo", true)
+          .to(g.V().hasLabel("User").has("username", contact))
+          .next();
       }
       for (const friend of friendList) {
-        yield g.V(userVertex).addE('FRIENDS_WITH').to(g.V().hasLabel('User').has('username', friend)).next();
+        yield g
+          .V(userVertex)
+          .addE("FRIENDS_WITH")
+          .to(g.V().hasLabel("User").has("username", friend))
+          .next();
       }
       for (const gradeFriend of sameGrade) {
-        yield g.V(userVertex).addE('HAS_SAME_GRADE').to(g.V().hasLabel('User').has('username', gradeFriend)).next();
+        yield g
+          .V(userVertex)
+          .addE("HAS_SAME_GRADE")
+          .to(g.V().hasLabel("User").has("username", gradeFriend))
+          .next();
       }
       for (const topPollUser of topPolls) {
-        yield g.V(userVertex).addE('HAS_TOP_POLL').to(g.V().hasLabel('User').has('username', topPollUser)).next();
+        yield g
+          .V(userVertex)
+          .addE("HAS_TOP_POLL")
+          .to(g.V().hasLabel("User").has("username", topPollUser))
+          .next();
       }
     })();
 
@@ -209,7 +246,6 @@ async function createNeptuneUser(req) {
 
     await handleTransactionCompletion(req.transactionId, req.phoneNumber);
     return true; // Return the success response
-
   } catch (error) {
     await handleTransactionError("neptune", req);
     await OnUserCreationFailed(req.transactionId);
@@ -217,26 +253,18 @@ async function createNeptuneUser(req) {
   }
 }
 
-
 async function CreateFirebaseUser(req) {
-  var {
-    username,
-    phoneNumber
-  } = req.query;
+  var { username, phoneNumber } = req.query;
   const password = req.query.otp;
- 
 
   try {
     await admin.auth().createUser({
       phoneNumber: phoneNumber,
       password: password,
       displayName: username,
-      disabled: false
-    })
-    await handleTransactionCompletion(
-      req.transactionId,
-      req.phoneNumber
-    );
+      disabled: false,
+    });
+    await handleTransactionCompletion(req.transactionId, req.phoneNumber);
     return true;
   } catch (err) {
     await handleTransactionError("cognito", req); //recursive 3 times , else return false
@@ -271,11 +299,72 @@ async function unenroll(highschoolName) {
   }
 }
 
+async function DeleteUser(req) {
+  const promises = [];
+  const queries = [];
+  const {pn,highschool} = AuthHandler.GetUserDataFromJWT(req);
+ 
+   // Fill the array with query objects
+   queries.push({
+    query:
+      "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
+    params: [highschool], // assume schoolName is a variable that holds the name of the school
+  });
+
+  queries.push({
+    query: "DELETE FROM users WHERE phoneNumber = ?",
+    params: [pn],
+  });
+
+  queries.push({
+    query: "DELETE FROM reports WHERE phoneNumber = ?",
+    params: [pn],
+  });
+
+  queries.push({
+    query: "DELETE FROM inbox WHERE phoneNumber = ?",
+    params: [pn],
+  });
+
+  queries.push({
+    query: "DELETE FROM topFriendsAndPolls WHERE phoneNumber = ?",
+    params: [pn],
+  });
+
+  queries.push({
+    query: "DELETE FROM userPolls WHERE phoneNumber = ?",
+    params: [pn],
+  });
+
+  queries.push({
+    query: "DELETE FROM notificationTable WHERE phoneNumber = ?",
+    params: [pn],
+  });
 
 
-module.exports= {
+  const DeleteUserScyllaPromise = client.batch(queries,{prepare:true});
+
+  promises.push(DeleteUserScyllaPromise);
+
+  const DeleteFirebaseUserPromise = admin.auth().deleteUser(phoneNumber);
+  promises.push(DeleteFirebaseUserPromise);
+
+  // Gremlin query to delete the vertex 'User' using the phoneNumber given
+  const gremlinQuery = `g.V().has('User', 'phoneNumber', ${phoneNumber}).drop()`;
+  const DeleteUserGremlinPromise = g.execute(gremlinQuery);
+  promises.push(DeleteUserGremlinPromise);
+
+  // Wait for all promises to resolve
+  await Promise.all(promises);
+
+}
+ 
+
+
+module.exports = {
   CreateMixPanelUser,
   CreateScyllaUser,
   createNeptuneUser,
   CreateFirebaseUser,
+  DeleteUser
 };
