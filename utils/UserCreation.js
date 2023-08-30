@@ -130,6 +130,8 @@ async function CreateScyllaUser(req) {
       return false;
     }
   } catch (err) {
+    
+    await DeleteUser(req);
     await handleTransactionError("scylla", req); //recursive 3 times , else return false
     await OnUserCreationFailed(req.transactionId);
     return false;
@@ -247,6 +249,8 @@ async function createNeptuneUser(req) {
     await handleTransactionCompletion(req.transactionId, req.phoneNumber);
     return true; // Return the success response
   } catch (error) {
+    
+    await DeleteUser(req);
     await handleTransactionError("neptune", req);
     await OnUserCreationFailed(req.transactionId);
     return false;
@@ -267,6 +271,7 @@ async function CreateFirebaseUser(req) {
     await handleTransactionCompletion(req.transactionId, req.phoneNumber);
     return true;
   } catch (err) {
+    await DeleteUser(req);
     await handleTransactionError("cognito", req); //recursive 3 times , else return false
     await OnUserCreationFailed(req.transactionId);
     return false;
