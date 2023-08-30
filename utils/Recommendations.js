@@ -1,7 +1,7 @@
 
 
 const {SetupGraphDB} = requie('./SetupGraphDB.js')
-let g = SetupGraphDB(g)
+let g = SetupGraphDB()
 
 const { IsUserInvited } = require("./InviteHandler.js");
 const { getKV } = require("./KV.js");

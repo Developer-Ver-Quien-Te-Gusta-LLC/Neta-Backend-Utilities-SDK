@@ -11,6 +11,7 @@ const ScyllaSetup = require("./SetupCassandra.js");
 var client;
 
 const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
+const FetchChannelId = require('./AlbyToken.js').FetchChannelId;
 
 const Ably = require('ably');
 
@@ -57,8 +58,6 @@ async function OnUserCreationComplete(transactionId, encryptionKey = null) {
   const albySuccessObj = {
     status: "success",
   };
-
-  var channel = ably.channels.get(transactionId);
 
   // Publish a message to the channel
   channel.publish("event", JSON.stringify(albySuccessObj), (err) => {

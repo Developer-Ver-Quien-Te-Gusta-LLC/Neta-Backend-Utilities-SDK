@@ -21,12 +21,12 @@ async function initializeClient() {
 
 
 /// included for redundancy purposes
-async function FetchChannelId(phoneNumber, fetchEncryptionKey = false) {
+async function FetchChannelId(phoneNumber) {
     const client = await initializeClient();
     const AlbyChannelIdExpir = await FetchFromSecrets("AlbyChannelIdExpir");
 
     // Fetch AlbyTopicName and creation date from Cassandra
-    const query = 'SELECT AlbyTopicName, createdAt, AlbyEncryptionKey FROM users WHERE phoneNumber = ?';
+    const query = 'SELECT AlbyTopicName, FROM users WHERE phoneNumber = ?';
     const result = await client.execute(query, [phoneNumber]);
     let now = Date.now();
 
@@ -37,30 +37,19 @@ async function FetchChannelId(phoneNumber, fetchEncryptionKey = false) {
         if (!user.AlbyTopicName || !user.createdAt || ((now - user.createdAt > AlbyChannelIdExpir * 1000) && considerExpiryDate)) { 
             user.AlbyTopicName = Math.random().toString(36).substring(2, 14); // generate random 12 character string
             user.createdAt = now;
-            user.AlbyEncryptionKey = Math.random().toString(36).substring(2, 14); // generate random 12 character string
-        } 
 
-        // Update the user properties and return the necessary details
-        const updateQuery = 'UPDATE users SET AlbyTopicName = ?, createdAt = ?, AlbyEncryptionKey = ? WHERE phoneNumber = ?';
-        await client.execute(updateQuery, [user.AlbyTopicName, user.createdAt, user.AlbyEncryptionKey, phoneNumber]);
+            // Update the user properties and return the necessary details
+            const updateQuery = 'UPDATE users SET AlbyTopicName = ? WHERE phoneNumber = ?';
+            await client.execute(updateQuery, [user.AlbyTopicName, phoneNumber]);
+        }
     } else {
-        // If no user found, create a new user
-        const newUserQuery = 'INSERT INTO users (phoneNumber, AlbyTopicName, createdAt, AlbyEncryptionKey) VALUES (?, ?, ?, ?)';
-        let AlbyTopicName = Math.random().toString(36).substring(2, 14);
-        let AlbyEncryptionKey = Math.random().toString(36).substring(2, 14);
-        await client.execute(newUserQuery, [phoneNumber, AlbyTopicName, now, AlbyEncryptionKey]);
-
-        if(fetchEncryptionKey) return {topicId: AlbyTopicName, encryptionKey: AlbyEncryptionKey}
-        
-        return AlbyTopicName;
+        // If no user found, do nothing
     }
-
-    if (fetchEncryptionKey) return {encryptionKey : user.AlbyEncryptionKey, topicId : user.AlbyTopicName}
     
     return user.AlbyTopicName;
 }
 
-async function FetchChannelIdPre(phoneNumber, fetchEncryptionKey = false, additionalKeysToFetch = null) {
+async function FetchChannelIdPre(phoneNumber, additionalKeysToFetch = null) {
     const client = await initializeClient();
     const AlbyChannelIdExpir = await getKV("AlbyChannelIdExpir");
 
@@ -70,11 +59,8 @@ async function FetchChannelIdPre(phoneNumber, fetchEncryptionKey = false, additi
         additionalKeysString = ', ' + additionalKeysToFetch.join(', ');
     }
 
-    // Determine if we need to fetch the encryption key
-    let encryptionKeyString = fetchEncryptionKey ? ', AlbyEncryptionKey' : '';
-
     // Construct the query string
-    const query = `SELECT AlbyTopicName, createdAt${encryptionKeyString}${additionalKeysString} FROM users WHERE phoneNumber = ?`;
+    const query = `SELECT AlbyTopicName, createdAt${additionalKeysString} FROM users WHERE phoneNumber = ?`;
 
     // Execute the query
     const result = await client.execute(query, [phoneNumber]);
@@ -82,7 +68,7 @@ async function FetchChannelIdPre(phoneNumber, fetchEncryptionKey = false, additi
 }
 
 
-async function FetchChannelIdPost(result, phoneNumber, fetchEncryptionKey = false) {
+async function FetchChannelIdPost(result, phoneNumber) {
     let now = Date.now();
 
     if (result.rowLength > 0) {
@@ -92,20 +78,18 @@ async function FetchChannelIdPost(result, phoneNumber, fetchEncryptionKey = fals
         if (!user.AlbyTopicName || !user.createdAt || (now - user.createdAt > AlbyChannelIdExpir * 1000)) { 
             user.AlbyTopicName = Math.random().toString(36).substring(2, 14); // generate random 12 character string
             user.createdAt = now;
-            user.AlbyEncryptionKey = Math.random().toString(36).substring(2, 14); // generate random 12 character string
         } 
 
         // Update the user properties and return the necessary details
-        const updateQuery = 'UPDATE users SET AlbyTopicName = ?, createdAt = ?, AlbyEncryptionKey = ? WHERE phoneNumber = ?';
-        await client.execute(updateQuery, [user.AlbyTopicName, user.createdAt, user.AlbyEncryptionKey, phoneNumber]);
+        const updateQuery = 'UPDATE users SET AlbyTopicName = ?, createdAt = ? WHERE phoneNumber = ?';
+        await client.execute(updateQuery, [user.AlbyTopicName, user.createdAt, phoneNumber]);
     } else {
         // If no user found, log erorr
         throw new Error("FetchChannelIdPost: incorrect result")
     }
-
-    if (fetchEncryptionKey) return {encryptionKey : user.AlbyEncryptionKey, topicId : user.AlbyTopicName}
     
     return user.AlbyTopicName;
 }
 
 module.exports = {FetchChannelIdPre, FetchChannelIdPost, FetchChannelId};
+
