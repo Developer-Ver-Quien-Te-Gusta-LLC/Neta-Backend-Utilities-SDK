@@ -312,7 +312,7 @@ async function unenroll(highschoolName) {
   }
 }
 
-async function DeleteUser(req) {
+async function DeleteUser(req, deleteVerification = false) {
   const promises = [];
   const queries = [];
   const {pn,highschool} = AuthHandler.GetUserDataFromJWT(req);
@@ -354,6 +354,12 @@ async function DeleteUser(req) {
     params: [pn],
   });
 
+  if(deleteVerification) {
+    queries.push({
+      query: "DELETE FROM verification WHERE phoneNumber = ?",
+      params: [pn],
+    });
+  }
 
   const DeleteUserScyllaPromise = client.batch(queries,{prepare:true});
 
@@ -363,7 +369,7 @@ async function DeleteUser(req) {
   promises.push(DeleteFirebaseUserPromise);
 
   // Gremlin query to delete the vertex 'User' using the phoneNumber given
-  const gremlinQuery = `g.V().has('User', 'phoneNumber', ${phoneNumber}).drop()`;
+  const gremlinQuery = `g.V().has('User', 'uid', ${phoneNumber}).drop()`;
   const DeleteUserGremlinPromise = g.execute(gremlinQuery);
   promises.push(DeleteUserGremlinPromise);
 
