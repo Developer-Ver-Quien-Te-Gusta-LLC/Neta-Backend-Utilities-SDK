@@ -159,41 +159,39 @@ async function InsertMutualCount(username,filteredList){
 //#endregion
 
 //#region Actual Fetching
-async function GetRecommendationsOnboarding(username,contactsList,FavcontactsList,page_peopleYouMayKnow,pagesize_PeopleYouMayKnow,page_peopleInContacts,pagesize_peopleInContacts,grade,highschool) {
+async function GetRecommendationsOnboarding(username, contactsList, FavcontactsList, page_peopleYouMayKnow, pagesize_PeopleYouMayKnow, page_peopleInContacts, pagesize_peopleInContacts, grade, highschool) {
   // Calculate the offset
   const offset_PeopleYouMayKnow = (page_peopleYouMayKnow - 1) * pagesize_PeopleYouMayKnow;
-  const offset_PeopleInContacts = (page_peopleInContacts-1)* pagesize_peopleInContacts;
-  // Check user validity first
-  if (!(await CheckPlayerValidity(username))) {
-    return { success: false, error: "User does not exist" };
-  }
- // Fetch friends of the given user
- const userFriends = await g.V()
- .has('username', username)
- .out('FRIENDS_WITH')
- .values('username')
- .toList();
+  const offset_PeopleInContacts = (page_peopleInContacts - 1) * pagesize_peopleInContacts;
+  
+  const userFriendsPromise = g.V()
+    .has('username', username)
+    .out('FRIENDS_WITH')
+    .values('username')
+    .toList();
 
+  const peopleYouMayKnowPromise = g.V()
+    .union(
+      __.V().hasLabel('User').has('highschool', highschool).range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow),
+      __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow),
+    )
+    .toList();
 
-  const PeopleYouMayKnow = await g.V()
-  .union(
-    __.V().hasLabel('User').has('highschool', highschool).range(offset_PeopleYouMayKnow,page_peopleYouMayKnow*pagesize_PeopleYouMayKnow),
-    __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(offset_PeopleYouMayKnow,page_peopleYouMayKnow*pagesize_PeopleYouMayKnow),
-  )
-  .toList();
+  const peopleInContactsPromise = g.V()
+    .union(
+      __.V().hasLabel('User').has('phoneNumber', within(contactsList)).range(offset_PeopleInContacts, page_peopleInContacts * pagesize_peopleInContacts),
+      __.V().hasLabel('User').has('phoneNumber', within(FavcontactsList)).range(offset_PeopleInContacts, page_peopleInContacts * pagesize_peopleInContacts),
+    )
+    .toList();
 
-  const PeopleInContacts = await g.V()
-  .union(
-    __.V().hasLabel('User').has('phoneNumber', within(contactsList)).range(offset_PeopleInContacts,page_peopleInContacts*pagesize_peopleInContacts),
-    __.V().hasLabel('User').has('phoneNumber', within(FavcontactsList)).range(offset_PeopleInContacts,page_peopleInContacts*pagesize_peopleInContacts),
-  )
-  .toList();
+  const invitedPromise = IsUserInvited(username);
 
-  const FilteredPeopleYouMayKnow = PeopleYouMayKnow.filter((user) => !userFriends.includes(user.username));
-  const FilteredPeopleInContacts = PeopleInContacts.filter((user) => !userFriends.includes(user.username));
+  const [userFriends, PeopleYouMayKnow, PeopleInContacts, invited] = await Promise.allSettled([userFriendsPromise, peopleYouMayKnowPromise, peopleInContactsPromise, invitedPromise]);
 
-  var invited = await IsUserInvited(username);
-  if (invited) PeopleYouMayKnow.concat(invited[0].inviter);
+  const FilteredPeopleYouMayKnow = PeopleYouMayKnow.value.filter((user) => !userFriends.value.includes(user.username));
+  const FilteredPeopleInContacts = PeopleInContacts.value.filter((user) => !userFriends.value.includes(user.username));
+
+  if (invited.value) PeopleYouMayKnow.value.concat(invited.value[0].inviter);
 
   // Return both the result and the next page number for paging
   return {
@@ -202,9 +200,10 @@ async function GetRecommendationsOnboarding(username,contactsList,FavcontactsLis
     People_You_May_Know: FilteredPeopleYouMayKnow,
     page_peopleInContacts: page_peopleInContacts,
     PeopleInContacts: FilteredPeopleInContacts,
-    invited:invited
+    invited: invited.value
   };
 }
+
 
 // Get Recommendations for friends while in the explore section (after onboarding)
 async function GetRecommendationsExploreSection(username, page_FriendsOfFriends,page_SchoolUsers,pagesize_FriendsOfFriends,pagesize_SchoolUsers,highschool,grade) {
