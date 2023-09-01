@@ -220,6 +220,6 @@ module.exports= {
   ExecuteCustomScyllaQuery,
   AddFriendRelationInNeptune,
   removeFriendsRelation,
-  listFriends
+  //listFriends
   //QuerySchools,
 };
