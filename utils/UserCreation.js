@@ -318,9 +318,10 @@ async function DeleteUser(req, deleteVerification = false) {
   const {pn} = AuthHandler.GetUserDataFromJWT(req);
  
    // Fill the array with query objects
-   const highschoolQuery = "SELECT highschool FROM users WHERE uid = ?";
+   const highschoolQuery = "SELECT highschool, phoneNumber FROM users WHERE uid = ?";
    const highschoolResult = await client.execute(highschoolQuery, [uid], { prepare: true });
    const highschool = highschoolResult.rows[0].highschool;
+   const phoneNumber = highschoolResult.rows[0].phoneNumber;
 
    queries.push({
      query: "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
@@ -364,8 +365,8 @@ async function DeleteUser(req, deleteVerification = false) {
 
   if(deleteVerification) {
     queries.push({
-      query: "DELETE FROM verification WHERE uid = ?",
-      params: [pn],
+      query: "DELETE FROM verification WHERE phoneNumber = ?",
+      params: [phoneNumber],
     });
   }
 
