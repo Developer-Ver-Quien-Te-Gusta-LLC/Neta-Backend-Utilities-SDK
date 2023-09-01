@@ -2,7 +2,7 @@ var AwsSecrets = require("./utils/AwsSecrets.js");
 var AlbyToken = require("./utils/AlbyToken.js");
 var Analytics = require("./utils/Analytics.js");
 var AuthHandler = require("./utils/AuthHandler.js");
-var AwsEncryption = require("./utils/AwsEncryption.js");
+//var AwsEncryption = require("./utils/AwsEncryption.js");
 var DataBaseQueriesHandler = require("./utils/DataBaseQueriesHandler.js");
 //var Invitations = require("../microservices/Invitations/GenerateInviteLink.js");
 var KV = require("./utils/KV.js");
@@ -19,8 +19,8 @@ module.exports = {
   FetchChannelId: AlbyToken.FetchChannelId,
   SendEvent: Analytics.SendEvent,
   GetUserDataFromJWT: AuthHandler.GetUserDataFromJWT,
-  encrypt: AwsEncryption.encrypt,
-  decrypt: AwsEncryption.decrypt,
+  //encrypt: AwsEncryption.encrypt,
+  //decrypt: AwsEncryption.decrypt,
   FetchFromSecrets: AwsSecrets.FetchFromSecrets,
   FetchTopFriendsAndPolls: DataBaseQueriesHandler.FetchTopFriendsAndPolls,
   getDataFromNeptune: DataBaseQueriesHandler.getDataFromNeptune,
