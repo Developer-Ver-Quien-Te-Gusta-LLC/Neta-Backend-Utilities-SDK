@@ -1,43 +1,59 @@
 const admin = require('firebase-admin');
-
 const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 
-var isClientConnected = false;
+let isInitialized = false;
 
-let credentials;
 //#region Setup
-async function SetupClients() {
-  
+async function initializeFirebase() {
+    try {
+        // Ensure Firebase Admin SDK is only initialized once
+        if (isInitialized) {
+            console.warn("Firebase Admin SDK is already initialized.");
+            return;
+        }
 
-  credentials = await FetchFromSecrets("FCMAccountCredentials");
- 
-  admin.initializeApp({
-    credential: admin.credential.cert(credentials),
-  });
+        const credentials = await FetchFromSecrets("FCMAccountCredentials");
+        if (!credentials) {
+            console.error("Unable to fetch FCM Account Credentials.");
+            return;
+        }
 
-  console.log("KV Client Connected");
-  isClientConnected = true;
+        admin.initializeApp({
+            credential: admin.credential.cert(credentials),
+        });
+
+        console.log("Firebase Admin SDK Initialized.");
+        isInitialized = true;
+
+    } catch (error) {
+        console.error("Error during Firebase Admin SDK initialization:", error);
+    }
 }
-SetupClients();
+initializeFirebase();
 //#endregion
 
-
-
 async function fetchRemoteConfig(key) {
-  try {
-    // Fetch the remote config template
-    const template = await admin.remoteConfig().getTemplate();
-    const parameter = template.parameters[key];
+    try {
+        // Ensure that Firebase Admin SDK is initialized
+        if (!isInitialized) {
+            throw new Error("Firebase Admin SDK is not initialized.");
+        }
 
-    if (parameter) {
-      console.log(`Value for key 'your_key' is: ${parameter.defaultValue.value}`);
-      return parameter.defaultValue.value;
-    } else {
-      console.log(`Key 'your_key' is not found in the remote config.`);
+        // Fetch the remote config template
+        const template = await admin.remoteConfig().getTemplate();
+        const parameter = template.parameters[key];
+
+        if (parameter && parameter.defaultValue) {
+            console.log(`Value for key '${key}' is: ${parameter.defaultValue.value}`);
+            return parameter.defaultValue.value;
+        } else {
+            console.warn(`Key '${key}' is not found in the remote config.`);
+            return null;
+        }
+    } catch (err) {
+        console.error('Error fetching remote config:', err);
+        return null;
     }
-  } catch (err) {
-    console.error('Error fetching remote config:', err);
-  }
 }
 
-module.exports = { getKV:fetchRemoteConfig };
+module.exports = { getKV: fetchRemoteConfig };

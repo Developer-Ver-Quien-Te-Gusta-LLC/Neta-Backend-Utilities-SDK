@@ -88,7 +88,8 @@ async function SendNotificationInApp(userId, payload) {
 
 
 async function SendNotification(userId, payload) {
-  const userStatus = await getDataFromScyalla("Users", userId, "Online");
+  let userStatus = await getDataFromScyalla("Users", userId, "online");
+  if (userStatus == undefined || userStatus == null) userStatus = false /// no value defaults to false
 
   if (userStatus == true) {
     await publishAlbyMessage(userId, payload);

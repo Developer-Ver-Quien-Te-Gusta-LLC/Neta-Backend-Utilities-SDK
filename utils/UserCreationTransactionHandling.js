@@ -25,10 +25,10 @@ fetchAlby()
 ScyllaSetup.SetupCassandraClient(client);
 
 // This function will be invoked by each service via SNS Topic
-async function handleTransactionCompletion(phoneNumber, transactionId, encryptionKey) {
+async function handleTransactionCompletion(uid, transactionId, encryptionKey) {
   const insertQuery =
-    "INSERT INTO transactions (transaction_id, status, phone_number) VALUES (?, ?, ?) IF NOT EXISTS";
-  const params = [transactionId, "completed", phoneNumber];
+    "INSERT INTO transactions (transaction_id, status, uid) VALUES (?, ?, ?) IF NOT EXISTS";
+  const params = [transactionId, "completed", uid];
   const result = await client.execute(insertQuery, params, { prepare: true });
 
   if (result.applied) {
@@ -41,7 +41,7 @@ async function handleTransactionCompletion(phoneNumber, transactionId, encryptio
 }
 
 // This function checks if all three transactions are completed
-async function checkAllTransactionsCompleted(transactionId, encryptionKey) {
+async function checkAllTransactionsCompleted(transactionId) {
   const selectQuery =
     "SELECT COUNT(*) as count FROM transactions WHERE transaction_id = ? AND status = ?";
   const params = [transactionId, "completed"];
@@ -49,25 +49,25 @@ async function checkAllTransactionsCompleted(transactionId, encryptionKey) {
 
   if (result && result.first() && result.first().count === 3) {
     // If all transactions are completed, then invoke the final function
-    OnUserCreationComplete(transactionId, encryptionKey);
+    OnUserCreationComplete(transactionId);
   }
 }
 
-async function OnUserCreationComplete(transactionId, encryptionKey = null) {
+async function OnUserCreationComplete(transactionId) {
   // Send success signal via alby
   const albySuccessObj = {
     status: "success",
   };
 
   // Publish a message to the channel
-  channel.publish("event", JSON.stringify(albySuccessObj), (err) => {
+  ably.channnels.get(transactionId).channel.publish("event", JSON.stringify(albySuccessObj), (err) => {
     if (err) {
       console.log("Unable to publish message; err = " + err.message);
     }
   });
 }
 
-async function OnUserCreationFailed(transactionId, encryptionKey = null) {
+async function OnUserCreationFailed(transactionId) {
 // Send success signal via alby
 const albySuccessObj = {
   status: "failed",

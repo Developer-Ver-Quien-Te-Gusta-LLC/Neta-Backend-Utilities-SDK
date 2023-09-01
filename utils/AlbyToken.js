@@ -21,13 +21,13 @@ async function initializeClient() {
 
 
 /// included for redundancy purposes
-async function FetchChannelId(phoneNumber) {
+async function FetchChannelId(uid) {
     const client = await initializeClient();
     const AlbyChannelIdExpir = await FetchFromSecrets("AlbyChannelIdExpir");
 
     // Fetch AlbyTopicName and creation date from Cassandra
-    const query = 'SELECT AlbyTopicName, FROM users WHERE phoneNumber = ?';
-    const result = await client.execute(query, [phoneNumber]);
+    const query = 'SELECT AlbyTopicName, FROM users WHERE uid = ?';
+    const result = await client.execute(query, [uid]);
     let now = Date.now();
 
     if (result.rowLength > 0) {
@@ -39,8 +39,8 @@ async function FetchChannelId(phoneNumber) {
             user.createdAt = now;
 
             // Update the user properties and return the necessary details
-            const updateQuery = 'UPDATE users SET AlbyTopicName = ? WHERE phoneNumber = ?';
-            await client.execute(updateQuery, [user.AlbyTopicName, phoneNumber]);
+            const updateQuery = 'UPDATE users SET AlbyTopicName = ? WHERE uid = ?';
+            await client.execute(updateQuery, [user.AlbyTopicName, uid]);
         }
     } else {
         // If no user found, do nothing
@@ -48,48 +48,5 @@ async function FetchChannelId(phoneNumber) {
     
     return user.AlbyTopicName;
 }
-
-async function FetchChannelIdPre(phoneNumber, additionalKeysToFetch = null) {
-    const client = await initializeClient();
-    const AlbyChannelIdExpir = await getKV("AlbyChannelIdExpir");
-
-    // Prepare the additional keys to fetch if provided
-    let additionalKeysString = '';
-    if (additionalKeysToFetch && Array.isArray(additionalKeysToFetch)) {
-        additionalKeysString = ', ' + additionalKeysToFetch.join(', ');
-    }
-
-    // Construct the query string
-    const query = `SELECT AlbyTopicName, createdAt${additionalKeysString} FROM users WHERE phoneNumber = ?`;
-
-    // Execute the query
-    const result = await client.execute(query, [phoneNumber]);
-    return result;
-}
-
-
-async function FetchChannelIdPost(result, phoneNumber) {
-    let now = Date.now();
-
-    if (result.rowLength > 0) {
-        let user = result.rows[0];
-
-        // If AlbyTopicName has expired or doesn't exist
-        if (!user.AlbyTopicName || !user.createdAt || (now - user.createdAt > AlbyChannelIdExpir * 1000)) { 
-            user.AlbyTopicName = Math.random().toString(36).substring(2, 14); // generate random 12 character string
-            user.createdAt = now;
-        } 
-
-        // Update the user properties and return the necessary details
-        const updateQuery = 'UPDATE users SET AlbyTopicName = ?, createdAt = ? WHERE phoneNumber = ?';
-        await client.execute(updateQuery, [user.AlbyTopicName, user.createdAt, phoneNumber]);
-    } else {
-        // If no user found, log erorr
-        throw new Error("FetchChannelIdPost: incorrect result")
-    }
-    
-    return user.AlbyTopicName;
-}
-
-module.exports = {FetchChannelIdPre, FetchChannelIdPost, FetchChannelId};
+module.exports = {FetchChannelId};
 

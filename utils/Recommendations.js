@@ -58,44 +58,45 @@ async function CheckPlayerValidity(username) {
   }
 }
 
+/// TODO: complete
 // Fetch all the friends which have the coin sub for the poll active
 // Set the index and status of the subscriptions users has active after use
-async function FetchFriendsWithSubsActive(username) {
-  if (!CheckPlayerValidity(username)) {
+async function FetchFriendsWithSubsActive(uid) {
+  if (!CheckPlayerValidity(uid)) {
     return { success: false, data: "User does not exist" };
   }
   try {
     // Get the user
     const result = await client.execute(
-      "SELECT TempSubCrush, Friends FROM Users WHERE PhoneNumber = ?",
-      [phoneNumber]
+      "SELECT TempSubCrush, Friends FROM Users WHERE uid = ?",
+      [uid]
     );
     const user = result.first();
 
     // If the user does not exist or TempSubCrush is not true, simply return
     if (!user || !user.TempSubCrush) {
       const _result = await client.execute(
-        "SELECT TempSubCrush, Friends FROM Users WHERE PhoneNumber = ?",
-        [phoneNumber]
+        "SELECT TempSubCrush, Friends FROM Users WHERE uid = ?",
+        [uid]
       );
       const _user = result.first();
       if (!_user || _user.TempSubTop <= 0) {
         return null;
       }
       await client.execute(
-        "UPDATE Users SET TempTopCrush = ? WHERE PhoneNumber = ?",
-        [_user.TempSubTop - 1, phoneNumber]
+        "UPDATE Users SET TempTopCrush = ? WHERE uid = ?",
+        [_user.TempSubTop - 1, uid]
       );
 
       return _user.username;
     }
     // Update TempSubCrush to false
     await client.execute(
-      "UPDATE Users SET TempSubCrush = false WHERE PhoneNumber = ?",
-      [phoneNumber]
+      "UPDATE Users SET TempSubCrush = false WHERE uid = ?",
+      [uid]
     );
 
-    return user.username;
+    return user.username; /// why tf is it returning this
   } catch (err) {
     console.error(err);
   }
@@ -190,13 +191,10 @@ async function GetRecommendationsOnboarding(
     )
     .toList();
 
-  const invitedPromise = IsUserInvited(username);
-
-  const [ PeopleYouMayKnow, PeopleInContacts, invited] =
+  const [ PeopleYouMayKnow, PeopleInContacts] =
     await Promise.allSettled([
       peopleYouMayKnowPromise,
       peopleInContactsPromise,
-      invitedPromise,
     ]);
 
 

@@ -3,7 +3,7 @@ const AWS = require('aws-sdk');
 const cassandra = require('cassandra-driver');
 const  FetchFromSecrets  = require('./AwsSecrets.js').FetchFromSecrets;
 
-var userPoolId,NeptuneConnection,client;
+var NeptuneConnection,client;
 async function fetchCassandra() {
 
   const contactPoints = await FetchFromSecrets("contactPoints");
@@ -16,7 +16,6 @@ async function fetchCassandra() {
         keyspace:keyspace,
     });
   await client.connect();
-  userPoolId = await FetchFromSecrets("UserPoolID"); // Insert your user pool id here
 
   NeptuneConnection = {
   endpoint: await FetchFromSecrets("NeptuneEndpoint"),
@@ -44,7 +43,7 @@ const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
 const Graph = gremlin.structure.Graph;
 
 // Fetch data from Neptune (for the given phone number)
-async function getDataFromNeptune(phoneNumber, data) {
+async function getDataFromNeptune(uid, data) {
   const dc = new DriverRemoteConnection(
     `wss://${NeptuneConnection.endpoint}:${NeptuneConnection.port}/gremlin`
   );
@@ -54,7 +53,7 @@ async function getDataFromNeptune(phoneNumber, data) {
 
   let _data = 0;
   try {
-    const query = g.V().has("phoneNumber", phoneNumber).values(data);
+    const query = g.V().has("uid", uid).values(data);
     const result = await query.toList();
     if (result.length > 0) {
       _data = result[0];
@@ -70,11 +69,11 @@ async function getDataFromNeptune(phoneNumber, data) {
 }
 
 // Fetch data from ScyllaDB (for the given phone number)
-async function getDataFromScyalla(tableName, phoneNumber, data) {
-  const query = `SELECT ${data} FROM ${tableName} WHERE phoneNumber = ?`; //ScyllaDB query to fetch data
+async function getDataFromScyalla(tableName, uid, data) {
+  const query = `SELECT ${data} FROM ${tableName} WHERE uid = ?`; //ScyllaDB query to fetch data
 
   try {
-    const result = await client.execute(query, [phoneNumber], {
+    const result = await client.execute(query, [uid], {
       prepare: true,
     });
     const row = result.first();
@@ -88,34 +87,10 @@ async function getDataFromScyalla(tableName, phoneNumber, data) {
   }
 }
 
-// Fetch user attributes from Cognito (for the given phone number)
-async function FetchCognitoData(phoneNumber) {
-  const params = {
-    UserPoolId: userPoolId,
-    Username: phoneNumber,
-  };
-
-  try {
-    const data = await cognitoidentityserviceprovider
-      .adminGetUser(params)
-      .promise();
-
-    const userAttributes = {};
-
-    data.UserAttributes.forEach((attribute) => {
-      userAttributes[attribute.Name] = attribute.Value;
-    });
-
-    return userAttributes;
-  } catch (error) {
-    console.error(error);
-  }
-}
-
 // Insert data in ScyllaDB (for the given phone number)
 // data refers to the column name and value is the data to be inserted
-async function InsertDataInScylla(phoneNumber, data, value) {
-  const query = `UPDATE users SET ${data} = ? WHERE phoneNumber = ?`; //ScyllaDB query to insert data
+async function InsertDataInScylla(uid, data, value) {
+  const query = `UPDATE users SET ${data} = ? WHERE uid = ?`; //ScyllaDB query to insert data
 
   try {
     await client.execute(query, [value, phoneNumber], { prepare: true });
@@ -126,12 +101,12 @@ async function InsertDataInScylla(phoneNumber, data, value) {
 
 // Update data in ScyallaDB (for the given phone number)
 // data refers to the column name and value is the data to be inserted
-async function UpdateDataInScyallaDB(phoneNumber, data, value,table) {
+async function UpdateDataInScyallaDB(uid, data, value,table) {
   var query;
-  if(table != undefined || table!=null) query = `UPDATE users SET ${data} = ${data} + ${value} WHERE phoneNumber = ?`; //ScyllaDB query to update data
- else query = `UPDATE ${table} SET ${data} = ${data} + ${value} WHERE phoneNumber = ?`;
+  if(table != undefined || table!=null) query = `UPDATE users SET ${data} = ${data} + ${value} WHERE uid = ?`; //ScyllaDB query to update data
+ else query = `UPDATE ${table} SET ${data} = ${data} + ${value} WHERE uid = ?`;
   try {
-    await client.execute(query, [phoneNumber], { prepare: true });
+    await client.execute(query, [uid], { prepare: true });
   } catch (err) {
     console.error("Error executing query", err);
   }
@@ -139,18 +114,18 @@ async function UpdateDataInScyallaDB(phoneNumber, data, value,table) {
 
 // Update data in ScyallaDB (for the given phone number) with TTL mapped to the params
 // Note : TTL is in milliseconds
-async function UpdateDataInScyllaDBTTL(phoneNumber, data, value, ttl) {
-  const query = `UPDATE users USING TTL ${ttl} SET ${data} = ${value}  WHERE phoneNumber = ?`;
+async function UpdateDataInScyllaDBTTL(uid, data, value, ttl) {
+  const query = `UPDATE users USING TTL ${ttl} SET ${data} = ${value}  WHERE uid = ?`;
 
   try {
-    await client.execute(query, [phoneNumber], { prepare: true });
+    await client.execute(query, [uid], { prepare: true });
   } catch (err) {
     console.error("Error executing query", err);
   }
 }
 
 // Update data in Neptune (for the given phone number)
-async function UpdateDataInNeptune(phoneNumber, data, value) {
+async function UpdateDataInNeptune(uid, data, value) {
   const dc = new DriverRemoteConnection(
     `wss://${NeptuneConnection.endpoint}:${NeptuneConnection.port}/gremlin`
   );
@@ -161,7 +136,7 @@ async function UpdateDataInNeptune(phoneNumber, data, value) {
   try {
     const query = g
       .V()
-      .has("phoneNumber", phoneNumber)
+      .has("uid", uid)
       .property(data, value)
       .next();
     await query;
@@ -170,15 +145,15 @@ async function UpdateDataInNeptune(phoneNumber, data, value) {
   }
 }
 
-async function AddFriendRelationInNeptune(phoneNumber, friend) {
+async function AddFriendRelationInNeptune(uid, friend) {
   try {
-    const encryptedUser1Id = phoneNumber;
+    const encryptedUser1Id = uid;
     const encryptedUser2Id = friend;
 
     const query = `
-      g.V().has('User', 'username', '${encryptedUser1Id.data}')
+      g.V().has('User', 'uid', '${uid}')
         .addE('FRIENDS_WITH')
-        .to(g.V().has('User', 'username', '${encryptedUser2Id.data}'))
+        .to(g.V().has('User', 'username', ${friend}))
     `;
 
     return gremlinQuery(query).then((response) => {
@@ -190,124 +165,6 @@ async function AddFriendRelationInNeptune(phoneNumber, friend) {
     });
   } catch (encryptionerror) {
     return encryptionerror;
-  }
-}
-
-async function FetchTopFriendsAndPolls(user_id) {
-  const cql_query = "SELECT TopFriends, TopPolls FROM users WHERE user_id = ?";
-
-  try {
-    const result = await client.execute(cql_query, [user_id], {
-      prepare: true,
-    });
-    const row = result.first();
-
-    if (row) {
-      const TopFriends = row.TopFriends;
-      const TopPolls = row.TopPolls;
-
-      // Count the frequency of each interest
-      const countFriends = _.countBy(TopFriends);
-      const countPolls = _.countBy(TopPolls);
-
-      // Sort the interests by their frequency
-      const sortedTopFriends = Object.entries(countFriends).sort(
-        ([, a], [, b]) => b - a
-      );
-      const sortedTopPolls = Object.entries(countPolls).sort(
-        ([, a], [, b]) => b - a
-      );
-
-      return {
-        topFriends: sortedTopFriends,
-        topPolls: sortedTopPolls,
-      };
-    } else {
-      console.log("User not found!");
-      return null;
-    }
-  } catch (err) {
-    console.error("An error occurred", err);
-    throw err;
-  }
-}
-
-async function FetchTopFriends(user_id) {
-  const cql_query = "SELECT TopFriends FROM users WHERE user_id = ?";
-
-  try {
-    const result = await client.execute(cql_query, user_id, { prepare: true });
-    const row = result.first();
-
-    if (row) {
-      const TopFriends = row.TopFriends;
-
-      // Count the frequency of each interest
-      const count = _.countBy(TopFriends);
-
-      // Sort the interests by their frequency
-      const sortedTopFriends = Object.entries(count).sort(
-        ([, a], [, b]) => b - a
-      );
-      return sortedTopFriends;
-    } else {
-      console.log("User not found!");
-      return null;
-    }
-  } catch (err) {
-    console.error("An error occurred", err);
-    throw err;
-  }
-}
-async function listFriends(userId) {
-  try {
-    // Encrypt the user ID if necessary
-    const encryptedUserId = userId
-
-    const query = `
-      g.V().has('User', 'username', '${encryptedUserId.data}')
-        .out('FRIENDS_WITH')
-        .values('username')
-    `;
-
-    return gremlinQuery(query).then((response) => {
-      if (!response.success) {
-        ServiceBus.handleTransactionError("graphdb", req.query);
-      }
-
-      return { success: true, data: response.result.data }; // Return the success response
-    });
-  } catch (encryptionerror) {
-    return encryptionerror;
-  }
-}
-
-// Fetch and return a user's top polls
-//TODO: Fetch limit to return from KV
-async function FetchTopPolls(user_id) {
-  const cql_query = "SELECT TopPolls FROM users WHERE user_id = ? LIMIT 10";
-
-  try {
-    const result = await client.execute(cql_query, user_id, { prepare: true });
-    const row = result.first();
-
-    if (row) {
-      const polls = row.TopPolls;
-
-      // Count the frequency of each interest
-      const count = _.countBy(polls);
-
-      // Sort the interests by their frequency
-      const sortedPolls = Object.entries(count).sort(([, a], [, b]) => b - a);
-
-      return sortedPolls;
-    } else {
-      console.log("User not found!");
-      return null;
-    }
-  } catch (err) {
-    console.error("An error occurred", err);
-    throw err;
   }
 }
 
@@ -325,16 +182,16 @@ async function ExecuteCustomScyllaQuery(query) {
   }
 }
 
-async function removeFriendsRelation(phoneNumber, friend) {
+async function removeFriendsRelation(uid, friend) {
   try {
     // Encrypt user IDs if necessary
-    const encryptedUser1Id = phoneNumber;
+    const encryptedUser1Id = uid;
     const encryptedUser2Id = friend;
 
     const query = `
-      g.V().has('User', 'username', '${encryptedUser1Id.data}')
+      g.V().has('User', 'username', '${uid}')
         .outE('FRIENDS_WITH')
-        .where(inV().has('User', 'username', '${encryptedUser2Id.data}'))
+        .where(inV().has('User', 'username', '${friend}'))
         .drop()
     `;
 
@@ -355,14 +212,11 @@ module.exports= {
   FetchTopFriendsAndPolls,
   getDataFromNeptune,
   getDataFromScyalla,
-  FetchCognitoData,
   InsertDataInScylla,
   UpdateDataInNeptune,
   //FetchInitialPolls,
   UpdateDataInScyallaDB,
   UpdateDataInScyllaDBTTL,
-  FetchTopPolls,
-  FetchTopFriends,
   ExecuteCustomScyllaQuery,
   AddFriendRelationInNeptune,
   removeFriendsRelation,

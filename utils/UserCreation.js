@@ -109,7 +109,7 @@ async function CreateScyllaUser(req) {
 
       /// submit to /createScyllaUser
       const params = {
-        Message: JSON.stringify({ phoneNumber, requestedUsername: username }),
+        Message: JSON.stringify({ uid, requestedUsername: username }),
         TopicArn: ARN, // replace with your SNS Topic ARN
       };
 
@@ -121,7 +121,7 @@ async function CreateScyllaUser(req) {
       const uid = uuidv4();
       const query = `
   INSERT INTO inbox 
-  (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, phoneNumbers, index) 
+  (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, uids, index) 
   VALUES 
   (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);
 `;
@@ -276,7 +276,7 @@ async function CreateFirebaseUser(req) {
       uid:uid,
       disabled: false,
     });
-    await handleTransactionCompletion(req.transactionId, req.phoneNumber);
+    await handleTransactionCompletion(req.transactionId, uid);
     return true;
   } catch (err) {
     await DeleteUser(req);
@@ -325,38 +325,38 @@ async function DeleteUser(req, deleteVerification = false) {
   });
 
   queries.push({
-    query: "DELETE FROM users WHERE phoneNumber = ?",
+    query: "DELETE FROM users WHERE uid = ?",
     params: [pn],
   });
 
   queries.push({
-    query: "DELETE FROM reports WHERE phoneNumber = ?",
+    query: "DELETE FROM reports WHERE uid = ?",
     params: [pn],
   });
 
   queries.push({
-    query: "DELETE FROM inbox WHERE phoneNumber = ?",
+    query: "DELETE FROM inbox WHERE uid = ?",
     params: [pn],
   });
 
   queries.push({
-    query: "DELETE FROM topFriendsAndPolls WHERE phoneNumber = ?",
+    query: "DELETE FROM topFriendsAndPolls WHERE uid = ?",
     params: [pn],
   });
 
   queries.push({
-    query: "DELETE FROM userPolls WHERE phoneNumber = ?",
+    query: "DELETE FROM userPolls WHERE uid = ?",
     params: [pn],
   });
 
   queries.push({
-    query: "DELETE FROM notificationTable WHERE phoneNumber = ?",
+    query: "DELETE FROM notificationTable WHERE uid = ?",
     params: [pn],
   });
 
   if(deleteVerification) {
     queries.push({
-      query: "DELETE FROM verification WHERE phoneNumber = ?",
+      query: "DELETE FROM verification WHERE uid = ?",
       params: [pn],
     });
   }
