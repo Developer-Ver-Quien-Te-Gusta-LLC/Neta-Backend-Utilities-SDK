@@ -209,7 +209,7 @@ async function removeFriendsRelation(uid, friend) {
 
 
 module.exports= {
-  FetchTopFriendsAndPolls,
+  //FetchTopFriendsAndPolls,
   getDataFromNeptune,
   getDataFromScyalla,
   InsertDataInScylla,
