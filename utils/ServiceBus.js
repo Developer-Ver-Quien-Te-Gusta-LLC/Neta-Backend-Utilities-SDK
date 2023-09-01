@@ -18,28 +18,28 @@ SetupCassandraClient(client).then(
 
 
 
-async function CheckRetry(phoneNumber, transactionId) {
+async function CheckRetry(uid, transactionId) {
   // Define retry limit
   const retryLimit = await KV.getKV("RetryTimes");
 
   // Fetch the transaction
-  const selectQuery = "SELECT retry_count FROM transactions WHERE transaction_id = ? AND phone_number = ?";
-  const params = [transactionId, phoneNumber];
+  const selectQuery = "SELECT retry_count FROM transactions WHERE transaction_id = ? AND uid = ?";
+  const params = [transactionId, uid];
   const result = await client.execute(selectQuery, params, { prepare: true });
 
   if (result.rowLength > 0) {
     const retryCount = result.first().retry_count;
     if (retryCount < retryLimit) {
       // Increment retry count
-      const incrementRetryCountQuery = "UPDATE transactions SET retry_count = retry_count + 1 WHERE transaction_id = ? AND phone_number = ?";
-      await client.execute(incrementRetryCountQuery, [transactionId, phoneNumber], { prepare: true });
+      const incrementRetryCountQuery = "UPDATE transactions SET retry_count = retry_count + 1 WHERE transaction_id = ? AND uid = ?";
+      await client.execute(incrementRetryCountQuery, [transactionId, uid], { prepare: true });
       return true;
     } else {
-      console.log(`Transaction ${transactionId} for phone number ${phoneNumber} has reached the retry limit.`);
+      console.log(`Transaction ${transactionId} for uid ${uid} has reached the retry limit.`);
       return false;
     }
   } else {
-    console.log(`Transaction ${transactionId} for phone number ${phoneNumber} does not exist.`);
+    console.log(`Transaction ${transactionId} for uid ${uid} does not exist.`);
     return false;
   }
 }

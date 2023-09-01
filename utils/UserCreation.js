@@ -315,9 +315,17 @@ async function unenroll(highschoolName) {
 async function DeleteUser(req, deleteVerification = false) {
   const promises = [];
   const queries = [];
-  const {pn,highschool} = AuthHandler.GetUserDataFromJWT(req);
+  const {pn} = AuthHandler.GetUserDataFromJWT(req);
  
    // Fill the array with query objects
+   const highschoolQuery = "SELECT highschool FROM users WHERE uid = ?";
+   const highschoolResult = await client.execute(highschoolQuery, [uid], { prepare: true });
+   const highschool = highschoolResult.rows[0].highschool;
+
+   queries.push({
+     query: "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
+     params: [highschool],
+   });
    queries.push({
     query:
       "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
