@@ -1,7 +1,6 @@
-const { SetupGraphDB } = requie("./SetupGraphDB.js");
+const { SetupGraphDB } = require("./SetupGraphDB.js");
 let g = SetupGraphDB();
 
-const { IsUserInvited } = require("./InviteHandler.js");
 const { getKV } = require("./KV.js");
 const cassandra = require("./SetupCassandra.js");
 

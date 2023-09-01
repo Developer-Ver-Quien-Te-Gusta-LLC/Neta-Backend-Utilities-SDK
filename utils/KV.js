@@ -12,18 +12,25 @@ async function initializeFirebase() {
             return;
         }
 
-        const credentials = await FetchFromSecrets("FCMAccountCredentials");
+        var credentials = await FetchFromSecrets("FCMAccountCredentials");
+
+        credentials = JSON.parse(credentials);
         if (!credentials) {
             console.error("Unable to fetch FCM Account Credentials.");
             return;
         }
 
+        if(admin.apps.length === 0){
         admin.initializeApp({
             credential: admin.credential.cert(credentials),
         });
 
         console.log("Firebase Admin SDK Initialized.");
         isInitialized = true;
+    }
+    else{
+        isInitialized = true;
+    }
 
     } catch (error) {
         console.error("Error during Firebase Admin SDK initialization:", error);
@@ -36,7 +43,10 @@ async function fetchRemoteConfig(key) {
     try {
         // Ensure that Firebase Admin SDK is initialized
         if (!isInitialized) {
-            throw new Error("Firebase Admin SDK is not initialized.");
+            while (!isInitialized) {
+                console.warn("Waiting for Firebase Admin SDK to initialize...");
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
         }
 
         // Fetch the remote config template

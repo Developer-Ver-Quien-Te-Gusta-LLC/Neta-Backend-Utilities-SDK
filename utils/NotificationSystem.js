@@ -1,7 +1,6 @@
 const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
 const  FetchChannelId  = require("./AlbyToken.js").FetchChannelId;
 const  getDataFromScyalla  = require("./DataBaseQueriesHandler.js").getDataFromScyalla;
-const { encrypt } = require("./AwsEncryption.js").encrypt;
 
 const Ably = require('ably');
 
@@ -19,9 +18,11 @@ async function SetupFCM() {
   //import serviceAccount from './credentials/creds.json';
   Credentials = await FetchFromSecrets("FCMAccountCredentials");
   Credentials = JSON.parse(Credentials);
+  if(fcm.apps.length ===0){
   fcm.initializeApp({
     credential: fcm.credential.cert(Credentials),
   });
+}
 }
 
 SetupFCM();

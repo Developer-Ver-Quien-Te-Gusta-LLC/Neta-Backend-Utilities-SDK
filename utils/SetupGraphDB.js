@@ -3,9 +3,8 @@ const gremlin = require('gremlin');
 const traversal = gremlin.process.AnonymousTraversalSource.traversal;
 const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
 const Graph = gremlin.structure.Graph;
-
 let stored;
-const FetchFromSecrets = require('./AwsSecrets').FetchFromSecret
+const {FetchFromSecrets} = require('./AwsSecrets')
 let cosmosDBUsername;
 
 async function fetchSecrets() {
@@ -39,9 +38,9 @@ function SetupGraphDB(temp = null) {
             });
     });
 
-    stored = g;
-    temp = g
-    return g;
+    stored = graph;
+    temp = graph
+    return graph;
 }
 
-export { SetupGraphDB };
+module.exports = { SetupGraphDB };

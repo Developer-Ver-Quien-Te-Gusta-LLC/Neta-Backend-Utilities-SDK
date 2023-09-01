@@ -3,9 +3,11 @@ const admin = require('firebase-admin');
 const getKV = require('./KV.js').getKV;
 
 (async () => {
+    if(admin.apps.length ===0){
     admin.initializeApp({
         credential: await getKV("FCMAccountCredentials")
     });
+}
 })();
 
 //#region JWT Authentication

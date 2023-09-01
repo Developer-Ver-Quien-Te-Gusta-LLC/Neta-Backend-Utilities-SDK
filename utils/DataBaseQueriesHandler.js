@@ -35,10 +35,6 @@ fetchCassandra();
   });
 } // use credentials if not in prod , else use IAM role for ec2 instance*/
 
-const cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
- 
-
-const Neptune = new AWS.Neptune();
 const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
 const Graph = gremlin.structure.Graph;
 

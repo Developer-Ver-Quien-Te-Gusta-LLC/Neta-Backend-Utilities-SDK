@@ -12,7 +12,7 @@ var ServiceBus = require("./utils/ServiceBus.js");
 var UserCreation = require("./utils/UserCreation.js");
 var UserCreationTransactionHandling = require("./utils/UserCreationTransactionHandling.js");
 var SetupCassandra = require("./utils/SetupCassandra.js");
-var Datadog = require("./Datadog.js")
+var Datadog = require("./utils/Datadog.js")
 console.log("Backend SDK initialized");
 
 module.exports = {
