@@ -18,29 +18,23 @@ async function fetchSecrets() {
 }
 fetchSecrets()
 
-function SetupGraphDB(temp = null) {
+async function SetupGraphDB(temp = null) {
     if (stored) return stored;
 
     const graph = new Graph();
+    const secrets = await fetchSecrets();
 
-    fetchSecrets().then(secrets => {
-        graph
-            .traversal()
-            .withRemote(new DriverRemoteConnection(secrets.endpoint, {
-                "auth": {
-                    "username": cosmosDBUsername, //"/dbs/<your-db-name>/colls/<your-coll-name>",
-                    "password": secrets.primaryKey
-                }
-            }))
-            .then(g => {
-                stored = g;
-                temp = g;
-            });
-    });
+    stored = graph.traversal().withRemote(new DriverRemoteConnection(
+        secrets.endpoint, 
+        { 
+            "auth": { 
+                "username": cosmosDBUsername, 
+                "password": secrets.primaryKey 
+            } 
+        }
+    ));
 
-    stored = graph;
-    temp = graph
-    return graph;
+    return stored;
 }
 
 module.exports = { SetupGraphDB };

@@ -1,14 +1,18 @@
 const SendEvent = require('./Analytics.js').SendEvent;
 const admin = require('firebase-admin');
-const getKV = require('./KV.js').getKV;
+const { FetchFromSecrets } = require('./AwsSecrets.js');
+const {isInitialized} = require('./KV.js');
 
-(async () => {
-    if(admin.apps.length ===0){
+/*(async () => {
+    if(!isInitialized){
+        var credentials = await FetchFromSecrets("FCMAccountCredentials");
+
+        credentials = JSON.parse(credentials);
     admin.initializeApp({
-        credential: await getKV("FCMAccountCredentials")
+        credential: admin.credential.cert(credentials),
     });
 }
-})();
+})();*/
 
 //#region JWT Authentication
 async function GetUserDataFromJWT(req) {

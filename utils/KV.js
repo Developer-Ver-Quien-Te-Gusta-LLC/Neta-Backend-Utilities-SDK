@@ -30,6 +30,7 @@ async function initializeFirebase() {
     }
     else{
         isInitialized = true;
+        console.log("Firebase Admin SDK Initialized.");
     }
 
     } catch (error) {
@@ -44,7 +45,7 @@ async function fetchRemoteConfig(key) {
         // Ensure that Firebase Admin SDK is initialized
         if (!isInitialized) {
             while (!isInitialized) {
-                console.warn("Waiting for Firebase Admin SDK to initialize...");
+                //console.warn("Waiting for Firebase Admin SDK to initialize...");
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
@@ -66,4 +67,4 @@ async function fetchRemoteConfig(key) {
     }
 }
 
-module.exports = { getKV: fetchRemoteConfig };
+module.exports = { getKV: fetchRemoteConfig,isInitialized };
