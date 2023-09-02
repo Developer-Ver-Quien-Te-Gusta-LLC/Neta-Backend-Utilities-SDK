@@ -14,13 +14,17 @@ async function SendEvent(event_name, phoneNumber, value, time) {
     ...value
   };
 
-  Mixpanel.import(event_name, time, eventData, (err) => {
-    if (err) {
-      console.error('Failed to send event:', err);
-    } else {
-      console.log('Event sent successfully!');
-    }
-  });
+  if (mixpanel) {
+    mixpanel.track(event_name, eventData, (err) => {
+      if (err) {
+        console.error('Failed to send event:', err);
+      } else {
+        console.log('Event sent successfully!');
+      }
+    });
+  } else {
+    console.error('Mixpanel not initialized');
+  }
 }
 
 module.exports = { SendEvent };
