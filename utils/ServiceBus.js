@@ -66,7 +66,7 @@ async function handleTransactionError(service, data) {
 async function fetchRequestsFromSQS(queueURL) { //TODO: fetch max requests from KV
   const params = {
     QueueUrl: queueURL,
-    MaxNumberOfMessages: 1000,
+    MaxNumberOfMessages: 10,
     WaitTimeSeconds: 10, // Maximum wait time for messages (long polling)
   };
 
@@ -75,6 +75,15 @@ async function fetchRequestsFromSQS(queueURL) { //TODO: fetch max requests from 
       if (err) {
         reject(err);
       } else {
+        const deleteParams = {
+          QueueUrl: queueURL,
+          ReceiptHandle: data.Messages[0].ReceiptHandle
+        };
+        sqs.deleteMessage(deleteParams, function(err, data) {
+          if (err) {
+            console.warn("Delete Error", err);
+          } 
+        });
         resolve(data.Messages || []);
       }
     });
@@ -82,5 +91,7 @@ async function fetchRequestsFromSQS(queueURL) { //TODO: fetch max requests from 
 }
 
 //#endregion
+
+//fetchRequestsFromSQS("https://sqs.us-east-1.amazonaws.com/422862242595/UserCreationSQSQueue");
 
 module.exports = {handleTransactionError,fetchRequestsFromSQS};
