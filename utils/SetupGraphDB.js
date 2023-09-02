@@ -3,6 +3,7 @@ const gremlin = require('gremlin');
 const traversal = gremlin.process.AnonymousTraversalSource.traversal;
 const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
 const Graph = gremlin.structure.Graph;
+
 let stored;
 const {FetchFromSecrets} = require('./AwsSecrets')
 let cosmosDBUsername;
@@ -16,7 +17,6 @@ async function fetchSecrets() {
         primaryKey: await FetchFromSecrets("CosmosDBPrimaryKey") //"yourPrimaryKeyHere"
     };
 }
-fetchSecrets()
 
 async function SetupGraphDB(temp = null) {
     if (stored) return stored;
@@ -31,7 +31,7 @@ async function SetupGraphDB(temp = null) {
                 "username": cosmosDBUsername, 
                 "password": secrets.primaryKey 
             } 
-        }
+        },
     ));
 
     return stored;

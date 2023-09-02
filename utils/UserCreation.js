@@ -1,4 +1,4 @@
-const cassandra = require("cassandra-driver");
+const Cassandraclient = require("./SetupCassandra");
 const Ably = require("ably");
 const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 const AuthHandler = require("./AuthHandler.js");
@@ -8,27 +8,16 @@ async function fetchAlby() {
   ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
   await ably.connection.once("connected");
 }
-
 fetchAlby();
-const AWS = require("aws-sdk");
 
-let client, userPoolId;
-async function fetchCassandra() {
-  const contactPoints = await FetchFromSecrets("contactPoints");
-  const localDataCenter = await FetchFromSecrets("localDataCenter");
-  const keyspace = await FetchFromSecrets("keyspace");
 
-  client = new cassandra.Client({
-    contactPoints: [contactPoints],
-    localDataCenter: localDataCenter,
-    keyspace: keyspace,
-  });
-  await client.connect();
-  userPoolId = await FetchFromSecrets("UserPoolID"); // Insert your user pool id here
-}
-fetchCassandra();
+let client;
 
-var g = require("./SetupGraphDB.js").SetupGraphDB(g);
+Cassandraclient.SetupCassandraClient(client).then(result=>{client=result});
+
+var GraphDB = require("./SetupGraphDB.js");
+let g;
+GraphDB.SetupGraphDB(g).then(result=>{g=result;createNeptuneUser(dummyReq);})
 
 const handleTransactionError =
   require("./ServiceBus.js").handleTransactionError;
@@ -45,20 +34,19 @@ async function CreateMixPanelUser(username, firstname, lastname, geohash) {
   });
 }
 
-async function CreateScyllaUser(req) {
-  const school = req.query.school;
-  const username = req.query.username;
-  const phoneNumber = req.query.phoneNumber;
-  const friendList = req.query.friendList || [];
-  const blockList = req.query.blockList || [];
-  const hideList = req.query.hideList || [];
-  const topPolls = req.query.topPolls || [];
-  const friendRequests = req.query.friendRequests || [];
-  const starCount = req.query.starCount || 0;
-  const invitesLeft = req.query.invitesLeft || 0;
-  const lastPollTime = req.query.lastPollTime || null;
-  const platform = req.query.platform;
-  const uid = req.query.uid;
+async function CreateScyllaUser(UserParams) {
+  const username = UserParams.username;
+  const phoneNumber = UserParams.phoneNumber;
+  const friendList = UserParams.friendList || [];
+  const blockList = UserParams.blockList || [];
+  const hideList = UserParams.hideList || [];
+  const topPolls = UserParams.topPolls || [];
+  const friendRequests = UserParams.friendRequests || [];
+  const starCount = UserParams.starCount || 0;
+  const invitesLeft = UserParams.invitesLeft || 0;
+  const lastPollTime = UserParams.lastPollTime || null;
+  const platform = UserParams.platform;
+  const uid = UserParams.uid;
 
   try {
     const query = `
@@ -95,13 +83,13 @@ async function CreateScyllaUser(req) {
       lastPollTime,
       -1,
       platform,
-      req.query.gender,
-      req.query.school,
+      UserParams.gender,
+      UserParams.highschool,
       uid
     ];
     try {
       await client.execute(query, params, { prepare: true }); /// submit main scylla query
-      await enroll(req.query.school); /// enroll in school
+      await enroll(UserParams.school); /// enroll in school
       /// submit to username uniqueness service
       const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
         "ServiceBus_UsernameUniqueness"
@@ -125,18 +113,18 @@ async function CreateScyllaUser(req) {
   VALUES 
   (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);
 `;
-      await handleTransactionCompletion(req.transactionId, req.phoneNumber);
+      await handleTransactionCompletion(UserParams.transactionId, UserParams.phoneNumber);
       return true;
     } catch (err) {
-      await handleTransactionError("scylla", req); //recursive 3 times , else return false
-      await OnUserCreationFailed(req.transactionId);
+      await handleTransactionError("scylla", UserParams); //recursive 3 times , else return false
+      await OnUserCreationFailed(UserParams.transactionId);
       return false;
     }
   } catch (err) {
     
-    await DeleteUser(req);
-    await handleTransactionError("scylla", req); //recursive 3 times , else return false
-    await OnUserCreationFailed(req.transactionId);
+    await DeleteUser(UserParams);
+    await handleTransactionError("scylla", UserParams); //recursive 3 times , else return false
+    await OnUserCreationFailed(UserParams.transactionId);
     return false;
   }
 }
@@ -162,6 +150,8 @@ async function* asyncLimiter(generator) {
 
   await Promise.allSettled(activePromises);
 }
+
+  
 
 async function createNeptuneUser(req) {
   var {
@@ -200,66 +190,15 @@ async function createNeptuneUser(req) {
       .property("uid",uid)
       .next();
 
-    // Generator function for creating relationships
-    const relationshipGenerator = (function* () {
-      for (const contact of favContacts) {
-        yield g
-          .V(userVertex)
-          .addE("HAS_CONTACT")
-          .property("fav", true)
-          .to(g.V().hasLabel("User").has("username", contact))
-          .next();
-      }
-      for (const contact of photoContacts) {
-        yield g
-          .V(userVertex)
-          .addE("HAS_CONTACT")
-          .property("photo", true)
-          .to(g.V().hasLabel("User").has("username", contact))
-          .next();
-      }
-      for (const friend of friendList) {
-        yield g
-          .V(userVertex)
-          .addE("FRIENDS_WITH")
-          .to(g.V().hasLabel("User").has("username", friend))
-          .next();
-      }
-      for (const gradeFriend of sameGrade) {
-        yield g
-          .V(userVertex)
-          .addE("HAS_SAME_GRADE")
-          .to(g.V().hasLabel("User").has("username", gradeFriend))
-          .next();
-      }
-      for (const topPollUser of topPolls) {
-        yield g
-          .V(userVertex)
-          .addE("HAS_TOP_POLL")
-          .to(g.V().hasLabel("User").has("username", topPollUser))
-          .next();
-      }
-    })();
-
-    const results = [];
-    for await (const result of asyncLimiter(relationshipGenerator)) {
-      results.push(result);
-    }
-
-    // Handle errors, if any
-    results.forEach((result, index) => {
-      if (result.status === "rejected") {
-        console.error(`Error in promise ${index}:`, result.reason);
-      }
-    });
 
     await handleTransactionCompletion(req.transactionId, req.phoneNumber);
     return true; // Return the success response
   } catch (error) {
+    console.log(error);
     
-    await DeleteUser(req);
-    await handleTransactionError("neptune", req);
-    await OnUserCreationFailed(req.transactionId);
+   // await DeleteUser(req);
+    //await handleTransactionError("neptune", req);
+    //await OnUserCreationFailed(req.transactionId);
     return false;
   }
 }
@@ -315,7 +254,7 @@ async function unenroll(highschoolName) {
 async function DeleteUser(req, deleteVerification = false) {
   const promises = [];
   const queries = [];
-  const {pn} = AuthHandler.GetUserDataFromJWT(req);
+  const {uid} = req.query;
  
    // Fill the array with query objects
    const highschoolQuery = "SELECT highschool, phoneNumber FROM users WHERE uid = ?";
@@ -387,6 +326,26 @@ async function DeleteUser(req, deleteVerification = false) {
 
 }
  
+// Create a dummy variable to pass to createNeptuneUser
+var dummyReq = {
+  query: {
+    username: "dummyUser",
+    phoneNumber: "1234567890",
+    highschool: "dummyHighschool",
+    grade: "dummyGrade",
+    age: "dummyAge",
+    gender: "dummyGender",
+    fname: "dummyFname",
+    lname: "dummyLname",
+    favContacts: [],
+    photoContacts: [],
+    friendList: [],
+    sameGrade: [],
+    topPolls: [],
+    uid: "dummyUid"
+  }
+};
+
 
 
 module.exports = {
