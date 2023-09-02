@@ -23,7 +23,7 @@ async function SendEvent(event_name, phoneNumber, value, time) {
       }
     });
   } else {
-    console.error('Mixpanel not initialized');
+    console.log('Mixpanel not initialized');
   }
 }
 
