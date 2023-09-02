@@ -3,14 +3,13 @@ const AWSXRay = require('aws-xray-sdk-core');
 // Initialize AWS X-Ray
 AWSXRay.config([AWSXRay.plugins.EC2Plugin, AWSXRay.plugins.ECSPlugin]);
 AWSXRay.setContextMissingStrategy('LOG_ERROR');
-
 /**
  * Middleware to measure compute length of routes using AWS X-Ray.
  */
 const measureRouteComputeLength = (req, res, next) => {
   const name = AWSXRay.middleware.resolveName(req.headers.host || 'unknown-host');
   const segment = new AWSXRay.Segment('http.request', null, name);
-  AWSXRay.middleware.setSegment(req, segment);
+  AWSXRay.setSegment(segment);
 
   res.on('finish', () => {
     segment.addMetadata('http_status_code', res.statusCode);
