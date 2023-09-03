@@ -3,6 +3,8 @@ const Ably = require("ably");
 const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 const AuthHandler = require("./AuthHandler.js");
 var ably;
+const AWS = require('aws-sdk');
+
 
 async function fetchAlby() {
   ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
@@ -175,7 +177,7 @@ async function createNeptuneUser(req) {
   try {
     await g
       .submit(
-        "g.addV('User').property('username', username).property('phoneNumber', phoneNumber).property('highschool', highschool).property('grade', grade).property('age', age).property('gender', gender).property('fname', fname).property('lname', lname).property('uid',uid).next()",
+        "g.addV('User').property('syntheticPartitionKey', 'anal').property('username', username).property('phoneNumber', phoneNumber).property('highschool', highschool).property('grade', grade).property('age', age).property('gender', gender).property('fname', fname).property('lname', lname).property('uid',uid)",
         {
           username: username,
           phoneNumber: phoneNumber,
