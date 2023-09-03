@@ -49,7 +49,9 @@ fetchWeights(); // fetch the weights as soon as the module is imported
 
 // CheckPlayerValidity function
 async function CheckPlayerValidity(username) {
-  const userResult = await g.V().has("User", "username", username).next();
+  const userResult = await g.submit("g.V().has('User', 'username', username)", {
+    username: username,
+  });
   if (userResult.value == null) {
     return false;
   } else {
@@ -82,10 +84,10 @@ async function FetchFriendsWithSubsActive(uid) {
       if (!_user || _user.TempSubTop <= 0) {
         return null;
       }
-      await client.execute(
-        "UPDATE Users SET TempTopCrush = ? WHERE uid = ?",
-        [_user.TempSubTop - 1, uid]
-      );
+      await client.execute("UPDATE Users SET TempTopCrush = ? WHERE uid = ?", [
+        _user.TempSubTop - 1,
+        uid,
+      ]);
 
       return _user.username;
     }
@@ -103,20 +105,16 @@ async function FetchFriendsWithSubsActive(uid) {
 
 async function getMutualFriends(uid, otheruid) {
   // Find friends of the main user
-  const userFriends = await g
-    .V()
-    .has("uid", uid)
-    .out("FRIENDS_WITH")
-    .values("username")
-    .toList();
+  const userFriends = await g.submit(
+    " g.V().has('uid', uid).out('FRIENDS_WITH').values('username')",
+    { uid: uid }
+  );
 
   // Find friends of the other user
-  const otherUserFriends = await g
-    .V()
-    .has("uid", otheruid)
-    .out("FRIENDS_WITH")
-    .values("username")
-    .toList();
+  const otherUserFriends = await g.submit(
+    "g.V().has('uid', otheruid).out('FRIENDS_WITH').values('username')",
+    { otheruid: otheruid }
+  );
 
   // Calculate mutual friends
   const mutualFriends = userFriends.filter((friend) =>
@@ -151,51 +149,29 @@ async function GetRecommendationsOnboarding(
     (page_peopleYouMayKnow - 1) * pagesize_PeopleYouMayKnow;
   const offset_PeopleInContacts =
     (page_peopleInContacts - 1) * pagesize_peopleInContacts;
-  const peopleYouMayKnowPromise = g
-    .V()
-    .union(
-      __.V()
-        .hasLabel("User")
-        .has("highschool", highschool)
-        .range(
-          offset_PeopleYouMayKnow,
-          page_peopleYouMayKnow * pagesize_PeopleYouMayKnow
-        ),
-      __.V()
-        .hasLabel("User")
-        .has("highschool", highschool)
-        .has("grade", grade)
-        .values("username")
-        .range(
-          offset_PeopleYouMayKnow,
-          page_peopleYouMayKnow * pagesize_PeopleYouMayKnow
-        )
-    )
-    .toList();
+  const peopleYouMayKnowPromise = await g.submit(
+    "g.V().union(__.V().hasLabel('User').has('highschool', highschool).range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow), __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow))",
+    {
+      highschool: highschool,
+      offset_PeopleYouMayKnow: offset_PeopleYouMayKnow,
+      page_peopleYouMayKnow: page_peopleYouMayKnow,
+      pagesize_PeopleYouMayKnow: pagesize_PeopleYouMayKnow,
+      grade: grade,
+    }
+  );
 
-  const peopleInContactsPromise = g
-    .V()
-    .hasLabel("User")
-    .has("username", username)
-    .outE("HAS_CONTACT")
-    .choose(
-      __.has("fav", true),
-      __.inV().property("weight", EmojiContactsWeightQuestions),
-      __.inV().property("weight", ContactsWeightQuestions)
-    )
-    .choose(
-      __.has("photo", true),
-      __.inV().property("weight", PhotoContactsWeightQuestions),
-      __.inV().property("weight", ContactsWeightQuestions)
-    )
-    .toList();
+  const peopleInContactsPromise = await g.submit("g.V().hasLabel('User').has('username', username).outE('HAS_CONTACT').choose(__.has('fav', true), __.inV().property('weight', EmojiContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)).choose(__.has('photo', true), __.inV().property('weight', PhotoContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions))", 
+  {
+    username: username,
+    EmojiContactsWeightQuestions: EmojiContactsWeightQuestions,
+    ContactsWeightQuestions: ContactsWeightQuestions,
+    PhotoContactsWeightQuestions: PhotoContactsWeightQuestions
+  });
 
-  const [ PeopleYouMayKnow, PeopleInContacts] =
-    await Promise.allSettled([
-      peopleYouMayKnowPromise,
-      peopleInContactsPromise,
-    ]);
-
+  const [PeopleYouMayKnow, PeopleInContacts] = await Promise.allSettled([
+    peopleYouMayKnowPromise,
+    peopleInContactsPromise,
+  ]);
 
   if (invited.value) PeopleYouMayKnow.value.concat(invited.value[0].inviter);
 
@@ -233,67 +209,12 @@ async function GetRecommendationsExploreSection(
   //#region GraphDB calls
 
   // Fetch friends of the given user
-  const userFriendsPromise = g
-    .V()
-    .has("uid", uid)
-    .out("FRIENDS_WITH")
-    .values("uid")
-    .toList();
+  const userFriendsPromise = g.submit("g.V().has('uid', uid).out('FRIENDS_WITH').values('uid')", {uid: uid});
+  const AllUsersInSchoolPromise = g.submit("g.V().union(__.V().hasLabel('User').has('highschool', highschool).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends), __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends).not(__.inE('FRIENDS_WITH').has('uid', uid)))", {highschool: highschool, offset_FriendsOfFriends: offset_FriendsOfFriends, page_FriendsOfFriends: page_FriendsOfFriends, pagesize_FriendsOfFriends: pagesize_FriendsOfFriends, grade: grade, uid: uid});
 
-  const AllUsersInSchoolPromise = g
-    .V()
-    .union(
-      __.V()
-        .hasLabel("User")
-        .has("highschool", highschool)
-        .range(
-          offset_FriendsOfFriends,
-          page_FriendsOfFriends * pagesize_FriendsOfFriends
-        ),
-      __.V()
-        .hasLabel("User")
-        .has("highschool", highschool)
-        .has("grade", grade)
-        .range(
-          offset_FriendsOfFriends,
-          page_FriendsOfFriends * pagesize_FriendsOfFriends
-        )
+  const AllUsersInContactsPromise = g.submit("g.V().hasLabel('User').has('username', username).outE('HAS_CONTACT').choose(__.has('fav', true), __.inV().property('weight', EmojiContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)).choose(__.has('photo', true), __.inV().property('weight', PhotoContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)).not(__.inE('FRIENDS_WITH').has('uid', uid)).range(offset_Contacts, page_Contacts * pagesize_Contacts)", {username: username, EmojiContactsWeightQuestions: EmojiContactsWeightQuestions, ContactsWeightQuestions: ContactsWeightQuestions, PhotoContactsWeightQuestions: PhotoContactsWeightQuestions, uid: uid, offset_Contacts: offset_Contacts, page_Contacts: page_Contacts, pagesize_Contacts: pagesize_Contacts});
 
-        .not(__.inE("FRIENDS_WITH").has("uid", uid)) // Exclude users who are already friends
-    )
-    .toList();
-
-  const AllUsersInContactsPromise = g
-    .V()
-    .hasLabel("User")
-    .has("username", username)
-    .outE("HAS_CONTACT")
-    .choose(
-      __.has("fav", true),
-      __.inV().property("weight", EmojiContactsWeightQuestions),
-      __.inV().property("weight", ContactsWeightQuestions)
-    )
-    .choose(
-      __.has("photo", true),
-      __.inV().property("weight", PhotoContactsWeightQuestions),
-      __.inV().property("weight", ContactsWeightQuestions)
-    )
-    .not(__.inE("FRIENDS_WITH").has("uid", uid)) // Exclude users who are already friends
-    .range(offset_Contacts, page_Contacts * pagesize_Contacts)
-    .toList();
-
-  const FriendsOfFriendsPromise = g
-    .V()
-    .hasLabel("User")
-    .has("uid", uid)
-    .out("FRIENDS_WITH")
-    .out("FRIENDS_WITH")
-    .dedup()
-    .where(P.neq("self"))
-    .not(__.inE("FRIENDS_WITH").has("uid", uid)) // Exclude users who are already friends
-    .range(offset_SchoolUsers, page_SchoolUsers * pagesize_SchoolUsers)
-    .valueMap("uid")
-    .toList();
+  const FriendsOfFriendsPromise = g.submit("g.V().hasLabel('User').has('uid', uid).out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).not(__.inE('FRIENDS_WITH').has('uid', uid)).range(offset_SchoolUsers, page_SchoolUsers * pagesize_SchoolUsers).valueMap('uid')", {uid: uid, offset_SchoolUsers: offset_SchoolUsers, page_SchoolUsers: page_SchoolUsers, pagesize_SchoolUsers: pagesize_SchoolUsers});
 
   //#endregion
 
@@ -353,63 +274,7 @@ async function GetRecommendationsExploreSection(
 }
 
 async function GetRecommendationsQuestions(uid, highschool, grade) {
-  const allUsers = await g
-    .V()
-    .hasLabel("User")
-    .has("username", uid)
-    .union(
-      // Contacts and FavContacts merged
-      __.outE("HAS_CONTACT")
-        .choose(
-          __.has("fav", true),
-          __.inV().property("weight", EmojiContactsWeightQuestions), // treated as favContact
-          __.inV().property("weight", ContactsWeightQuestions)
-        )
-        .choose(
-          __.has("photo", true),
-          __.inV().property("weight", PhotoContactsWeightQuestions), // treated as favContact
-          __.inV().property("weight", ContactsWeightQuestions)
-        ),
-
-      // Highschool friends
-      __.has("highschool", highschool).property(
-        "weight",
-        SameHighSchoolWeightQuestions
-      ),
-
-      // Friends
-      __.out("FRIENDS_WITH").property("weight", FriendsWeightQuestions),
-
-      // Friends of Friends
-      __.out("FRIENDS_WITH")
-        .out("FRIENDS_WITH")
-        .dedup()
-        .where(P.neq("self"))
-        .property("weight", FriendsOfFriendsWeightQuestions),
-
-      // Same Grade
-      __.has("highschool", highschool)
-        .has("grade", grade)
-        .property("weight", SameGradeWeightQuestions),
-
-      // Users with property "PollsCount" and edge connection with our current user as "FRIENDS_WITH" (in descending order of PollsCount)
-      __.out("FRIENDS_WITH")
-        .order()
-        .by("PollsCount", decr)
-        .property("weight", TopFriendsWeightsQuestions),
-    )
-    .local(
-      __.repeat(__.sample(1).math("sin(random()) + _").is(P.gt(0))).times(4) // Return 4 users every time
-    )
-    .coalesce(
-      __.unfold(),
-      __.V()
-        .hasLabel("User")
-        .has("username", username)
-        .out("HAS_CONTACT")
-        .limit(4)
-    )
-    .toList();
+  const allUsers = await g.submit("g.V().hasLabel('User').has('username', uid).union(__.outE('HAS_CONTACT').choose(__.has('fav', true), __.inV().property('weight', EmojiContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)).choose(__.has('photo', true), __.inV().property('weight', PhotoContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)), __.has('highschool', highschool).property('weight', SameHighSchoolWeightQuestions), __.out('FRIENDS_WITH').property('weight', FriendsWeightQuestions), __.out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).property('weight', FriendsOfFriendsWeightQuestions), __.has('highschool', highschool).has('grade', grade).property('weight', SameGradeWeightQuestions), __.out('FRIENDS_WITH').order().by('PollsCount', decr).property('weight', TopFriendsWeightsQuestions)).local(__.repeat(__.sample(1).math('sin(random()) + _').is(P.gt(0))).times(4)).coalesce(__.unfold(), __.V().hasLabel('User').has('username', username).out('HAS_CONTACT').limit(4))");
 
   return allUsers;
 }
