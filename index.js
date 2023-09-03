@@ -13,13 +13,14 @@ var UserCreation = require("./utils/UserCreation.js");
 var UserCreationTransactionHandling = require("./utils/UserCreationTransactionHandling.js");
 var SetupCassandra = require("./utils/SetupCassandra.js");
 var Datadog = require("./utils/Datadog.js")
-var SetupGeospatialDB = require("./utils/SetupGeospatialDB.js")
+var SetupGeospatialDB = require("./utils/SetupGeospatialDB.js");
 console.log("Backend SDK initialized");
 
 module.exports = {
   FetchChannelId: AlbyToken.FetchChannelId,
   SendEvent: Analytics.SendEvent,
   GetUserDataFromJWT: AuthHandler.GetUserDataFromJWT,
+  SetupGeospatialDB: require('./utils/SetupGeospatialDB.js').SetupGeospatialDB,
   //encrypt: AwsEncryption.encrypt,
   //decrypt: AwsEncryption.decrypt,
   FetchFromSecrets: AwsSecrets.FetchFromSecrets,
@@ -36,7 +37,6 @@ module.exports = {
   SetupGraphDB: require('./utils/SetupGraphDB.js').SetupGraphDB,
   SetKV: KV.SetKV,
   getKV: KV.getKV,
-  SetupGeospatialDB: SetupGeospatialDB.SetupGeospatialDB,
   measureRouteComputeLength : Datadog.measureRouteComputeLength,
   logSanitizedRequest : Datadog.logSanitizedRequest,
   SendNotification: NotificationSystem.SendNotification,
