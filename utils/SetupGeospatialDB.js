@@ -16,4 +16,4 @@ async function SetupGeospatialDB(c = undefined) {
 }
 
 
-exports.module = {SetupGeospatialDB}
+module.exports = {SetupGeospatialDB}
