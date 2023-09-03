@@ -2,39 +2,45 @@
 const gremlin = require('gremlin');
 const traversal = gremlin.process.AnonymousTraversalSource.traversal;
 const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
-const Graph = gremlin.structure.Graph;
+//const Graph = gremlin.structure.Graph;
 
 let stored;
 const {FetchFromSecrets} = require('./AwsSecrets')
-let cosmosDBUsername;
+
 
 async function fetchSecrets() {
     // Implement the logic to retrieve secrets from your secret manager.
     // This is just a placeholder and will vary based on your secret management solution.
-    cosmosDBUsername = await FetchFromSecrets("CosmosDBUsername")
+
     return {
         endpoint: await FetchFromSecrets("CosmosDBEndpoint"),//"wss://usergraph.gremlin.cosmos.azure.com:443/",
-        primaryKey: await FetchFromSecrets("CosmosDBPrimaryKey") //"yourPrimaryKeyHere"
+        primaryKey: await FetchFromSecrets("CosmosDBPrimaryKey") ,//"yourPrimaryKeyHere",
+        cosmosDBUsername : await FetchFromSecrets("CosmosDBUsername")
     };
 }
 
-async function SetupGraphDB(temp = null) {
+
+var secrets;
+
+async function SetupGraphDB() {
     if (stored) return stored;
-
-    const graph = new Graph();
-    const secrets = await fetchSecrets();
-
-    stored = graph.traversal().withRemote(new DriverRemoteConnection(
-        secrets.endpoint, 
+   
+    secrets = await fetchSecrets();
+   
+    const cosmosDBUsername = `/dbs/${secrets.DbName}/colls/${secrets.collectionName}`;
+    const authenticator = new gremlin.driver.auth.PlainTextSaslAuthenticator(cosmosDBUsername, secrets.primaryKey)
+    const client = new gremlin.driver.Client(
+        secrets.endpoint,
         { 
-            "auth": { 
-                "username": cosmosDBUsername, 
-                "password": secrets.primaryKey 
-            } 
-        },
-    ));
-
-    return stored;
+            traversalsource : "g",
+            authenticator,
+            rejectUnauthorized : true,
+            mimeType : "application/vnd.gremlin-v2.0+json"
+        }
+    );
+    console.log("Gremlin Client Set Up");
+    const g = traversal().withRemote(new DriverRemoteConnection(secrets.endpoint, { authenticator }));
+    return client;
 }
 
 module.exports = { SetupGraphDB };

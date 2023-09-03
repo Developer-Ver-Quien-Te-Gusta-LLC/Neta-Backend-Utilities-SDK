@@ -10,14 +10,18 @@ async function fetchAlby() {
 }
 fetchAlby();
 
-
 let client;
 
-Cassandraclient.SetupCassandraClient(client).then(result=>{client=result});
+Cassandraclient.SetupCassandraClient(client).then((result) => {
+  client = result;
+});
 
 var GraphDB = require("./SetupGraphDB.js");
 let g;
-GraphDB.SetupGraphDB(g).then(result=>{g=result;createNeptuneUser(dummyReq);})
+GraphDB.SetupGraphDB().then((result) => {
+  g = result;
+  createNeptuneUser(dummyReq);
+});
 
 const handleTransactionError =
   require("./ServiceBus.js").handleTransactionError;
@@ -65,7 +69,6 @@ async function CreateScyllaUser(UserParams) {
         gender,
         school,
         uid
-        
       ) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?,?)
     `;
@@ -85,7 +88,7 @@ async function CreateScyllaUser(UserParams) {
       platform,
       UserParams.gender,
       UserParams.highschool,
-      uid
+      uid,
     ];
     try {
       await client.execute(query, params, { prepare: true }); /// submit main scylla query
@@ -113,7 +116,10 @@ async function CreateScyllaUser(UserParams) {
   VALUES 
   (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);
 `;
-      await handleTransactionCompletion(UserParams.transactionId, UserParams.phoneNumber);
+      await handleTransactionCompletion(
+        UserParams.transactionId,
+        UserParams.phoneNumber
+      );
       return true;
     } catch (err) {
       await handleTransactionError("scylla", UserParams); //recursive 3 times , else return false
@@ -121,7 +127,6 @@ async function CreateScyllaUser(UserParams) {
       return false;
     }
   } catch (err) {
-    
     await DeleteUser(UserParams);
     await handleTransactionError("scylla", UserParams); //recursive 3 times , else return false
     await OnUserCreationFailed(UserParams.transactionId);
@@ -151,8 +156,6 @@ async function* asyncLimiter(generator) {
   await Promise.allSettled(activePromises);
 }
 
-  
-
 async function createNeptuneUser(req) {
   var {
     username,
@@ -163,40 +166,38 @@ async function createNeptuneUser(req) {
     gender,
     fname,
     lname,
-    favContacts,
-    photoContacts,
-    friendList,
-    sameGrade,
-    topPolls,
-    uid
+    uid,
   } = req.query;
 
   if (!grade) grade = null;
   if (!gender) gender = null;
 
-
-
   try {
-    const userVertex = await g
-      .addV("User")
-      .property("username", username)
-      .property("phoneNumber", phoneNumber)
-      .property("highschool", highschool)
-      .property("grade", grade)
-      .property("age", age)
-      .property("gender", gender)
-      .property("fname", fname)
-      .property("lname", lname)
-      .property("uid",uid)
-      .next();
-
+    await g
+      .submit(
+        "g.addV('User').property('username', username).property('phoneNumber', phoneNumber).property('highschool', highschool).property('grade', grade).property('age', age).property('gender', gender).property('fname', fname).property('lname', lname).property('uid',uid).next()",
+        {
+          username: username,
+          phoneNumber: phoneNumber,
+          highschool: highschool,
+          grade: grade,
+          age: age,
+          gender: gender,
+          fname: fname,
+          lname: lname,
+          uid: uid,
+        }
+      )
+      .then(function (result) {
+        console.log("Result: %s\n", JSON.stringify(result));
+      });
 
     await handleTransactionCompletion(req.transactionId, req.phoneNumber);
     return true; // Return the success response
   } catch (error) {
     console.log(error);
-    
-   // await DeleteUser(req);
+
+    // await DeleteUser(req);
     //await handleTransactionError("neptune", req);
     //await OnUserCreationFailed(req.transactionId);
     return false;
@@ -204,7 +205,7 @@ async function createNeptuneUser(req) {
 }
 
 async function CreateFirebaseUser(req) {
-  var { username, phoneNumber,uid } = req.query;
+  var { username, phoneNumber, uid } = req.query;
   const password = req.query.otp;
 
   try {
@@ -212,7 +213,7 @@ async function CreateFirebaseUser(req) {
       phoneNumber: phoneNumber,
       password: password,
       displayName: username,
-      uid:uid,
+      uid: uid,
       disabled: false,
     });
     await handleTransactionCompletion(req.transactionId, uid);
@@ -254,19 +255,23 @@ async function unenroll(highschoolName) {
 async function DeleteUser(req, deleteVerification = false) {
   const promises = [];
   const queries = [];
-  const {uid} = req.query;
- 
-   // Fill the array with query objects
-   const highschoolQuery = "SELECT highschool, phoneNumber FROM users WHERE uid = ?";
-   const highschoolResult = await client.execute(highschoolQuery, [uid], { prepare: true });
-   const highschool = highschoolResult.rows[0].highschool;
-   const phoneNumber = highschoolResult.rows[0].phoneNumber;
+  const { uid } = req.query;
 
-   queries.push({
-     query: "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
-     params: [highschool],
-   });
-   queries.push({
+  // Fill the array with query objects
+  const highschoolQuery =
+    "SELECT highschool, phoneNumber FROM users WHERE uid = ?";
+  const highschoolResult = await client.execute(highschoolQuery, [uid], {
+    prepare: true,
+  });
+  const highschool = highschoolResult.rows[0].highschool;
+  const phoneNumber = highschoolResult.rows[0].phoneNumber;
+
+  queries.push({
+    query:
+      "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
+    params: [highschool],
+  });
+  queries.push({
     query:
       "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
     params: [highschool], // assume schoolName is a variable that holds the name of the school
@@ -302,14 +307,14 @@ async function DeleteUser(req, deleteVerification = false) {
     params: [pn],
   });
 
-  if(deleteVerification) {
+  if (deleteVerification) {
     queries.push({
       query: "DELETE FROM verification WHERE phoneNumber = ?",
       params: [phoneNumber],
     });
   }
 
-  const DeleteUserScyllaPromise = client.batch(queries,{prepare:true});
+  const DeleteUserScyllaPromise = client.batch(queries, { prepare: true });
 
   promises.push(DeleteUserScyllaPromise);
 
@@ -323,9 +328,8 @@ async function DeleteUser(req, deleteVerification = false) {
 
   // Wait for all promises to resolve
   await Promise.all(promises);
-
 }
- 
+
 // Create a dummy variable to pass to createNeptuneUser
 var dummyReq = {
   query: {
@@ -342,16 +346,14 @@ var dummyReq = {
     friendList: [],
     sameGrade: [],
     topPolls: [],
-    uid: "dummyUid"
-  }
+    uid: "dummyUid",
+  },
 };
-
-
 
 module.exports = {
   CreateMixPanelUser,
   CreateScyllaUser,
   createNeptuneUser,
   CreateFirebaseUser,
-  DeleteUser
+  DeleteUser,
 };
