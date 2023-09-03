@@ -78,7 +78,7 @@ async function fetchRequestsFromSQS(queueURL) {
       if (err) {
         reject(err);
       } else {
-        if (data.Messages==undefined||data.Messages.length > 0) {
+        if (data.Messages!=undefined||data.Messages.length > 0) {
           const deleteParams = {
             QueueUrl: queueURL,
             ReceiptHandle: data.Messages[0].ReceiptHandle,
