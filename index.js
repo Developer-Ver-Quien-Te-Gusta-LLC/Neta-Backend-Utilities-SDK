@@ -35,7 +35,7 @@ module.exports = {
   SetupGraphDB: require('./utils/SetupGraphDB.js').SetupGraphDB,
   SetKV: KV.SetKV,
   getKV: KV.getKV,
-  SetupGeospatialDB: require('./utils/SetupGeospatialDB.js').SetupGeospatialDB,
+  SetupGeospatialDB: require('./utils/SetupGeospatialDB.js'),
   measureRouteComputeLength : Datadog.measureRouteComputeLength,
   logSanitizedRequest : Datadog.logSanitizedRequest,
   SendNotification: NotificationSystem.SendNotification,
