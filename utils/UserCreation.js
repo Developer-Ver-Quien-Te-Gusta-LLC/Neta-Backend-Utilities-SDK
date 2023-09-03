@@ -22,7 +22,6 @@ var GraphDB = require("./SetupGraphDB.js");
 let g;
 GraphDB.SetupGraphDB().then((result) => {
   g = result;
-  createNeptuneUser(dummyReq);
 });
 
 const handleTransactionError =
@@ -134,28 +133,6 @@ async function CreateScyllaUser(UserParams) {
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
   }
-}
-
-const CONCURRENT_PROMISES_LIMIT = 10; // Adjust this value as needed
-
-// Utility function to handle a limited number of concurrent promises
-async function* asyncLimiter(generator) {
-  const activePromises = new Set();
-
-  for (const promise of generator) {
-    if (activePromises.size >= CONCURRENT_PROMISES_LIMIT) {
-      await Promise.race(activePromises);
-    }
-
-    activePromises.add(promise);
-    promise
-      .then(() => activePromises.delete(promise))
-      .catch(() => activePromises.delete(promise));
-
-    yield promise;
-  }
-
-  await Promise.allSettled(activePromises);
 }
 
 async function createNeptuneUser(req) {
