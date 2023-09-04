@@ -60,7 +60,7 @@ async function CreateScyllaUser(UserParams) {
   const lastPollTime = UserParams.lastPollTime || null;
 
   try {
-    const UserCreationQuery = `INSERT INTO users (username, phoneNumber, topPolls, topFriends, starCount, coins, invitesLeft, lastPollTime, pollIndex, numberOfStars, platform, gender, highschool, grade, uid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`;
+    const UserCreationQuery = `INSERT INTO users (username, phoneNumber, topPolls, topFriends, starCount, coins, invitesLeft, lastPollTime, pollIndex, numberOfStars, platform, gender, highschool, grade, uid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const params = [
       username,
       phoneNumber,
