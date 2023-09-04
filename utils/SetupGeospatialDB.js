@@ -36,7 +36,7 @@ async function SetupGeospatialDB() {
         const db = client.db(dbName);
         const collections = await db.listCollections().toArray();
         //console.log("Collections in the database:", collections.map(coll => coll.name));
-        return collections
+        return db
     } catch (error) {
         console.error("Error connecting to the database:", error);
     } finally {
