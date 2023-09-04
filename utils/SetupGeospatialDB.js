@@ -1,19 +1,29 @@
-const { CosmosClient } = require("@azure/cosmos");
-const FetchFromSecrets = require('./AwsSecrets.js').FetchFromSecrets
+const MongoClient = require('mongodb').MongoClient;
 
-async function SetupGeospatialDB(c = undefined) {
-  const cosmosDbEndpoint = await FetchFromSecrets("CosmosDBSpatialEndpoint");
-  const cosmosDbKey = await FetchFromSecrets("CosmosDBSpatialKey");
-  const cosmosClient = new CosmosClient({ endpoint: cosmosDbEndpoint, key: cosmosDbKey });
+let _db;
 
-  const databaseName = await FetchFromSecrets("CosmosDBSpatialDatabaseName");
-  const database = cosmosClient.database(databaseName);
+async function SetupGeospatialDB() {
+    const cosmosDbEndpoint = await FetchFromSecrets("CosmosDBSpatialEndpoint");
+    const cosmosDbKey = await FetchFromSecrets("CosmosDBSpatialKey");
+    const dbName = await FetchFromSecrets("CosmosDBSpatialDatabaseName");
+    const client = await MongoClient.connect(cosmosDbEndpoint, { 
+        useNewUrlParser: true, 
+        useUnifiedTopology: true,
+        auth: {
+            user: 'admin',
+            password: cosmosDbKey
+        }
+    });
 
-  const containerName = await FetchFromSecrets("CosmosDBSpatialContainerName");
-  const container = database.container(containerName);
-  c = container
-  return container;
+    _db = client.db(dbName);
+
+    const collectionName = await FetchFromSecrets("CosmosDBSpatialContainerName");
+    const collection = _db.collection(collectionName);
+
+    // Ensure 2dsphere index
+    await collection.createIndex({ location: "2dsphere" });
+
+    return collection;
 }
 
-
-module.exports = {SetupGeospatialDB}
+module.exports = { SetupGeospatialDB }
