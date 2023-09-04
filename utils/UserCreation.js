@@ -80,14 +80,14 @@ async function CreateScyllaUser(UserParams) {
     ];
     await client.execute(UserCreationQuery, params, { prepare: true }); /// submit main scylla query
    
-      await enroll(UserParams.highschool); /// enroll in school
+      //await enroll(UserParams.highschool); /// enroll in school
       /// submit to username uniqueness service
-      const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
+      /*const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
         "ServiceBus_UsernameUniqueness"
       );
 
       /// submit to /createScyllaUser
-     /* const SNSParams = {
+      const SNSParams = {
         Message: JSON.stringify({ uid, requestedUsername: username }),
         TopicArn: ARN, // replace with your SNS Topic ARN
       };
@@ -202,7 +202,6 @@ async function enroll(highschoolName) {
 async function unenroll(highschoolName) {
   const query =
     "UPDATE highschools SET num_students = num_students + 1 WHERE name = ?";
-
   try {
     await client.execute(query, [highschoolName], { prepare: true });
     console.log(`Number of students increased for ${highschoolName}`);
