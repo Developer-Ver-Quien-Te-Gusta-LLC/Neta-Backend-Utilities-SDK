@@ -6,8 +6,6 @@ var ably;
 const AWS = require('aws-sdk');
 const admin = require('firebase-admin');
 
-let isInitialized = false;
-
 async function initializeFirebase() {
   try {
       var credentials = await FetchFromSecrets("FCMAccountCredentials");
@@ -59,8 +57,7 @@ const handleTransactionCompletion =
 
 
 async function CreateScyllaUser(UserParams) {
-  const username = UserParams.username;
-  const phoneNumber = UserParams.phoneNumber;
+  const { username, phoneNumber, platform, transactionId, encryptionKey,uid } = UserParams;
   const friendList = UserParams.friendList || [];
   const blockList = UserParams.blockList || [];
   const hideList = UserParams.hideList || [];
@@ -69,8 +66,6 @@ async function CreateScyllaUser(UserParams) {
   const starCount = UserParams.starCount || 0;
   const invitesLeft = UserParams.invitesLeft || 0;
   const lastPollTime = UserParams.lastPollTime || null;
-  const platform = UserParams.platform;
-  const uid = cassandra.types.Uuid.fromString(UserParams.uid);;
 
   try {
     const query = `
@@ -138,10 +133,7 @@ async function CreateScyllaUser(UserParams) {
   VALUES 
   (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);
 `;
-      await handleTransactionCompletion(
-        UserParams.transactionId,
-        UserParams.phoneNumber
-      );
+await handleTransactionCompletion(transactionId,uid,encryptionKey);
       return true;
     } catch (err) {
       await ServiceBus.handleTransactionError("scylla", UserParams, phoneNumber); //recursive 3 times , else return false
@@ -156,7 +148,7 @@ async function CreateScyllaUser(UserParams) {
   }
 }
 
-async function createNeptuneUser(req) {
+async function createNeptuneUser(UserParams) {
   var {
     username,
     phoneNumber,
@@ -167,7 +159,9 @@ async function createNeptuneUser(req) {
     fname,
     lname,
     uid,
-  } = req.query;
+    transactionId,
+    encryptionKey
+  } = UserParams;
 
   if (!grade) grade = null;
   if (!gender) gender = null;
@@ -192,20 +186,20 @@ async function createNeptuneUser(req) {
         console.log("User Created in graphdb");
       });
 
-    await handleTransactionCompletion(req.transactionId, req.phoneNumber);
+    await handleTransactionCompletion(transactionId,uid,encryptionKey);
     return true; // Return the success response
   } catch (error) {
-    console.log(error);
-    await ServiceBus.handleTransactionError("neptune", req, phoneNumber);
-    await OnUserCreationFailed(req.transactionId);
+    console.error(error);
+    await ServiceBus.handleTransactionError("neptune", UserParams, phoneNumber);
+    await OnUserCreationFailed(UserParams.transactionId);
     return false;
   }
 }
 
-async function CreateFirebaseUser(req) {
+async function CreateFirebaseUser(UserParams) {
  
-  var { username, phoneNumber, uid } = req.query;
-  const password = req.query.otp;
+  var { username,uid,transactionId, encryptionKey } = UserParams;
+  const password = UserParams.otp;
 
   try {
     await admin.auth().createUser({
@@ -214,12 +208,12 @@ async function CreateFirebaseUser(req) {
       uid: uid,
       disabled: false,
     });
-    await handleTransactionCompletion(req.transactionId, uid);
+    await handleTransactionCompletion(transactionId,uid,encryptionKey);
     return true;
   } catch (err) {
     console.log(err);
-    await ServiceBus.handleTransactionError("cognito", req, phoneNumbe, phoneNumberr); //recursive 3 times , else return false
-    await OnUserCreationFailed(req.transactionId);
+    await ServiceBus.handleTransactionError("cognito", UserParams, phoneNumbe, phoneNumberr); //recursive 3 times , else return false
+    await OnUserCreationFailed(UserParams.transactionId);
     return false;
   }
 }
@@ -328,25 +322,6 @@ async function DeleteUser(req, deleteVerification = false) {
   await Promise.all(promises);
 }
 
-// Create a dummy variable to pass to createNeptuneUser
-var dummyReq = {
-  query: {
-    username: "dummyUser",
-    phoneNumber: "1234567890",
-    highschool: "dummyHighschool",
-    grade: "dummyGrade",
-    age: "dummyAge",
-    gender: "dummyGender",
-    fname: "dummyFname",
-    lname: "dummyLname",
-    favContacts: [],
-    photoContacts: [],
-    friendList: [],
-    sameGrade: [],
-    topPolls: [],
-    uid: "dummyUid",
-  },
-};
 
 module.exports = {
   CreateScyllaUser,
