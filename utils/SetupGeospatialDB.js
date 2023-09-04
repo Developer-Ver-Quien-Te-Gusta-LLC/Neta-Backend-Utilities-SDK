@@ -10,7 +10,7 @@ async function SetupGeospatialDB() {
         useNewUrlParser: true, 
         useUnifiedTopology: true,
         auth: {
-            user: 'netaschools',
+            username: 'netaschools',
             password: cosmosDbKey
         }
     });
