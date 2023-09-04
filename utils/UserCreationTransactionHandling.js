@@ -22,7 +22,7 @@ async function fetchAlby() {
 }
 fetchAlby()
 
-ScyllaSetup.SetupCassandraClient(client);
+ScyllaSetup.SetupCassandraClient(client).then(result=>{client=result});
 
 // TODO: implemenet isTransactionInProgress
 
