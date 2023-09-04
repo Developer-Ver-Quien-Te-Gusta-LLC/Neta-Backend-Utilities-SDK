@@ -328,47 +328,40 @@ async function GetRecommendationsExploreSection(
 }
 
 async function GetRecommendationsQuestions(uid, highschool, grade) {
-  const allUsers = await g.submit(`
-    g.V().hasLabel('User').has('uid', uid)
+  const allUsers = await g.submit(
+    `g.V().hasLabel('User').has('uid', ${uid})
     .union(
       __.outE('HAS_CONTACT')
       .choose(
         __.has('fav', true), 
-        __.repeat(__.inV()).times(EmojiContactsWeightQuestions),
-        __.repeat(__.inV()).times(ContactsWeightQuestions)
+        __.repeat(__.inV()).times(${EmojiContactsWeightQuestions_}),
+        __.repeat(__.inV()).times(${ContactsWeightQuestions_})
       )
       .choose(
         __.has('photo', true), 
-        __.repeat(__.inV()).times(PhotoContactsWeightQuestions),
-        __.repeat(__.inV()).times(ContactsWeightQuestions)
+        __.repeat(__.inV()).times(${PhotoContactsWeightQuestions_}),
+        __.repeat(__.inV()).times(${ContactsWeightQuestions_})
       ), 
-      __.repeat(__.has('highschool', highschool)).times(SameHighSchoolWeightQuestions), 
-      __.repeat(__.out('FRIENDS_WITH')).times(FriendsWeightQuestions), 
-      __.repeat(__.out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self'))).times(FriendsOfFriendsWeightQuestions),
-      __.repeat(__.has('highschool', highschool).has('grade', grade)).times(SameGradeWeightQuestions), 
-      __.repeat(__.out('FRIENDS_WITH').order().by('PollsCount', decr)).times(TopFriendsWeightsQuestions)
+      __.repeat(__.has('highschool', ${highschool})).times(${SameHighSchoolWeightQuestions_}), 
+      __.repeat(__.out('FRIENDS_WITH')).times(${FriendsWeightQuestions_}), 
+      __.repeat(__.out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self'))).times(${FriendsOfFriendsWeightQuestions_}),
+      __.repeat(__.has('highschool', ${highschool}).has('grade', ${grade})).times(${SameGradeWeightQuestions_}), 
+      __.repeat(__.out('FRIENDS_WITH').order().by('PollsCount', decr)).times(${TopFriendsWeightsQuestions_})
     )
     .sample(4)
     .coalesce(
       __.unfold(), 
-      __.V().hasLabel('User').has('uid', uid).out('HAS_CONTACT').limit(4)
-    )
-  `,
-  {
-    uid: uid,
-    highschool: highschool,
-    grade: grade,
-    EmojiContactsWeightQuestions: EmojiContactsWeightQuestions,
-    PhotoContactsWeightQuestions: PhotoContactsWeightQuestions,
-    ContactsWeightQuestions: ContactsWeightQuestions,
-    SameHighSchoolWeightQuestions: SameHighSchoolWeightQuestions,
-    FriendsWeightQuestions: FriendsWeightQuestions,
-    SameGradeWeightQuestions: SameGradeWeightQuestions,
-    TopFriendsWeightsQuestions: TopFriendsWeightsQuestions,
-    FriendsOfFriendsWeightQuestions: FriendsOfFriendsWeightQuestions
+      __.V().hasLabel('User').has('uid', ${uid}).out('HAS_CONTACT').limit(4)
+    )`
+  )
+  .then(result => {
+    const allUsers = result;
+    console.log(allUsers);
+    return allUsers;
+  })
+  .catch(error => {
+    console.error(error);
   });
-  console.log(allUsers);
-  return allUsers;
 }
 
 
