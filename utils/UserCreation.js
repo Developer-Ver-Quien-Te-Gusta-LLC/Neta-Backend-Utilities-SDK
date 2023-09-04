@@ -123,13 +123,12 @@ async function CreateScyllaUser(UserParams) {
       );
       return true;
     } catch (err) {
-      await handleTransactionError("scylla", UserParams); //recursive 3 times , else return false
+      await handleTransactionError("scylla", UserParams, phoneNumber); //recursive 3 times , else return false
       await OnUserCreationFailed(UserParams.transactionId);
       return false;
     }
   } catch (err) {
-    await DeleteUser(UserParams);
-    await handleTransactionError("scylla", UserParams); //recursive 3 times , else return false
+    await handleTransactionError("scylla", UserParams, phoneNumber); //recursive 3 times , else return false
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
   }
@@ -174,11 +173,8 @@ async function createNeptuneUser(req) {
     await handleTransactionCompletion(req.transactionId, req.phoneNumber);
     return true; // Return the success response
   } catch (error) {
-    console.log(error);
-
-    // await DeleteUser(req);
-    //await handleTransactionError("neptune", req);
-    //await OnUserCreationFailed(req.transactionId);
+    await handleTransactionError("neptune", req, phoneNumber);
+    await OnUserCreationFailed(req.transactionId);
     return false;
   }
 }
@@ -198,8 +194,7 @@ async function CreateFirebaseUser(req) {
     await handleTransactionCompletion(req.transactionId, uid);
     return true;
   } catch (err) {
-    await DeleteUser(req);
-    await handleTransactionError("cognito", req); //recursive 3 times , else return false
+    await handleTransactionError("cognito", req, phoneNumbe, phoneNumberr); //recursive 3 times , else return false
     await OnUserCreationFailed(req.transactionId);
     return false;
   }

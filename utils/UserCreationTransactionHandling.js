@@ -24,6 +24,8 @@ fetchAlby()
 
 ScyllaSetup.SetupCassandraClient(client);
 
+// TODO: implemenet isTransactionInProgress
+
 // This function will be invoked by each service via SNS Topic
 async function handleTransactionCompletion(uid, transactionId, encryptionKey) {
   const insertQuery =
@@ -52,6 +54,20 @@ async function checkAllTransactionsCompleted(transactionId) {
     OnUserCreationComplete(transactionId);
   }
 }
+
+async function isTransactionInProgress(phoneNumber) {
+  const selectQuery =
+    "SELECT COUNT(*) as count FROM transactions WHERE phoneNumber = ? AND status = ?";
+  const params = [phoneNumber, "in progress"];
+  const result = await client.execute(selectQuery, params, { prepare: true });
+
+  if (result && result.first() && result.first().count > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 
 async function OnUserCreationComplete(transactionId) {
   // Send success signal via alby
@@ -100,4 +116,5 @@ module.exports= {
   handleTransactionCompletion,
  // checkForTransactionErrors,
  OnUserCreationFailed,
+ isTransactionInProgress
 };

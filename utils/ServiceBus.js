@@ -15,53 +15,8 @@ SetupCassandraClient(client).then(
   (Cassandraclient) => (client = Cassandraclient)
 );
 
-async function CheckRetry(uid, transactionId) {
-  // Define retry limit
-  const retryLimit = await KV.getKV("RetryTimes");
-
-  // Fetch the transaction
-  const selectQuery =
-    "SELECT retry_count FROM transactions WHERE transaction_id = ? AND uid = ?";
-  const params = [transactionId, uid];
-  const result = await client.execute(selectQuery, params, { prepare: true });
-
-  if (result.rowLength > 0) {
-    const retryCount = result.first().retry_count;
-    if (retryCount < retryLimit) {
-      // Increment retry count
-      const incrementRetryCountQuery =
-        "UPDATE transactions SET retry_count = retry_count + 1 WHERE transaction_id = ? AND uid = ?";
-      await client.execute(incrementRetryCountQuery, [transactionId, uid], {
-        prepare: true,
-      });
-      return true;
-    } else {
-      console.log(
-        `Transaction ${transactionId} for uid ${uid} has reached the retry limit.`
-      );
-      return false;
-    }
-  } else {
-    console.log(`Transaction ${transactionId} for uid ${uid} does not exist.`);
-    return false;
-  }
-}
-
-async function handleTransactionError(service, data) {
-  if (!(await CheckRetry(data.transactionId))) {
-    //TODO: Delete The Entire User and reset retries for next attempy
-    return;
-  }
-  /// service = "scylla", "cognito", "graphdb"
-  /// send the data back to this specfic service
-
-  if (service == "scylla") {
-    UserCreation.CreateScyllaUser(data);
-  } else if (service == "cognito") {
-    UserCreation.CreateCognitoUser(data);
-  } else if (service == "graphdb") {
-    UserCreation.CreateNeptuneUser(data);
-  }
+async function handleTransactionError(service, data, phoneNumber) {
+  await UserCreation.DeleteUser(phoneNumber)
 }
 
 //#region Fetching params stored in SQS , completely different from error handling
