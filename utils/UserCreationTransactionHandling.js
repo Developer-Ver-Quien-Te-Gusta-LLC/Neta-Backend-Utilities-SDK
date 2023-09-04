@@ -115,6 +115,7 @@ channel.publish("event", JSON.stringify(albySuccessObj), (err) => {
 
 module.exports= {
   handleTransactionCompletion,
+  checkAllTransactionsCompleted,
  // checkForTransactionErrors,
  OnUserCreationFailed,
  isTransactionInProgress
