@@ -45,7 +45,7 @@ async function pushSchools(reqs, db) {
     let itemBodies = [];
     
     for(let req of reqs) {
-      let id = crypto.randomBytes(16).toString("hex");
+      let uid = crypto.randomBytes(16).toString("hex");
       let location = ngeohash.decode(req.query.geohashValue);
       let name = req.query.name;
       let pfp = req.query.pfp;
