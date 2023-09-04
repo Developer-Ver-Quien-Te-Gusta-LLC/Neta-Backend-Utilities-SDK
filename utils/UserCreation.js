@@ -61,7 +61,8 @@ async function CreateScyllaUser(UserParams) {
         numberOfStars,
         platform,
         gender,
-        school,
+        highschool,
+        grade,
         uid
       ) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?,?)
@@ -82,6 +83,7 @@ async function CreateScyllaUser(UserParams) {
       platform,
       UserParams.gender,
       UserParams.highschool,
+      UserParams.grade,
       uid,
     ];
     try {
