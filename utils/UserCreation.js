@@ -4,7 +4,44 @@ const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 const AuthHandler = require("./AuthHandler.js");
 var ably;
 const AWS = require('aws-sdk');
+const admin = require('firebase-admin');
 
+let isInitialized = false;
+
+async function initializeFirebase() {
+  try {
+      // Ensure Firebase Admin SDK is only initialized once
+      if (isInitialized) {
+          console.warn("Firebase Admin SDK is already initialized.");
+          return;
+      }
+
+      var credentials = await FetchFromSecrets("FCMAccountCredentials");
+
+      credentials = JSON.parse(credentials);
+      if (!credentials) {
+          console.error("Unable to fetch FCM Account Credentials.");
+          return;
+      }
+
+      if(admin.apps.length === 0){
+      admin.initializeApp({
+          credential: admin.credential.cert(credentials),
+      });
+
+      console.log("Firebase Admin SDK Initialized.");
+      isInitialized = true;
+  }
+  else{
+      isInitialized = true;
+      console.log("Firebase Admin SDK Initialized.");
+  }
+
+  } catch (error) {
+      console.error("Error during Firebase Admin SDK initialization:", error);
+  }
+}
+initializeFirebase();
 
 async function fetchAlby() {
   ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
