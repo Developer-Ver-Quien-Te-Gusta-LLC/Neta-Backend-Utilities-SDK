@@ -96,8 +96,9 @@ async function CreateScyllaUser(UserParams) {
         if (err) console.log(err, err.stack);
         else console.log(data);
       });*/
+      
       // submit initial imbox msg
-      const query = `INSERT INTO inbox (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, uids, index) VALUES (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);`;
+      const query = `INSERT INTO inbox (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, uids, Inboxindex) VALUES (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);`;
       await client.execute(query, [uid], { prepare: true }); /// submit main scylla query
       await handleTransactionCompletion(transactionId, uid, encryptionKey);
       return true;
