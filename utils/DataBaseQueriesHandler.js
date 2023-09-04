@@ -1,7 +1,7 @@
 const gremlin = require('gremlin');
 const AWS = require('aws-sdk');
 const cassandra = require('cassandra-driver');
-const SetupCassandraClient = require('./SetupCassandra').SetupCassandraClient
+const SetupCassandraClientnp = require('./SetupCassandra').SetupCassandraClient
 const  FetchFromSecrets  = require('./AwsSecrets.js').FetchFromSecrets;
 
 let client;

@@ -349,8 +349,10 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
       __.out('FRIENDS_WITH').order().by('PollsCount', decr).property('weight', TopFriendsWeightsQuestions)
     )
     .local(
-      __.repeat(__.sample(1).math('sin(random()) + _').is(P.gt(0))).times(4)
-    )
+      __.repeat(
+        __.sample(1).filter(__.math('sin(random()) + _').is(P.gt(0)))
+      ).times(4)
+    )    
     .coalesce(
       __.unfold(), 
       __.V().hasLabel('User').has('uid', uid).out('HAS_CONTACT').limit(4)
