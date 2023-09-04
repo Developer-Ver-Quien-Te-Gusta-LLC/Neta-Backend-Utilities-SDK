@@ -189,7 +189,7 @@ async function createNeptuneUser(req) {
         }
       )
       .then(function (result) {
-        console.log("Result: %s\n", JSON.stringify(result));
+        console.log("User Created in graphdb");
       });
 
     await handleTransactionCompletion(req.transactionId, req.phoneNumber);
