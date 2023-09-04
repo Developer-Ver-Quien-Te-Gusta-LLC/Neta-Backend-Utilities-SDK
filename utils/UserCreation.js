@@ -98,7 +98,7 @@ async function CreateScyllaUser(UserParams) {
       });*/
       // submit initial imbox msg
       const query = `INSERT INTO inbox (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, uids, index) VALUES (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);`;
-      await client.execute(query, [uid, undefined, false, undefined, undefined, undefined, undefined, undefined, undefined, -1], { prepare: true }); /// submit main scylla query
+      await client.execute(query, [uid], { prepare: true }); /// submit main scylla query
       await handleTransactionCompletion(transactionId, uid, encryptionKey);
       return true;
     
@@ -111,19 +111,7 @@ async function CreateScyllaUser(UserParams) {
 }
 
 async function createNeptuneUser(UserParams) {
-  var {
-    username,
-    phoneNumber,
-    highschool,
-    grade,
-    age,
-    gender,
-    fname,
-    lname,
-    uid,
-    transactionId,
-    encryptionKey,
-  } = UserParams;
+  var { username, phoneNumber, highschool, grade, age, gender, fname, lname, uid, transactionId, encryptionKey } = UserParams;
 
   if (!grade) grade = null;
   if (!gender) gender = null;
