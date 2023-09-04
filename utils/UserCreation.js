@@ -319,7 +319,6 @@ var dummyReq = {
 };
 
 module.exports = {
-  CreateMixPanelUser,
   CreateScyllaUser,
   createNeptuneUser,
   CreateFirebaseUser,
