@@ -180,7 +180,6 @@ async function CreateFirebaseUser(req) {
 
   try {
     await admin.auth().createUser({
-      phoneNumber: phoneNumber,
       password: password,
       displayName: username,
       uid: uid,
