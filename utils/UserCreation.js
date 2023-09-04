@@ -188,7 +188,7 @@ async function CreateFirebaseUser(UserParams) {
 //decrease the number of students in a highschool
 async function enroll(highschoolName) {
   const query =
-    "UPDATE highschools SET num_students = num_students - 1 WHERE name = ?";
+    "UPDATE highschool SET num_students = num_students - 1 WHERE name = ?";
 
   try {
     await client.execute(query, [highschoolName], { prepare: true });
