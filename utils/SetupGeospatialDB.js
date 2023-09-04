@@ -6,9 +6,7 @@ async function SetupGeospatialDB() {
     const cosmosDbEndpoint = await FetchFromSecrets("CosmosDBSpatialEndpoint");
     const cosmosDbKey = await FetchFromSecrets("CosmosDBSpatialKey");
     const dbName = await FetchFromSecrets("CosmosDBSpatialDatabaseName");
-    const client = await MongoClient.connect(cosmosDbEndpoint, { 
-        useNewUrlParser: true, 
-        useUnifiedTopology: true,
+    const client = await MongoClient.connect(cosmosDbEndpoint, {
         auth: {
             username: 'netaschools',
             password: cosmosDbKey
