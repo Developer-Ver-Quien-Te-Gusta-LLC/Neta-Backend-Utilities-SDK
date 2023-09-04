@@ -90,7 +90,7 @@ async function CreateScyllaUser(UserParams) {
       await client.execute(query, params, { prepare: true }); /// submit main scylla query
       await enroll(UserParams.school); /// enroll in school
       /// submit to username uniqueness service
-      const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
+      /*const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
         "ServiceBus_UsernameUniqueness"
       );
 
@@ -103,7 +103,7 @@ async function CreateScyllaUser(UserParams) {
       sns.publish(params, function (err, data) {
         if (err) console.log(err, err.stack);
         else console.log(data);
-      });
+      });*/
       // submit initial imbox msg
       const uid = uuidv4();
       const query = `
@@ -123,6 +123,7 @@ async function CreateScyllaUser(UserParams) {
       return false;
     }
   } catch (err) {
+    console.log(err);
     await handleTransactionError("scylla", UserParams, phoneNumber); //recursive 3 times , else return false
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
@@ -168,6 +169,7 @@ async function createNeptuneUser(req) {
     await handleTransactionCompletion(req.transactionId, req.phoneNumber);
     return true; // Return the success response
   } catch (error) {
+    console.log(error);
     await handleTransactionError("neptune", req, phoneNumber);
     await OnUserCreationFailed(req.transactionId);
     return false;
@@ -180,7 +182,6 @@ async function CreateFirebaseUser(req) {
 
   try {
     await admin.auth().createUser({
-      phoneNumber: phoneNumber,
       password: password,
       displayName: username,
       uid: uid,
@@ -189,6 +190,7 @@ async function CreateFirebaseUser(req) {
     await handleTransactionCompletion(req.transactionId, uid);
     return true;
   } catch (err) {
+    console.log(err);
     await handleTransactionError("cognito", req, phoneNumbe, phoneNumberr); //recursive 3 times , else return false
     await OnUserCreationFailed(req.transactionId);
     return false;
@@ -320,7 +322,6 @@ var dummyReq = {
 };
 
 module.exports = {
-  CreateMixPanelUser,
   CreateScyllaUser,
   createNeptuneUser,
   CreateFirebaseUser,
