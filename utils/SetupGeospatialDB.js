@@ -33,10 +33,7 @@ async function SetupGeospatialDB() {
         client = await MongoClient.connect(connectionString, { useNewUrlParser: true, useUnifiedTopology: true });
         console.log("Successfully connected to the database!");
 
-        const db = client.db(dbName);
-        const collections = await db.listCollections().toArray();
-        //console.log("Collections in the database:", collections.map(coll => coll.name));
-        return db
+        return client;
     } catch (error) {
         console.error("Error connecting to the database:", error);
     } finally {
