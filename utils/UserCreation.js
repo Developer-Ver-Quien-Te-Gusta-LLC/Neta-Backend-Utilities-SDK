@@ -50,8 +50,8 @@ GraphDB.SetupGraphDB().then((result) => {
   g = result;
 });
 
-const handleTransactionError =
-  require("./ServiceBus.js").handleTransactionError;
+const ServiceBus =
+  require("./ServiceBus.js");
 const OnUserCreationFailed =
   require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
 const handleTransactionCompletion =
@@ -144,13 +144,13 @@ async function CreateScyllaUser(UserParams) {
       );
       return true;
     } catch (err) {
-      await handleTransactionError("scylla", UserParams, phoneNumber); //recursive 3 times , else return false
+      await ServiceBus.handleTransactionError("scylla", UserParams, phoneNumber); //recursive 3 times , else return false
       await OnUserCreationFailed(UserParams.transactionId);
       return false;
     }
   } catch (err) {
     console.log(err);
-    await handleTransactionError("scylla", UserParams, phoneNumber); //recursive 3 times , else return false
+    await ServiceBus.handleTransactionError("scylla", UserParams, phoneNumber); //recursive 3 times , else return false
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
   }
@@ -196,7 +196,7 @@ async function createNeptuneUser(req) {
     return true; // Return the success response
   } catch (error) {
     console.log(error);
-    await handleTransactionError("neptune", req, phoneNumber);
+    await ServiceBus.handleTransactionError("neptune", req, phoneNumber);
     await OnUserCreationFailed(req.transactionId);
     return false;
   }
@@ -218,7 +218,7 @@ async function CreateFirebaseUser(req) {
     return true;
   } catch (err) {
     console.log(err);
-    await handleTransactionError("cognito", req, phoneNumbe, phoneNumberr); //recursive 3 times , else return false
+    await ServiceBus.handleTransactionError("cognito", req, phoneNumbe, phoneNumberr); //recursive 3 times , else return false
     await OnUserCreationFailed(req.transactionId);
     return false;
   }
