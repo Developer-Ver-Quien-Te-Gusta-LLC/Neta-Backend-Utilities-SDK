@@ -38,7 +38,7 @@ async function SetupGeospatialDB() {
         console.error("Error connecting to the database:", error);
     } finally {
         if (client) {
-            await client.close();
+            //await client.close();
         }
     }
 }
