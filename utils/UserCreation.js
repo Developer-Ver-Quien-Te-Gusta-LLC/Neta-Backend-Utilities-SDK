@@ -90,7 +90,7 @@ async function CreateScyllaUser(UserParams) {
       await client.execute(query, params, { prepare: true }); /// submit main scylla query
       await enroll(UserParams.school); /// enroll in school
       /// submit to username uniqueness service
-      /*const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
+      const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
         "ServiceBus_UsernameUniqueness"
       );
 
@@ -103,7 +103,7 @@ async function CreateScyllaUser(UserParams) {
       sns.publish(params, function (err, data) {
         if (err) console.log(err, err.stack);
         else console.log(data);
-      });*/
+      });
       // submit initial imbox msg
       const uid = uuidv4();
       const query = `
