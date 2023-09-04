@@ -70,7 +70,7 @@ async function CreateScyllaUser(UserParams) {
   const invitesLeft = UserParams.invitesLeft || 0;
   const lastPollTime = UserParams.lastPollTime || null;
   const platform = UserParams.platform;
-  const uid = UserParams.uid;
+  const uid = cassandra.types.Uuid.fromString(UserParams.uid);;
 
   try {
     const query = `
