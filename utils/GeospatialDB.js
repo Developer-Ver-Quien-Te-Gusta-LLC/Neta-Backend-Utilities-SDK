@@ -1,3 +1,7 @@
+/// this class uses azure cosmosdb via the mongodb api in order to provide
+/// geospatial searching for the 'schools' microservice
+
+
 const MongoClient = require('mongodb').MongoClient;
 const FetchFromSecrets = require('./AwsSecrets.js').FetchFromSecrets
 const ngeohash = require('ngeohash');
@@ -82,62 +86,61 @@ async function pushSchools(reqs, db) {
     });
   }
 
-async function fetchSchools(req, db) {
+  async function fetchSchools(req, db) {
     try {
-      const DEFAULT_UNIT = "km";
-      if (!req.query.unit) req.query.unit = DEFAULT_UNIT
-  
-      let queryname = req.query.queryname;
-      let geohashValue = req.query.geohashValue;
-      let nextPageToken = req.query.nextPageToken;
-  
-      const coordinates = ngeohash.decode(geohashValue);
-      const lon = coordinates.longitude;
-      const lat = coordinates.latitude;
-      const skipValue = nextPageToken ? parseInt(nextPageToken, 10) : 0;
-      const limitValue = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 10;
-  
-      const conversionFactor = req.query.unit === 'mi' ? 6371 / 1.60934 : 6371;
-  
-      let filter = {
-        location: {
-          $near: {
-            $geometry: {
-              type: "Point",
-              coordinates: [lon, lat]
-            },
-            $minDistance: skipValue * DISTANCE_INCREMENT
-          }
+        const DEFAULT_UNIT = "km";
+        if (!req.query.unit) req.query.unit = DEFAULT_UNIT
+
+        let queryname = req.query.queryname;
+        let geohashValue = req.query.geohashValue;
+        let nextPageToken = req.query.nextPageToken;
+
+        const coordinates = ngeohash.decode(geohashValue);
+        const lon = coordinates.longitude;
+        const lat = coordinates.latitude;
+        const skipValue = nextPageToken ? parseInt(nextPageToken, 10) : 0;
+        const limitValue = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 10;
+
+        const conversionFactor = req.query.unit === 'mi' ? 6371 / 1.60934 : 6371;
+
+        let filter = {
+            location: {
+                $near: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: [lon, lat]
+                    }
+                }
+            }
+        };
+
+        if (queryname) {
+            filter.name = new RegExp(queryname, "i");  // Case-insensitive search for names
         }
-      };
-  
-      if (queryname) {
-        filter.name = new RegExp(queryname, "i");  // Case-insensitive search for names
-      }
-  
-      const container = db.collection('schools');
-      const results = await container.find(filter).limit(limitValue).toArray();
-  
-      return {
-        rows: results.map(row => {
-          const distance = haversineDistance(
-              lon, lat,
-              row.location.coordinates[0],
-              row.location.coordinates[1],
-              conversionFactor
-          );
-          return {
-              ...row,
-              distance
-          };
-      }),
-      
-        nextPageToken: (skipValue + results.length).toString()
-    };
+
+        const container = db.collection('schools');
+        const results = await container.find(filter).skip(skipValue).limit(limitValue).toArray();
+
+        return {
+            rows: results.map(row => {
+                const distance = haversineDistance(
+                    lon, lat,
+                    row.location.coordinates[0],
+                    row.location.coordinates[1],
+                    conversionFactor
+                );
+                return {
+                    ...row,
+                    distance
+                };
+            }),
+            nextPageToken: (skipValue + results.length).toString()
+        };
     } catch (err) {
-      console.log(err);
-      return { Success: false, Error: err };
+        console.log(err);
+        return { Success: false, Error: err };
     }
-  }
+}
+
 
 module.exports = { SetupGeospatialDB, fetchSchools }
