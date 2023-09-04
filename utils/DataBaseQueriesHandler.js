@@ -1,68 +1,11 @@
 const gremlin = require('gremlin');
 const AWS = require('aws-sdk');
 const cassandra = require('cassandra-driver');
+const SetupCassandraClient = require('./SetupCassandra').SetupCassandraClient
 const  FetchFromSecrets  = require('./AwsSecrets.js').FetchFromSecrets;
 
-var NeptuneConnection,client;
-async function fetchCassandra() {
-
-  const contactPoints = await FetchFromSecrets("contactPoints");
-    const localDataCenter = await FetchFromSecrets("localDataCenter");
-    const keyspace = await FetchFromSecrets("keyspace");
-
-    client = new cassandra.Client({
-        contactPoints: [contactPoints],
-        localDataCenter: localDataCenter,
-        keyspace:keyspace,
-    });
-  await client.connect();
-
-  NeptuneConnection = {
-  endpoint: await FetchFromSecrets("NeptuneEndpoint"),
-  port: await FetchFromSecrets("NeptunePort"), 
-  region: process.env.AWS_REGION,
-};
-
- 
-}
-fetchCassandra();
-
-/*if (!process.env.prod) {
-  AWS.config.update({
-    region: process.env.AWS_REGION,
-    accessKeyId: await FetchFromSecrets("AccessKey"),
-    secretAccessKey: await FetchFromSecrets("SecretKey"),
-  });
-} // use credentials if not in prod , else use IAM role for ec2 instance*/
-
-const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
-const Graph = gremlin.structure.Graph;
-
-// Fetch data from Neptune (for the given phone number)
-async function getDataFromNeptune(uid, data) {
-  const dc = new DriverRemoteConnection(
-    `wss://${NeptuneConnection.endpoint}:${NeptuneConnection.port}/gremlin`
-  );
-
-  const graph = new Graph();
-  const g = graph.traversal().withRemote(dc);
-
-  let _data = 0;
-  try {
-    const query = g.V().has("uid", uid).values(data);
-    const result = await query.toList();
-    if (result.length > 0) {
-      _data = result[0];
-    } else {
-      console.error("No player found with the provided phone number");
-    }
-  } catch (error) {
-    console.error("Error querying Neptune", error);
-  } finally {
-    dc.close();
-  }
-  return _data;
-}
+let client;
+SetupCassandraClient(client)
 
 // Fetch data from ScyllaDB (for the given phone number)
 async function getDataFromScyalla(tableName, uid, data) {
@@ -206,7 +149,6 @@ async function removeFriendsRelation(uid, friend) {
 
 module.exports= {
   //FetchTopFriendsAndPolls,
-  getDataFromNeptune,
   getDataFromScyalla,
   InsertDataInScylla,
   UpdateDataInNeptune,

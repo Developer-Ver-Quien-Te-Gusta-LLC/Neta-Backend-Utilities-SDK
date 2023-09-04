@@ -27,7 +27,6 @@ module.exports = {
   //decrypt: AwsEncryption.decrypt,
   FetchFromSecrets: AwsSecrets.FetchFromSecrets,
   FetchTopFriendsAndPolls: DataBaseQueriesHandler.FetchTopFriendsAndPolls,
-  getDataFromNeptune: DataBaseQueriesHandler.getDataFromNeptune,
   getDataFromScyalla: DataBaseQueriesHandler.getDataFromScyalla,
   InsertDataInScylla: DataBaseQueriesHandler.InsertDataInScylla,
   UpdateDataInNeptune: DataBaseQueriesHandler.UpdateDataInNeptune,
