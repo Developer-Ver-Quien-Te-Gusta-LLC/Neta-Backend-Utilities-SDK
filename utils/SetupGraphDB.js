@@ -26,7 +26,7 @@ async function SetupGraphDB() {
     if (stored) return stored;
    
     secrets = await fetchSecrets();
-    console.log(secrets.cosmosDBUsername)
+   // console.log(secrets.cosmosDBUsername)
    
     const cosmosDBUsername = secrets.cosmosDBUsername
     const authenticator = new gremlin.driver.auth.PlainTextSaslAuthenticator(cosmosDBUsername, secrets.primaryKey)
