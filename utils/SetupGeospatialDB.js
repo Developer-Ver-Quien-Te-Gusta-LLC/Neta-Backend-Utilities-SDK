@@ -1,5 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
-
+const FetchFromSecrets = require('./AwsSecrets.js').FetchFromSecrets
 let _db;
 
 async function SetupGeospatialDB() {
