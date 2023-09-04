@@ -1,5 +1,9 @@
 const { SetupGraphDB } = require("./SetupGraphDB.js");
-SetupGraphDB().then(result => global.g = result);
+SetupGraphDB().then(result =>{ global.g = result;
+  setTimeout(() => {
+    GetRecommendationsQuestions("5bc0405d-af29-47ce-8532-12a7725963bd","anal",10);
+  }, 10000);
+});
 
 const { getKV } = require("./KV.js");
 const cassandra = require("./SetupCassandra.js");
@@ -14,7 +18,15 @@ let SameGradeWeightOnboarding,
   SameHighSchoolWeightOnboarding,
   PhotoContactsWeightOnboarding,
   EmojiContactsWeightOnboarding,
-  ContactsWeightOnboarding;
+  ContactsWeightOnboarding,
+  EmojiContactsWeightQuestions,
+  ContactsWeightQuestions,
+  PhotoContactsWeightQuestions,
+  SameHighSchoolWeightQuestions,
+  FriendsWeightQuestions,
+  SameGradeWeightQuestions,
+  TopFriendsWeightsQuestions,
+  FriendsOfFriendsWeightQuestions;
 
 async function fetchWeights() {
   // Fetch all weights concurrently
@@ -24,12 +36,28 @@ async function fetchWeights() {
     PhotoContactsWeightOnboarding_,
     EmojiContactsWeightOnboarding_,
     ContactsWeightOnboarding_,
+    EmojiContactsWeightQuestions_,
+    ContactsWeightQuestions_,
+    PhotoContactsWeightQuestions_,
+    SameHighSchoolWeightQuestions_,
+    FriendsWeightQuestions_,
+    SameGradeWeightQuestions_,
+    TopFriendsWeightsQuestions_,
+    FriendsOfFriendsWeightQuestions_
   ] = await Promise.allSettled([
     getKV(["SameGradeWeightOnboarding"]),
     getKV(["SameHighSchoolWeightOnboarding"]),
     getKV(["PhotoContactsWeightOnboarding"]),
     getKV(["EmojiContactsWeightOnboarding"]),
     getKV(["ContactsWeightOnboarding"]),
+    getKV(["EmojiContactsWeightQuestions"]),
+    getKV(["ContactsWeightQuestions"]),
+    getKV(["PhotoContactsWeightQuestions"]),
+    getKV(["SameHighSchoolWeightQuestions"]),
+    getKV(["FriendsWeightQuestions"]),
+    getKV(["SameGradeWeightQuestions"]),
+    getKV(["TopFriendsWeightsQuestions"]),
+    getKV(["FriendsOfFriendsWeightQuestions"])
   ]);
 
   // Assign weights to the initialized vars
@@ -38,8 +66,14 @@ async function fetchWeights() {
   PhotoContactsWeightOnboarding = PhotoContactsWeightOnboarding_.value;
   EmojiContactsWeightOnboarding = EmojiContactsWeightOnboarding_.value;
   ContactsWeightOnboarding = ContactsWeightOnboarding_.value;
-
-  
+  EmojiContactsWeightQuestions = EmojiContactsWeightQuestions_.value;
+  ContactsWeightQuestions = ContactsWeightQuestions_.value;
+  PhotoContactsWeightQuestions = PhotoContactsWeightQuestions_.value;
+  SameHighSchoolWeightQuestions = SameHighSchoolWeightQuestions_.value;
+  FriendsWeightQuestions = FriendsWeightQuestions_.value;
+  SameGradeWeightQuestions = SameGradeWeightQuestions_.value;
+  TopFriendsWeightsQuestions = TopFriendsWeightsQuestions_.value;
+  FriendsOfFriendsWeightQuestions = FriendsOfFriendsWeightQuestions_.value;
 }
 fetchWeights(); // fetch the weights as soon as the module is imported
 //#endregion
@@ -124,11 +158,10 @@ async function getMutualFriends(uid, otheruid) {
 
 async function InsertMutualCount(uid, filteredList) {
   index = 0;
-  filteredList.forEach(async (element) => {
-    const mutualCount = await getMutualFriends(uid, element.uid);
+  for(let index = 0; index < filteredList.length; index++) {
+    const mutualCount = await getMutualFriends(uid, filteredList[index].uid);
     filteredList[index].mutualCount = mutualCount;
-    index++;
-  });
+  }
 }
 //#endregion
 
@@ -215,7 +248,7 @@ async function GetRecommendationsExploreSection(
   const userFriendsPromise = g.submit("g.V().has('uid', uid).out('FRIENDS_WITH').values('uid')", {uid: uid});
   const AllUsersInSchoolPromise = g.submit("g.V().union(__.V().hasLabel('User').has('highschool', highschool).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends), __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends).not(__.inE('FRIENDS_WITH').has('uid', uid)))", {highschool: highschool, offset_FriendsOfFriends: offset_FriendsOfFriends, page_FriendsOfFriends: page_FriendsOfFriends, pagesize_FriendsOfFriends: pagesize_FriendsOfFriends, grade: grade, uid: uid});
 
-  const AllUsersInContactsPromise = g.submit("g.V().hasLabel('User').has('username', username).outE('HAS_CONTACT').choose(__.has('fav', true), __.inV().property('weight', EmojiContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)).choose(__.has('photo', true), __.inV().property('weight', PhotoContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)).not(__.inE('FRIENDS_WITH').has('uid', uid)).range(offset_Contacts, page_Contacts * pagesize_Contacts)", {username: username, EmojiContactsWeightQuestions: EmojiContactsWeightQuestions, ContactsWeightQuestions: ContactsWeightQuestions, PhotoContactsWeightQuestions: PhotoContactsWeightQuestions, uid: uid, offset_Contacts: offset_Contacts, page_Contacts: page_Contacts, pagesize_Contacts: pagesize_Contacts});
+  const AllUsersInContactsPromise = g.submit("g.V().hasLabel('User').has('uid', uid).outE('HAS_CONTACT').choose(__.has('fav', true), __.inV().property('weight', EmojiContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)).choose(__.has('photo', true), __.inV().property('weight', PhotoContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)).not(__.inE('FRIENDS_WITH').has('uid', uid)).range(offset_Contacts, page_Contacts * pagesize_Contacts)", { EmojiContactsWeightQuestions: EmojiContactsWeightQuestions, ContactsWeightQuestions: ContactsWeightQuestions, PhotoContactsWeightQuestions: PhotoContactsWeightQuestions, uid: uid, offset_Contacts: offset_Contacts, page_Contacts: page_Contacts, pagesize_Contacts: pagesize_Contacts});
 
   const FriendsOfFriendsPromise = g.submit("g.V().hasLabel('User').has('uid', uid).out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).not(__.inE('FRIENDS_WITH').has('uid', uid)).range(offset_SchoolUsers, page_SchoolUsers * pagesize_SchoolUsers).valueMap('uid')", {uid: uid, offset_SchoolUsers: offset_SchoolUsers, page_SchoolUsers: page_SchoolUsers, pagesize_SchoolUsers: pagesize_SchoolUsers});
 
@@ -251,14 +284,32 @@ async function GetRecommendationsExploreSection(
     AllInvitesSentPromise,
   ]);
 
+  // Fetch contactlist and favcontactsList from AllUserData
+  let contactList = [];
+  let favContactList = [];
+  let TotalFriends = 0;
+  
+  if (AllUserData && AllUserData.length > 0) {
+    contactList = AllUserData[0].contactsList ? AllUserData[0].contactsList : [];
+    favContactList = AllUserData[0].favcontactsList ? AllUserData[0].favcontactsList : [];
+    TotalFriends = AllUserData[0].TotalFriends;
+  }
+
+  // Initialize FilteredInvitationRecommendations array
+  const FilteredInvitationRecommendations = [];
+
+  // Iterate through contactList and favContactList
+  [...contactList, ...favContactList].forEach(phoneNumber => {
+    // Check if phoneNumber is not a property of any user in userFriends
+    if (!userFriends.some(user => user.phoneNumber === phoneNumber)) {
+      // If it's not, add the number to FilteredInvitationRecommendations
+      FilteredInvitationRecommendations.push(phoneNumber);
+    }
+  });
+  
+
   //#region Filtering
-  // Filter out the existing friends from allUsers
-
-  const FilteredInvitationRecommendations = [
-    ...new Set([...FilteredContactList, ...FilteredFavContactList]),
-  ];
-
-  await InsertMutualCount(uid, FilteredUsersInSchool);
+  await InsertMutualCount(uid, AllUsersInSchool);
   await InsertMutualCount(uid, FriendsOfFriends);
 
   //#endregion
@@ -268,17 +319,57 @@ async function GetRecommendationsExploreSection(
     FriendsOfFriends: FriendsOfFriends,
     UsersInContacts: AllUsersInContacts,
     page_SchoolUsers: page_SchoolUsers,
-    UsersInSchool: FilteredUsersInSchool,
+    UsersInSchool: AllUsersInSchool,
     InvitationRecommendation: FilteredInvitationRecommendations,
-    TotalFriends: AllUserData[2],
+    TotalFriends: TotalFriends,
     FriendRequests: friendRequests.value,
     InvitesSent: AllInvitesSent,
   };
 }
 
 async function GetRecommendationsQuestions(uid, highschool, grade) {
-  const allUsers = await g.submit("g.V().hasLabel('User').has('username', uid).union(__.outE('HAS_CONTACT').choose(__.has('fav', true), __.inV().property('weight', EmojiContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)).choose(__.has('photo', true), __.inV().property('weight', PhotoContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)), __.has('highschool', highschool).property('weight', SameHighSchoolWeightQuestions), __.out('FRIENDS_WITH').property('weight', FriendsWeightQuestions), __.out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).property('weight', FriendsOfFriendsWeightQuestions), __.has('highschool', highschool).has('grade', grade).property('weight', SameGradeWeightQuestions), __.out('FRIENDS_WITH').order().by('PollsCount', decr).property('weight', TopFriendsWeightsQuestions)).local(__.repeat(__.sample(1).math('sin(random()) + _').is(P.gt(0))).times(4)).coalesce(__.unfold(), __.V().hasLabel('User').has('username', username).out('HAS_CONTACT').limit(4))");
-
+  const allUsers = await g.submit(`
+    g.V().hasLabel('User').has('uid', uid)
+    .union(
+      __.outE('HAS_CONTACT')
+      .choose(
+        __.has('fav', true), 
+        __.inV().property('weight', EmojiContactsWeightQuestions), 
+        __.inV().property('weight', ContactsWeightQuestions)
+      )
+      .choose(
+        __.has('photo', true), 
+        __.inV().property('weight', PhotoContactsWeightQuestions), 
+        __.inV().property('weight', ContactsWeightQuestions)
+      ), 
+      __.has('highschool', highschool).property('weight', SameHighSchoolWeightQuestions), 
+      __.out('FRIENDS_WITH').property('weight', FriendsWeightQuestions), 
+      __.out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).property('weight', FriendsOfFriendsWeightQuestions), 
+      __.has('highschool', highschool).has('grade', grade).property('weight', SameGradeWeightQuestions), 
+      __.out('FRIENDS_WITH').order().by('PollsCount', decr).property('weight', TopFriendsWeightsQuestions)
+    )
+    .local(
+      __.repeat(__.sample(1).math('sin(random()) + _').is(P.gt(0))).times(4)
+    )
+    .coalesce(
+      __.unfold(), 
+      __.V().hasLabel('User').has('uid', uid).out('HAS_CONTACT').limit(4)
+    )
+  `,
+  {
+    uid:uid,
+    highschool:highschool,
+    grade:grade,
+    EmojiContactsWeightQuestions:EmojiContactsWeightQuestions,
+    PhotoContactsWeightQuestions:PhotoContactsWeightQuestions,
+    ContactsWeightQuestions:ContactsWeightQuestions,
+    SameHighSchoolWeightQuestions:SameHighSchoolWeightQuestions,
+    FriendsWeightQuestions:FriendsWeightQuestions,
+    SameGradeWeightQuestions:SameGradeWeightQuestions,
+    TopFriendsWeightsQuestions:TopFriendsWeightsQuestions,
+    FriendsOfFriendsWeightQuestions:FriendsOfFriendsWeightQuestions
+  });
+  console.log(allUsers);
   return allUsers;
 }
 
