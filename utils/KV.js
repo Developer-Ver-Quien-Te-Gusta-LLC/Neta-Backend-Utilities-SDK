@@ -58,7 +58,7 @@ async function fetchRemoteConfig(key) {
             //console.log(`Value for key '${key}' is: ${parameter.defaultValue.value}`);
             return parameter.defaultValue.value;
         } else {
-            //console.warn(`Key '${key}' is not found in the remote config.`);
+            console.warn(`Key '${key}' is not found in the remote config.`);
             return null;
         }
     } catch (err) {

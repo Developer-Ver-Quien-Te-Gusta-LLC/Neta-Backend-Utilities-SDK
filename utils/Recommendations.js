@@ -1,5 +1,5 @@
 const { SetupGraphDB } = require("./SetupGraphDB.js");
-let g = SetupGraphDB();
+SetupGraphDB().then(result => global.g = result);
 
 const { getKV } = require("./KV.js");
 const cassandra = require("./SetupCassandra.js");
@@ -12,36 +12,34 @@ cassandra
 
 let SameGradeWeightOnboarding,
   SameHighSchoolWeightOnboarding,
-  FriendsWeightOnboarding,
-  FriendsOfFriendsWeightOnboarding,
+  PhotoContactsWeightOnboarding,
   EmojiContactsWeightOnboarding,
   ContactsWeightOnboarding;
 
 async function fetchWeights() {
   // Fetch all weights concurrently
   const [
-    SameGradeWeights,
-    SameHighSchoolWeights,
-    FriendsWeights,
-    FriendsOfFriendsWeights,
-    EmojiContactsWeights,
-    ContactsWeights,
+    SameGradeWeightOnboarding_,
+    SameHighSchoolWeightOnboarding_,
+    PhotoContactsWeightOnboarding_,
+    EmojiContactsWeightOnboarding_,
+    ContactsWeightOnboarding_,
   ] = await Promise.allSettled([
     getKV(["SameGradeWeightOnboarding"]),
     getKV(["SameHighSchoolWeightOnboarding"]),
-    getKV(["FriendsWeightOnboarding"]),
-    getKV(["FriendsOfFriendsWeightOnboarding"]),
+    getKV(["PhotoContactsWeightOnboarding"]),
     getKV(["EmojiContactsWeightOnboarding"]),
     getKV(["ContactsWeightOnboarding"]),
   ]);
 
   // Assign weights to the initialized vars
-  SameGradeWeightOnboarding = SameGradeWeights.value;
-  SameHighSchoolWeightOnboarding = SameHighSchoolWeights.value;
-  FriendsWeightOnboarding = FriendsWeights.value;
-  FriendsOfFriendsWeightOnboarding = FriendsOfFriendsWeights.value;
-  EmojiContactsWeightOnboarding = EmojiContactsWeights.value;
-  ContactsWeightOnboarding = ContactsWeights.value;
+  SameGradeWeightOnboarding = SameGradeWeightOnboarding_.value;
+  SameHighSchoolWeightOnboarding = SameHighSchoolWeightOnboarding_.value;
+  PhotoContactsWeightOnboarding = PhotoContactsWeightOnboarding_.value;
+  EmojiContactsWeightOnboarding = EmojiContactsWeightOnboarding_.value;
+  ContactsWeightOnboarding = ContactsWeightOnboarding_.value;
+
+  
 }
 fetchWeights(); // fetch the weights as soon as the module is imported
 //#endregion
@@ -150,7 +148,13 @@ async function GetRecommendationsOnboarding(
   const offset_PeopleInContacts =
     (page_peopleInContacts - 1) * pagesize_peopleInContacts;
   const peopleYouMayKnowPromise = await g.submit(
-    "g.V().union(__.V().hasLabel('User').has('highschool', highschool).range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow), __.V().hasLabel('User').has('highschool', highschool).has('grade', grade).values('username').range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow))",
+    `g.V().union(
+      __.V().hasLabel('User').has('highschool', highschool)
+        .range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow), 
+      __.V().hasLabel('User').has('highschool', highschool).has('grade', grade)
+        .values('username')
+        .range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow)
+    )`,
     {
       highschool: highschool,
       offset_PeopleYouMayKnow: offset_PeopleYouMayKnow,
@@ -160,21 +164,21 @@ async function GetRecommendationsOnboarding(
     }
   );
 
-  const peopleInContactsPromise = await g.submit("g.V().hasLabel('User').has('username', username).outE('HAS_CONTACT').choose(__.has('fav', true), __.inV().property('weight', EmojiContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)).choose(__.has('photo', true), __.inV().property('weight', PhotoContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions))", 
+  const peopleInContactsPromise = await g.submit(
+    "g.V().hasLabel('User').has('uid', uid).outE('HAS_CONTACT')" +
+    ".choose(__.has('fav', true), __.inV().property('weight', EmojiContactsWeightOnboarding), __.inV().property('weight', ContactsWeightOnboarding))" +
+    ".choose(__.has('photo', true), __.inV().property('weight', PhotoContactsWeightOnboarding), __.inV().property('weight', ContactsWeightOnboarding))",
   {
-    username: username,
-    EmojiContactsWeightQuestions: EmojiContactsWeightQuestions,
-    ContactsWeightQuestions: ContactsWeightQuestions,
-    PhotoContactsWeightQuestions: PhotoContactsWeightQuestions
+    uid: uid,
+    EmojiContactsWeightOnboarding: EmojiContactsWeightOnboarding,
+    ContactsWeightOnboarding: ContactsWeightOnboarding,
+    PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding
   });
 
   const [PeopleYouMayKnow, PeopleInContacts] = await Promise.allSettled([
     peopleYouMayKnowPromise,
     peopleInContactsPromise,
   ]);
-
-  if (invited.value) PeopleYouMayKnow.value.concat(invited.value[0].inviter);
-
   // Return both the result and the next page number for paging
   return {
     success: true,
@@ -182,7 +186,6 @@ async function GetRecommendationsOnboarding(
     People_You_May_Know: PeopleYouMayKnow,
     page_peopleInContacts: page_peopleInContacts,
     PeopleInContacts: PeopleInContacts,
-    invited: invited.value,
   };
 }
 
@@ -280,6 +283,7 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
 }
 
 //#endregion
+
 
 module.exports = {
   FetchFriendsWithSubsActive,
