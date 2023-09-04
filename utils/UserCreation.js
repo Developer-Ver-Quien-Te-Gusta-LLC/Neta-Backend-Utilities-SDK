@@ -3,29 +3,28 @@ const Ably = require("ably");
 const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 const AuthHandler = require("./AuthHandler.js");
 var ably;
-const AWS = require('aws-sdk');
-const admin = require('firebase-admin');
+const AWS = require("aws-sdk");
+const admin = require("firebase-admin");
 
 async function initializeFirebase() {
   try {
-      var credentials = await FetchFromSecrets("FCMAccountCredentials");
+    var credentials = await FetchFromSecrets("FCMAccountCredentials");
 
-      credentials = JSON.parse(credentials);
-      if (!credentials) {
-          console.error("Unable to fetch FCM Account Credentials.");
-          return;
-      }
+    credentials = JSON.parse(credentials);
+    if (!credentials) {
+      console.error("Unable to fetch FCM Account Credentials.");
+      return;
+    }
 
-      if(admin.apps.length === 0){
+    if (admin.apps.length === 0) {
       admin.initializeApp({
-          credential: admin.credential.cert(credentials),
+        credential: admin.credential.cert(credentials),
       });
 
       console.log("Firebase Admin SDK Initialized.");
-  }
- 
+    }
   } catch (error) {
-      console.error("Error during Firebase Admin SDK initialization:", error);
+    console.error("Error during Firebase Admin SDK initialization:", error);
   }
 }
 initializeFirebase();
@@ -48,99 +47,62 @@ GraphDB.SetupGraphDB().then((result) => {
   g = result;
 });
 
-const ServiceBus =
-  require("./ServiceBus.js");
+const ServiceBus = require("./ServiceBus.js");
 const OnUserCreationFailed =
   require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
 const handleTransactionCompletion =
   require("./UserCreationTransactionHandling.js").handleTransactionCompletion;
 
-
 async function CreateScyllaUser(UserParams) {
-  const { username, phoneNumber, platform, transactionId, encryptionKey,uid } = UserParams;
-  const friendList = UserParams.friendList || [];
-  const blockList = UserParams.blockList || [];
-  const hideList = UserParams.hideList || [];
-  const topPolls = UserParams.topPolls || [];
-  const friendRequests = UserParams.friendRequests || [];
+  const { username, phoneNumber, platform, transactionId, encryptionKey } = UserParams;
   const starCount = UserParams.starCount || 0;
   const invitesLeft = UserParams.invitesLeft || 0;
   const lastPollTime = UserParams.lastPollTime || null;
 
   try {
-    const query = `
-      INSERT INTO users (
-        username,
-        phoneNumber, 
-        topPolls,
-        topFriends, 
-        starCount, 
-        coins,
-        invitesLeft, 
-        lastPollTime, 
-        pollIndex,
-        numberOfStars,
-        platform,
-        gender,
-        highschool,
-        grade,
-        uid
-      ) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?,?)
-    `;
+    const UserCreationQuery = `INSERT INTO users (username, phoneNumber, topPolls, topFriends, starCount, coins, invitesLeft, lastPollTime, pollIndex, numberOfStars, platform, gender, highschool, grade, uid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`;
     const params = [
-      null,
+      username,
       phoneNumber,
-      { list: friendList },
-      { list: blockList },
-      { list: hideList },
-      { list: topPolls },
-      { list: friendRequests },
+      null,
+      null,
       starCount,
       0,
       invitesLeft,
       lastPollTime,
       -1,
+      0,
       platform,
       UserParams.gender,
       UserParams.highschool,
       UserParams.grade,
-      uid,
+      UserParams.uid,
     ];
-    try {
-      await client.execute(query, params, { prepare: true }); /// submit main scylla query
-      await enroll(UserParams.school); /// enroll in school
+    await client.execute(UserCreationQuery, params, { prepare: true }); /// submit main scylla query
+   
+      await enroll(UserParams.highschool); /// enroll in school
       /// submit to username uniqueness service
       const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
         "ServiceBus_UsernameUniqueness"
       );
 
       /// submit to /createScyllaUser
-      const params = {
+     /* const SNSParams = {
         Message: JSON.stringify({ uid, requestedUsername: username }),
         TopicArn: ARN, // replace with your SNS Topic ARN
       };
 
-      sns.publish(params, function (err, data) {
+      sns.publish(SNSParams, function (err, data) {
         if (err) console.log(err, err.stack);
         else console.log(data);
-      });
+      });*/
       // submit initial imbox msg
       const uid = uuidv4();
-      const query = `
-  INSERT INTO inbox 
-  (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, uids, index) 
-  VALUES 
-  (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);
-`;
-await handleTransactionCompletion(transactionId,uid,encryptionKey);
+      const query = `INSERT INTO inbox (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, uids, index) VALUES (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);`;
+      await client.execute(query, [uid, undefined, false, undefined, undefined, undefined, undefined, undefined, undefined, -1], { prepare: true }); /// submit main scylla query
+      await handleTransactionCompletion(transactionId, uid, encryptionKey);
       return true;
-    } catch (err) {
-      console.error(err);
-      await ServiceBus.handleTransactionError(phoneNumber); //recursive 3 times , else return false
-      await OnUserCreationFailed(UserParams.transactionId);
-      return false;
-    }
+    
   } catch (err) {
     console.log(err);
     await ServiceBus.handleTransactionError("scylla", UserParams, phoneNumber); //recursive 3 times , else return false
@@ -161,7 +123,7 @@ async function createNeptuneUser(UserParams) {
     lname,
     uid,
     transactionId,
-    encryptionKey
+    encryptionKey,
   } = UserParams;
 
   if (!grade) grade = null;
@@ -187,7 +149,7 @@ async function createNeptuneUser(UserParams) {
         console.log("User Created in graphdb");
       });
 
-    await handleTransactionCompletion(transactionId,uid,encryptionKey);
+    await handleTransactionCompletion(transactionId, uid, encryptionKey);
     return true; // Return the success response
   } catch (error) {
     console.error(error);
@@ -198,8 +160,7 @@ async function createNeptuneUser(UserParams) {
 }
 
 async function CreateFirebaseUser(UserParams) {
- 
-  var { username,uid,transactionId, encryptionKey } = UserParams;
+  var { username, uid, transactionId, encryptionKey } = UserParams;
   const password = UserParams.otp;
 
   try {
@@ -209,11 +170,16 @@ async function CreateFirebaseUser(UserParams) {
       uid: uid,
       disabled: false,
     });
-    await handleTransactionCompletion(transactionId,uid,encryptionKey);
+    await handleTransactionCompletion(transactionId, uid, encryptionKey);
     return true;
   } catch (err) {
     console.log(err);
-    await ServiceBus.handleTransactionError("cognito", UserParams, phoneNumbe, phoneNumberr); //recursive 3 times , else return false
+    await ServiceBus.handleTransactionError(
+      "cognito",
+      UserParams,
+      phoneNumbe,
+      phoneNumberr
+    ); //recursive 3 times , else return false
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
   }
@@ -322,7 +288,6 @@ async function DeleteUser(req, deleteVerification = false) {
   // Wait for all promises to resolve
   await Promise.all(promises);
 }
-
 
 module.exports = {
   CreateScyllaUser,
