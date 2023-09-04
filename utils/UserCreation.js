@@ -30,14 +30,7 @@ const OnUserCreationFailed =
   require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
 const handleTransactionCompletion =
   require("./UserCreationTransactionHandling.js").handleTransactionCompletion;
-//Create a user profile in Mixpanel
-async function CreateMixPanelUser(username, firstname, lastname, geohash) {
-  mixpanel.people.set(username, {
-    $first_name: firstname,
-    $last_name: lastname,
-    $geohash: geohash,
-  });
-}
+
 
 async function CreateScyllaUser(UserParams) {
   const username = UserParams.username;
