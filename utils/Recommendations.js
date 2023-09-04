@@ -331,22 +331,45 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
   const allUsers = await g.submit(`
     g.V().hasLabel('User').has('uid', "${uid}")
     .union(
-      __.outE('HAS_CONTACT')
-      .choose(
-        __.has('fav', true), 
-        __.repeat(__.inV()).times(${EmojiContactsWeightQuestions}),
-        __.repeat(__.inV()).times(${ContactsWeightQuestions})
-      )
-      .choose(
-        __.has('photo', true), 
-        __.repeat(__.inV()).times(${PhotoContactsWeightQuestions}),
-        __.repeat(__.inV()).times(${ContactsWeightQuestions})
-      ), 
-      __.repeat(__.has('highschool', "${highschool}")).times(${SameHighSchoolWeightQuestions}), 
-      __.repeat(__.out('FRIENDS_WITH')).times(${FriendsWeightQuestions}), 
-      __.repeat(__.out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self'))).times(${FriendsOfFriendsWeightQuestions}),
-      __.repeat(__.has('highschool', "${highschool}").has('grade', "${grade}")).times(${SameGradeWeightQuestions}), 
-      __.repeat(__.out('FRIENDS_WITH').order().by('PollsCount', decr)).times(${TopFriendsWeightsQuestions})
+      // Repeating traversal for contacts with 'fav' true
+      __.unfold().repeat(
+        __.outE('HAS_CONTACT').has('fav', true).inV()
+      ).times(${EmojiContactsWeightQuestions}),
+      
+      // Repeating traversal for contacts with photo
+      __.unfold().repeat(
+        __.outE('HAS_CONTACT').has('photo', true).inV()
+      ).times(${PhotoContactsWeightQuestions}),
+      
+      // Repeating traversal for contacts without 'fav' and without photo
+      __.unfold().repeat(
+        __.outE('HAS_CONTACT').inV()
+      ).times(${ContactsWeightQuestions}),
+      
+      // Repeating traversal for same high school
+      __.unfold().repeat(
+        __.has('highschool', "${highschool}")
+      ).times(${SameHighSchoolWeightQuestions}),
+      
+      // Repeating traversal for friends
+      __.unfold().repeat(
+        __.out('FRIENDS_WITH')
+      ).times(${FriendsWeightQuestions}),
+      
+      // Repeating traversal for friends of friends
+      __.unfold().repeat(
+        __.out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self'))
+      ).times(${FriendsOfFriendsWeightQuestions}),
+      
+      // Repeating traversal for same grade in same high school
+      __.unfold().repeat(
+        __.has('highschool', "${highschool}").has('grade', "${grade}")
+      ).times(${SameGradeWeightQuestions}),
+      
+      // Repeating traversal for top friends
+      __.unfold().repeat(
+        __.out('FRIENDS_WITH').order().by('PollsCount', decr)
+      ).times(${TopFriendsWeightsQuestions})
     )
     .sample(4)
     .coalesce(
@@ -363,6 +386,7 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
     console.error(error);
   });
 }
+
 
 
 
