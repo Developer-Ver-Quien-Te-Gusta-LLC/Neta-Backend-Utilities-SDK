@@ -10,12 +10,6 @@ let isInitialized = false;
 
 async function initializeFirebase() {
   try {
-      // Ensure Firebase Admin SDK is only initialized once
-      if (isInitialized) {
-          console.warn("Firebase Admin SDK is already initialized.");
-          return;
-      }
-
       var credentials = await FetchFromSecrets("FCMAccountCredentials");
 
       credentials = JSON.parse(credentials);
@@ -30,13 +24,8 @@ async function initializeFirebase() {
       });
 
       console.log("Firebase Admin SDK Initialized.");
-      isInitialized = true;
   }
-  else{
-      isInitialized = true;
-      console.log("Firebase Admin SDK Initialized.");
-  }
-
+ 
   } catch (error) {
       console.error("Error during Firebase Admin SDK initialization:", error);
   }
@@ -214,10 +203,7 @@ async function createNeptuneUser(req) {
 }
 
 async function CreateFirebaseUser(req) {
-  while(!isInitialized) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-  
+ 
   var { username, phoneNumber, uid } = req.query;
   const password = req.query.otp;
 

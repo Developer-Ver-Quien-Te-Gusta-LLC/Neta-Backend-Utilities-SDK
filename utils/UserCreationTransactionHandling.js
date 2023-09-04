@@ -8,7 +8,7 @@
 /// Assign user a 'pollIndex' that is inclusive 0 -> num(polls)
 ///
 const ScyllaSetup = require("./SetupCassandra.js");
-var client;
+
 
 const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
 const FetchChannelId = require('./AlbyToken.js').FetchChannelId;
@@ -22,7 +22,8 @@ async function fetchAlby() {
 }
 fetchAlby()
 
-ScyllaSetup.SetupCassandraClient(client).then(result=>{client=result});
+var client;
+ScyllaSetup.SetupCassandraClient(client).then(result=>{client = result});
 
 // TODO: implemenet isTransactionInProgress
 
