@@ -54,7 +54,7 @@ const handleTransactionCompletion =
   require("./UserCreationTransactionHandling.js").handleTransactionCompletion;
 
 async function CreateScyllaUser(UserParams) {
-  const { username, phoneNumber, platform, transactionId, encryptionKey } = UserParams;
+  const { username, phoneNumber, platform, transactionId, encryptionKey,uid } = UserParams;
   const starCount = UserParams.starCount || 0;
   const invitesLeft = UserParams.invitesLeft || 0;
   const lastPollTime = UserParams.lastPollTime || null;
@@ -76,7 +76,7 @@ async function CreateScyllaUser(UserParams) {
       UserParams.gender,
       UserParams.highschool,
       UserParams.grade,
-      UserParams.uid,
+      uid,
     ];
     await client.execute(UserCreationQuery, params, { prepare: true }); /// submit main scylla query
    
@@ -97,7 +97,6 @@ async function CreateScyllaUser(UserParams) {
         else console.log(data);
       });*/
       // submit initial imbox msg
-      const uid = uuidv4();
       const query = `INSERT INTO inbox (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, uids, index) VALUES (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);`;
       await client.execute(query, [uid, undefined, false, undefined, undefined, undefined, undefined, undefined, undefined, -1], { prepare: true }); /// submit main scylla query
       await handleTransactionCompletion(transactionId, uid, encryptionKey);
