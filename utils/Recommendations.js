@@ -334,46 +334,43 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
       __.outE('HAS_CONTACT')
       .choose(
         __.has('fav', true), 
-        __.inV().property('weight', EmojiContactsWeightQuestions), 
-        __.inV().property('weight', ContactsWeightQuestions)
+        __.repeat(__.inV()).times(EmojiContactsWeightQuestions),
+        __.repeat(__.inV()).times(ContactsWeightQuestions)
       )
       .choose(
         __.has('photo', true), 
-        __.inV().property('weight', PhotoContactsWeightQuestions), 
-        __.inV().property('weight', ContactsWeightQuestions)
+        __.repeat(__.inV()).times(PhotoContactsWeightQuestions),
+        __.repeat(__.inV()).times(ContactsWeightQuestions)
       ), 
-      __.has('highschool', highschool).property('weight', SameHighSchoolWeightQuestions), 
-      __.out('FRIENDS_WITH').property('weight', FriendsWeightQuestions), 
-      __.out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).property('weight', FriendsOfFriendsWeightQuestions), 
-      __.has('highschool', highschool).has('grade', grade).property('weight', SameGradeWeightQuestions), 
-      __.out('FRIENDS_WITH').order().by('PollsCount', decr).property('weight', TopFriendsWeightsQuestions)
+      __.repeat(__.has('highschool', highschool)).times(SameHighSchoolWeightQuestions), 
+      __.repeat(__.out('FRIENDS_WITH')).times(FriendsWeightQuestions), 
+      __.repeat(__.out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self'))).times(FriendsOfFriendsWeightQuestions),
+      __.repeat(__.has('highschool', highschool).has('grade', grade)).times(SameGradeWeightQuestions), 
+      __.repeat(__.out('FRIENDS_WITH').order().by('PollsCount', decr)).times(TopFriendsWeightsQuestions)
     )
-    .local(
-      __.repeat(
-        __.sample(1).filter(__.math('sin(random()) + _').is(P.gt(0)))
-      ).times(4)
-    )    
+    .sample(4)
     .coalesce(
       __.unfold(), 
       __.V().hasLabel('User').has('uid', uid).out('HAS_CONTACT').limit(4)
     )
   `,
   {
-    uid:uid,
-    highschool:highschool,
-    grade:grade,
-    EmojiContactsWeightQuestions:EmojiContactsWeightQuestions,
-    PhotoContactsWeightQuestions:PhotoContactsWeightQuestions,
-    ContactsWeightQuestions:ContactsWeightQuestions,
-    SameHighSchoolWeightQuestions:SameHighSchoolWeightQuestions,
-    FriendsWeightQuestions:FriendsWeightQuestions,
-    SameGradeWeightQuestions:SameGradeWeightQuestions,
-    TopFriendsWeightsQuestions:TopFriendsWeightsQuestions,
-    FriendsOfFriendsWeightQuestions:FriendsOfFriendsWeightQuestions
+    uid: uid,
+    highschool: highschool,
+    grade: grade,
+    EmojiContactsWeightQuestions: EmojiContactsWeightQuestions,
+    PhotoContactsWeightQuestions: PhotoContactsWeightQuestions,
+    ContactsWeightQuestions: ContactsWeightQuestions,
+    SameHighSchoolWeightQuestions: SameHighSchoolWeightQuestions,
+    FriendsWeightQuestions: FriendsWeightQuestions,
+    SameGradeWeightQuestions: SameGradeWeightQuestions,
+    TopFriendsWeightsQuestions: TopFriendsWeightsQuestions,
+    FriendsOfFriendsWeightQuestions: FriendsOfFriendsWeightQuestions
   });
   console.log(allUsers);
   return allUsers;
 }
+
 
 //#endregion
 
