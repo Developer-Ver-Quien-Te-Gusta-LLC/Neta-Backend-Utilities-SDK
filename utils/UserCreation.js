@@ -136,7 +136,8 @@ async function CreateScyllaUser(UserParams) {
 await handleTransactionCompletion(transactionId,uid,encryptionKey);
       return true;
     } catch (err) {
-      await ServiceBus.handleTransactionError("scylla", UserParams, phoneNumber); //recursive 3 times , else return false
+      console.error(err);
+      await ServiceBus.handleTransactionError(phoneNumber); //recursive 3 times , else return false
       await OnUserCreationFailed(UserParams.transactionId);
       return false;
     }
