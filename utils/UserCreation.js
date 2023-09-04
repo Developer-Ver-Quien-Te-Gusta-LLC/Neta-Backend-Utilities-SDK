@@ -214,6 +214,10 @@ async function createNeptuneUser(req) {
 }
 
 async function CreateFirebaseUser(req) {
+  while(!isInitialized) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  
   var { username, phoneNumber, uid } = req.query;
   const password = req.query.otp;
 
