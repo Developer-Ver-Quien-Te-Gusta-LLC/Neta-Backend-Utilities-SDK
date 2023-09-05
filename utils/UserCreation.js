@@ -259,7 +259,7 @@ async function DeleteUser(req, deleteVerification = false) {
   promises.push(DeleteFirebaseUserPromise);
 
   // Gremlin query to delete the vertex 'User' using the phoneNumber given
-  const gremlinQuery = `g.V().has('User', 'uid', ${phoneNumber}).drop()`;
+  const gremlinQuery = `g.hasV().has('User', 'uid', ${phoneNumber}).drop()`;
   const DeleteUserGremlinPromise = g.execute(gremlinQuery);
   promises.push(DeleteUserGremlinPromise);
 
