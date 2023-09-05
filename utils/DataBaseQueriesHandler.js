@@ -153,7 +153,9 @@ async function UpdateDataInNeptune(uid, data, value) {
   try {
     // Fetch the current value
     const result = await g.submit('g.V().has("uid", uid).values(data)', { uid: uid, data: data });
+    console.log("userval" + result);
     const currentValue = result.next().value;
+    
 
     // Increment the value
     const newValue = currentValue + value;
