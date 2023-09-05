@@ -39,10 +39,27 @@ function haversineDistance(lon1, lat1, lon2, lat2, conversionFactor) {
     return conversionFactor * c; // returns distance in km or mi
 }
 
+async function getLocationString(lon, lat) {
+  try {
+      const response = await axios.get(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+      const locationData = response.data;
+      
+      if (locationData && locationData.city && locationData.principalSubdivisionCode) {
+          return `${locationData.city}, ${locationData.principalSubdivisionCode.split('-')[1]}`;
+      } else {
+          return null;
+      }
+  } catch (error) {
+      console.error("Error in getLocationString:", error);
+      return null;
+  }
+}
+
 async function pushSchools(reqs, db) {
     const container = db.collection('schools'); // <-- Update with your collection's name
     
     let itemBodies = [];
+    let locationPromises = [];
     
     for(let req of reqs) {
       let uid = crypto.randomBytes(16).toString("hex");
@@ -65,10 +82,19 @@ async function pushSchools(reqs, db) {
       };
       
       itemBodies.push(itemBody);
+      locationPromises.push(getLocationString(location.longitude, location.latitude));
     }
   
+    const locationStrings = await Promise.allSettled(locationPromises);
+    
+    locationStrings.forEach((locationString, index) => {
+        if (locationString.status === 'fulfilled' && locationString.value) {
+            itemBodies[index].locationStr = locationString.value;
+        }
+    });
+  
     await container.insertMany(itemBodies);
-  }
+}
   
   function downloadAndHashImage(uri) {
     return new Promise((resolve, reject) => {
