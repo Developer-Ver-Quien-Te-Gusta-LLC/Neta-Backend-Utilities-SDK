@@ -15,7 +15,7 @@ SetupCassandraClient(client).then(
   (Cassandraclient) => (client = Cassandraclient)
 );
 
-async function handleTransactionError(phoneNumber) {
+async function handleTransactionError(phoneNumber, a, b) {
   await UserCreation.DeleteUser(phoneNumber)
 }
 

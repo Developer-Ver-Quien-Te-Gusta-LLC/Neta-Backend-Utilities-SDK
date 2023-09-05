@@ -165,8 +165,7 @@ async function CreateFirebaseUser(UserParams) {
     await ServiceBus.handleTransactionError(
       "cognito",
       UserParams,
-      phoneNumbe,
-      phoneNumberr
+      phoneNumber
     ); //recursive 3 times , else return false
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
