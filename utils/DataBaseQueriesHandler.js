@@ -8,7 +8,7 @@ const { SetupGraphDB } = require("./SetupGraphDB.js");
 SetupGraphDB().then(result =>{ global.g = result});
 
 let client;
-SetupCassandraClient(client)
+SetupCassandraClient(client).then(result=>{client=result;})
 
 // Fetch data from ScyllaDB (for the given phone number)
 async function getDataFromScyalla(tableName, uid, data) {
