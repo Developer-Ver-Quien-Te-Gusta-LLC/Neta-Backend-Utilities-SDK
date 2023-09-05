@@ -70,7 +70,7 @@ async function pushSchools(reqs, db) {
       let numberOfStudents = req.query.numberOfStudents;
   
       let itemBody = {
-        "id": id,
+        "uid": uid,
         "location": {
           "type": "Point",
           "coordinates": [location.longitude, location.latitude] // backwords
