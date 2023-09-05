@@ -133,4 +133,4 @@ async function fetchRequestsFromSQS(queueURL) {
 
 //fetchRequestsFromSQS("https://sqs.us-east-1.amazonaws.com/422862242595/UserCreationSQSQueue");
 
-module.exports = { handleTransactionError, fetchRequestsFromSQS };
+module.exports = { fetchRequestsFromSQS };
