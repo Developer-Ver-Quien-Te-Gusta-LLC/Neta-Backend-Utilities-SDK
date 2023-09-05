@@ -351,6 +351,13 @@ async function DeleteUser(req, deleteVerification = false) {
   await Promise.all(promises);
 }
 const MAX_CONCURRENT_PROMISES = 10;
+var weight,EmojiContactsWeight;
+async function getWeights() {
+ weight = await getKV("ContactsWeightOnboarding");
+ EmojiContactsWeight = await getKV("EmojiContactsWeightOnboarding");
+  return { weight, EmojiContactsWeight };
+}
+getWeights();
 
 async function uploadUserContacts(req, res) {
   const { phoneNumber } = req.body;
@@ -387,24 +394,19 @@ async function uploadUserContacts(req, res) {
         uploadResult && (hasEmoji(contact.Fname) || hasEmoji(contact.Lname));
 
       // Using Gremlin to add contact vertex and edge
-      let weight = await getKV("ContactsWeightOnboarding");
+    
       if (uploadResult) {
         weight = isFavorite
-          ? await getKV("EmojiContactsWeightOnboarding")
-          : await getKV("EmojiContactsWeightOnboarding");
+          ? EmojiContactsWeight
+          : weight;
       }
-
-      const userVertex = await g.submit(
-        `g.V().has('phoneNumber', '${contact.phoneNumber}')`
-      );
-
-      if (userVertex) {
-        await g.submit(
+ 
+        const connection = await g.submit(
           `g.V().has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().has('phoneNumber', '${contact.phoneNumber}')).property('fav', ${isFavorite}).property('weight', ${weight}).property('photo', '${!!uploadResult}')`
         );
 
-        uploadAndPushPromises.push(userVertex);
-      }
+        uploadAndPushPromises.push(connection);
+      
 
       if (uploadAndPushPromises.length >= MAX_CONCURRENT_PROMISES) {
         await Promise.allSettled(uploadAndPushPromises);
