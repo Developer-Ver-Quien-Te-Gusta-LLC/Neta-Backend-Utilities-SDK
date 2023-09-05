@@ -169,4 +169,4 @@ async function pushSchools(reqs, db) {
 }
 
 
-module.exports = { SetupGeospatialDB, fetchSchools }
+module.exports = { SetupGeospatialDB, fetchSchools, pushSchools }
