@@ -10,6 +10,7 @@ async function fetchAlby() {
   await ably.connection.once("connected");
 }
 fetchAlby();
+
 console.log("Connected to Ably!");
 const fcm = require("firebase-admin");
 
@@ -37,9 +38,6 @@ async function publishAlbyMessageNaive(user_id, message) {
 
   return { message: `Published a message to the topic: ${topicName}` };
 }
-
-
-
 
 async function publishAlbyMessage(user_id, message) {
   const temp = await FetchChannelId(user_id, true); //await DataHandler.getDataFromScyalla("Users", user_id, "AlbyTopicName");
@@ -78,15 +76,6 @@ async function publishFCMMessage(userToken, message) {
       console.error("Error sending notification:", error);
     });
 }
-
-async function SendNotificationPush(userId, payload) {
-  await publishFCMMessage(userToken, JSON.stringify(payload));
-}
-
-async function SendNotificationInApp(userId, payload) {
-  await publishAlbyMessage(userId, payload);
-}
-
 
 async function SendNotification(userId, payload) {
   let userStatus = await getDataFromScyalla("Users", userId, "online");

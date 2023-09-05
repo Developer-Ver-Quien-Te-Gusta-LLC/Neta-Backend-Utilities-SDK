@@ -1,9 +1,5 @@
 const { SetupGraphDB } = require("./SetupGraphDB.js");
-SetupGraphDB().then(result =>{ global.g = result;
-  setTimeout(() => {
-    GetRecommendationsQuestions("5bc0405d-af29-47ce-8532-12a7725963bd","anal",10);
-  }, 10000);
-});
+SetupGraphDB().then(result =>{ global.g = result;});
 
 const { getKV } = require("./KV.js");
 const cassandra = require("./SetupCassandra.js");
