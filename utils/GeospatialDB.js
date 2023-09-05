@@ -114,68 +114,50 @@ async function pushSchools(reqs, db) {
   }
 
   async function fetchSchools(req, db) {
-    try {
-        const DEFAULT_UNIT = "km";
-        if (!req.query.unit) req.query.unit = DEFAULT_UNIT
+    const DEFAULT_UNIT = "km";
+    let unit = req.query.unit || DEFAULT_UNIT;
+    let queryname = req.query.queryname;
+    let geohashValue = req.query.geohashValue;
 
-        let queryname = req.query.queryname;
-        let geohashValue = req.query.geohashValue;
-        if (!geohashValue) {
-            let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-            if (ip) {
-                const response = await axios.get(`https://ipinfo.io/${ip}/geo`);
-                const location = response.data.loc.split(',');
-                geohashValue = ngeohash.encode(location[0], location[1]);
-            }
-        }
-        let nextPageToken = req.query.nextPageToken;
+    const coordinates = ngeohash.decode(geohashValue);
+    const limitValue = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 10;
+    const skipValue = req.query.nextPageToken ? parseInt(req.query.nextPageToken, 10) : 0;
+    const conversionFactor = unit === 'mi' ? 6371 / 1.60934 : 6371;
 
-        const coordinates = ngeohash.decode(geohashValue);
-        const lon = coordinates.longitude;
-        const lat = coordinates.latitude;
-        const skipValue = nextPageToken ? parseInt(nextPageToken, 10) : 0;
-        const limitValue = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 10;
-
-        const conversionFactor = req.query.unit === 'mi' ? 6371 / 1.60934 : 6371;
-
-        let filter = {
-            location: {
-                $near: {
-                    $geometry: {
-                        type: "Point",
-                        coordinates: [lon, lat]
-                    }
+    let filter = {
+        "location": {
+            $near: {
+                $geometry: {
+                    type: "Point",
+                    coordinates: [coordinates.longitude, coordinates.latitude]
                 }
             }
-        };
-
-        if (queryname) {
-            filter.name = new RegExp(queryname, "i");  // Case-insensitive search for names
         }
+    };
 
-        const container = db.collection('schools');
-        const results = await container.find(filter).skip(skipValue).limit(limitValue).toArray();
-
-        return {
-            rows: results.map(row => {
-                const distance = haversineDistance(
-                    lon, lat,
-                    row.location.coordinates[0],
-                    row.location.coordinates[1],
-                    conversionFactor
-                );
-                return {
-                    ...row,
-                    distance
-                };
-            }),
-            nextPageToken: (skipValue + results.length).toString()
-        };
-    } catch (err) {
-        console.log(err);
-        return { Success: false, Error: err };
+    if (queryname) {
+        filter["details.name"] = new RegExp(`^${queryname}`, "i");  // Efficient prefix search
     }
+
+    const results = await db.collection('schools').find(filter).skip(skipValue).limit(limitValue).toArray();
+
+    return {
+        rows: results.map(row => {
+            const distance = haversineDistance(
+                coordinates.longitude, coordinates.latitude,
+                row.location.coordinates[0],
+                row.location.coordinates[1],
+                conversionFactor
+            );
+            return {
+                ...row,
+                distance
+            };
+        }),
+        nextPageToken: (skipValue + results.length).toString()
+    };
 }
+
 
 
 module.exports = { SetupGeospatialDB, fetchSchools, pushSchools }
