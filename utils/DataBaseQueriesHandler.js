@@ -160,7 +160,7 @@ async function UpdateDataInNeptune(uid, data, value) {
     const newValue = currentValue + value;
 
     // Update the vertex with the new value
-    await g.submit('g.V().has("uid", uid).property(data, newValue)', { uid: uid, newValue: newValue });
+    await g.submit('g.V().has("uid", uid).property(data, newValue)', { uid: uid,data:data, newValue: newValue });
   } catch (error) {
     console.error("Error querying Neptune", error);
   }
