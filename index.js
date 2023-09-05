@@ -50,7 +50,6 @@ module.exports = {
   GetRecommendationsOnboarding: Recommendations.GetRecommendationsOnboarding,
   GetRecommendationsExploreSection: Recommendations.GetRecommendationsExploreSection,
   GetRecommendationsQuestions: Recommendations.GetRecommendationsQuestions,
-  handleTransactionError: ServiceBus.handleTransactionError,
   fetchRequestsFromSQS: ServiceBus.fetchRequestsFromSQS,
   CreateMixPanelUser: UserCreation.CreateMixPanelUser,
   CreateScyllaUser: UserCreation.CreateScyllaUser,
