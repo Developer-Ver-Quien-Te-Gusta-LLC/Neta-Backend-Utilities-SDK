@@ -120,6 +120,14 @@ async function pushSchools(reqs, db) {
 
         let queryname = req.query.queryname;
         let geohashValue = req.query.geohashValue;
+        if (!geohashValue) {
+            let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+            if (ip) {
+                const response = await axios.get(`https://ipinfo.io/${ip}/geo`);
+                const location = response.data.loc.split(',');
+                geohashValue = ngeohash.encode(location[0], location[1]);
+            }
+        }
         let nextPageToken = req.query.nextPageToken;
 
         const coordinates = ngeohash.decode(geohashValue);

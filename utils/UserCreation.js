@@ -135,7 +135,7 @@ const handleTransactionCompletion =
   }
 
 async function CreateScyllaUser(UserParams) {
-  const { username, phoneNumber, platform, transactionId, encryptionKey,uid } = UserParams;
+  const { username, phoneNumber, platform, transactionId, encryptionKey, uid } = UserParams;
   const starCount = UserParams.starCount || 0;
   const invitesLeft = UserParams.invitesLeft || 0;
   const lastPollTime = UserParams.lastPollTime || null;
