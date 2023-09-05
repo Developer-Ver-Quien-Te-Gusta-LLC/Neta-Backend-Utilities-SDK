@@ -113,6 +113,9 @@ async function CreateScyllaUser(UserParams) {
 
 async function createNeptuneUser(UserParams) {
   var { username, phoneNumber, highschool, grade, age, gender, fname, lname, uid, transactionId, encryptionKey } = UserParams;
+  for (let key in UserParams) {
+    if (UserParams[key] === undefined) UserParams[key] = null;
+  }
 
   if (!grade) grade = null;
   if (!gender) gender = null;
