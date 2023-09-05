@@ -152,16 +152,15 @@ async function handleTransactionError(phoneNumber, a = undefined, b = undefined)
 async function UpdateDataInNeptune(uid, data, value) {
   try {
     // Fetch the current value
-    const result = await g.submit('g.V().has("uid", uid).values(data)', { uid: uid, data: data });
-    console.log("userval" + result);
-    const currentValue = result.toArray()[0];
-    
+    const result = await g.submit('g.V().has("uid", uid)', { uid: uid});
+    const currentValue =  result._items[value] == undefined ? 0:result._items[value];
+    console.log(currentValue);
 
     // Increment the value
     const newValue = currentValue + value;
 
     // Update the vertex with the new value
-    await g.submit('g.V().has("uid", uid).property(data, newValue)', { uid: uid, data: data, newValue: newValue });
+    await g.submit('g.V().has("uid", uid).property(data, newValue)', { uid: uid, newValue: newValue });
   } catch (error) {
     console.error("Error querying Neptune", error);
   }
