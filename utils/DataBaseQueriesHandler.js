@@ -4,6 +4,9 @@ const cassandra = require('cassandra-driver');
 const SetupCassandraClient = require('./SetupCassandra').SetupCassandraClient
 const  FetchFromSecrets  = require('./AwsSecrets.js').FetchFromSecrets;
 
+const { SetupGraphDB } = require("./SetupGraphDB.js");
+SetupGraphDB().then(result =>{ global.g = result});
+
 let client;
 SetupCassandraClient(client)
 
@@ -147,20 +150,11 @@ async function handleTransactionError(phoneNumber, a = undefined, b = undefined)
 
 // Update data in Neptune (for the given phone number)
 async function UpdateDataInNeptune(uid, data, value) {
-  const dc = new DriverRemoteConnection(
-    `wss://${NeptuneConnection.endpoint}:${NeptuneConnection.port}/gremlin`
-  );
-
-  const graph = new Graph();
-  const g = graph.traversal().withRemote(dc);
-
   try {
-    const query = g
-      .V()
-      .has("uid", uid)
-      .property(data, value)
-      .next();
-    await query;
+      await g.submit(
+      'g.V().has("uid",uid).property(data, g.V().values(data).sum().is(value))',
+      { uid: uid, data: data, value: value }
+    );
   } catch (error) {
     console.error("Error querying Neptune", error);
   }
