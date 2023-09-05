@@ -1,6 +1,7 @@
 /// this class uses azure cosmosdb via the mongodb api in order to provide
 /// geospatial searching for the 'schools' microservice
 
+const axios = require('axios');
 
 const MongoClient = require('mongodb').MongoClient;
 const FetchFromSecrets = require('./AwsSecrets.js').FetchFromSecrets
