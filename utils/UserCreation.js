@@ -120,18 +120,7 @@ async function createNeptuneUser(UserParams) {
   try {
     await g
       .submit(
-        "g.addV('User').property('username', username).property('phoneNumber', phoneNumber).property('highschool', highschool).property('grade', grade).property('age', age).property('gender', gender).property('fname', fname).property('lname', lname).property('uid',uid)",
-        {
-          username: username,
-          phoneNumber: phoneNumber,
-          highschool: highschool,
-          grade: grade,
-          age: age,
-          gender: gender,
-          fname: fname,
-          lname: lname,
-          uid: uid,
-        }
+        `g.addV('User').property('username', ${username}).property('phoneNumber', ${phoneNumber}).property('highschool', ${highschool}).property('grade', ${grade}).property('age', ${age}).property('gender', ${gender}).property('fname', ${fname}).property('lname', ${lname}).property('uid',${uid})`
       )
       .then(function (result) {
         console.log("User Created in graphdb");
