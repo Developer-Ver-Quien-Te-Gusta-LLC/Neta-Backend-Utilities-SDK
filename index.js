@@ -55,6 +55,7 @@ module.exports = {
   CreateScyllaUser: UserCreation.CreateScyllaUser,
   createNeptuneUser: UserCreation.createNeptuneUser,
   CreateFirebaseUser: UserCreation.CreateFirebaseUser,
+  uploadUserContacts: UserCreation.uploadUserContacts,
   handleTransactionCompletion: UserCreationTransactionHandling.handleTransactionCompletion,
   OnUserCreationFailed: UserCreationTransactionHandling.OnUserCreationFailed,
   publishAlbyMessage: NotificationSystem.publishAlbyMessage,

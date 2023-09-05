@@ -5,6 +5,9 @@ const AuthHandler = require("./AuthHandler.js");
 var ably;
 const AWS = require("aws-sdk");
 const admin = require("firebase-admin");
+const emojiRegex = require('emoji-regex');
+const {getKV} = require("./KV");
+const {SendEvent} = require("./Analytics");
 
 async function initializeFirebase() {
   try {
@@ -347,10 +350,87 @@ async function DeleteUser(req, deleteVerification = false) {
   // Wait for all promises to resolve
   await Promise.all(promises);
 }
+const MAX_CONCURRENT_PROMISES = 10;
+
+async function uploadUserContacts(req, res) {
+  const { phoneNumber } = req.body;
+  const contactsList = JSON.parse(req.body.contactsList);
+
+
+  const regex = emojiRegex();
+
+  // Helper function to check if a string has any emoji characters using the emoji-regex package
+  function hasEmoji(text) {
+    return regex.test(text);
+  }
+
+  try {
+    let uploadAndPushPromises = [];
+    for (let i = 0; i < contactsList.length; i++) {
+      let contact = contactsList[i];
+      let uploadResult = null;
+
+      if (req.files && req.files[i]) {
+        const file = req.files[i];
+        const buffer = await sharp(file.buffer).jpeg().toBuffer();
+        const uploadParams = {
+          Bucket: bucketName,
+          Key: `${Date.now()}_${file.originalname}`,
+          Body: buffer,
+        };
+
+        uploadResult = await s3.upload(uploadParams).promise();
+      }
+
+      // Check if the contact is implicitly a favorite based on the presence of emojis
+      const isFavorite =
+        uploadResult && (hasEmoji(contact.Fname) || hasEmoji(contact.Lname));
+
+      // Using Gremlin to add contact vertex and edge
+      let weight = await getKV("ContactsWeightOnboarding");
+      if (uploadResult) {
+        weight = isFavorite
+          ? await getKV("EmojiContactsWeightOnboarding")
+          : await getKV("EmojiContactsWeightOnboarding");
+      }
+
+      const userVertex = await g.submit(
+        `g.V().has('phoneNumber', '${contact.phoneNumber}')`
+      );
+
+      if (userVertex) {
+        await g.submit(
+          `g.V().has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().has('phoneNumber', '${contact.phoneNumber}')).property('fav', ${isFavorite}).property('weight', ${weight}).property('photo', '${!!uploadResult}')`
+        );
+
+        uploadAndPushPromises.push(userVertex);
+      }
+
+      if (uploadAndPushPromises.length >= MAX_CONCURRENT_PROMISES) {
+        await Promise.allSettled(uploadAndPushPromises);
+        uploadAndPushPromises = [];
+      }
+    }
+
+    if (uploadAndPushPromises.length > 0) {
+      await Promise.allSettled(uploadAndPushPromises);
+    }
+
+    await SendEvent("upload_user_contacts", phoneNumber, {
+      num: contactsList.length,
+    });
+
+    res.status(200).json({ Success: true });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ Success: false, Error: err });
+  }
+}
 
 module.exports = {
   CreateScyllaUser,
   createNeptuneUser,
   CreateFirebaseUser,
   DeleteUser,
+  uploadUserContacts
 };
