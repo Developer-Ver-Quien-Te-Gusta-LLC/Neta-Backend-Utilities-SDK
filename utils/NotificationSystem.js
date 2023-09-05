@@ -12,16 +12,16 @@ async function fetchAlby() {
 fetchAlby();
 
 console.log("Connected to Ably!");
-const fcm = require("firebase-admin");
+const admin = require("firebase-admin");
 
 let Credentials;
 async function SetupFCM() {
   //import serviceAccount from './credentials/creds.json';
   Credentials = await FetchFromSecrets("FCMAccountCredentials");
   Credentials = JSON.parse(Credentials);
-  if(fcm.apps.length ===0){
-  fcm.initializeApp({
-    credential: fcm.credential.cert(Credentials),
+  if(admin.apps.length ===0){
+  admin.initializeApp({
+    credential: admin.credential.cert(Credentials),
   });
 }
 }
