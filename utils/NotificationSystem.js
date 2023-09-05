@@ -88,4 +88,4 @@ async function SendNotification(userId, payload) {
     await publishFCMMessage(userToken, JSON.stringify(payload));
   }
 }
-module.exports = { SendNotification ,publishAlbyMessage, publishAlbyMessageNaive, SendNotificationPush, SendNotificationInApp };
+module.exports = { SendNotification ,publishAlbyMessage, publishAlbyMessageNaive };
