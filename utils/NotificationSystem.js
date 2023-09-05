@@ -25,7 +25,6 @@ async function SetupFCM() {
   });
 }
 }
-
 SetupFCM();
 
 async function publishAlbyMessageNaive(user_id, message) {
@@ -78,13 +77,13 @@ async function publishFCMMessage(userToken, message) {
 }
 
 async function SendNotification(userId, payload) {
-  let userStatus = await getDataFromScyalla("Users", userId, "online");
+  let userStatus = await getDataFromScyalla("users", userId, "online");
   if (userStatus == undefined || userStatus == null) userStatus = false /// no value defaults to false
 
   if (userStatus == true) {
     await publishAlbyMessage(userId, payload);
   } else {
-    const userToken = await getDataFromScyalla("Users", userId, "token");
+    const userToken = await getDataFromScyalla("users", userId, "uid");
     await publishFCMMessage(userToken, JSON.stringify(payload));
   }
 }
