@@ -209,10 +209,32 @@ async function createNeptuneUser(UserParams) {
     await g
       .submit(
         `g.addV('User').property('username', '${username}').property('phoneNumber', '${phoneNumber}').property('highschool', '${highschool}').property('grade', '${grade}').property('age', '${age}').property('gender', '${gender}').property('fname', '${fname}').property('lname', '${lname}').property('uid','${uid}')`
-      )
-      .then(function (result) {
-        console.log("User Created in graphdb");
-      });
+      );
+
+      const contactExists = await g.submit(`g.V().hasLabel('Contact').has('phonenumber', '${phoneNumber}')`);
+      if (contactExists._items.length === 0) {
+        await g.submit(`g.addV('Contact').property('phonenumber', '${phoneNumber}')`);
+      }
+
+      
+
+    const highschoolVertex = await g.submit(
+      `g.V().hasLabel('Highschool').has('name', '${highschool}')`
+    );
+
+    if (highschoolVertex._items.length > 0) {
+      await g.submit(
+        `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().has('Highschool', 'name', '${highschool}'))`
+      );
+    } else {
+      await g.submit(
+        `g.addV('Highschool').property('name', '${highschool}')`
+      );
+      await g.submit(
+        `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().has('Highschool', 'name', '${highschool}'))`
+      );
+    }
+    
     await handleTransactionCompletion(transactionId, uid, encryptionKey);
     return true; // Return the success response
   } catch (error) {
