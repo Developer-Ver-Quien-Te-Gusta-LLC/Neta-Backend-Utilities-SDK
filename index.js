@@ -38,7 +38,7 @@ module.exports = {
   SetupGraphDB: require('./utils/SetupGraphDB.js').SetupGraphDB,
   SetKV: KV.SetKV,
   getKV: KV.getKV,
-  formatPhoneNumber : require('./utils/PhoneNumberFormatter.js'),
+  formatPhoneNumber : require('./utils/PhoneNumberFormatter.js').formatPhoneNumber,
   measureRouteComputeLength : Datadog.measureRouteComputeLength,
   logSanitizedRequest : Datadog.logSanitizedRequest,
   SendNotification: NotificationSystem.SendNotification,
