@@ -228,11 +228,11 @@ async function createNeptuneUser(UserParams) {
     );
 
     const contactExists = await g.submit(
-      `g.V().hasLabel('Contact').has('phonenumber', '${phoneNumber}')`
+      `g.V().hasLabel('Contact').has('phoneNumber', '${phoneNumber}')`
     );
     if (contactExists._items.length === 0) {
       await g.submit(
-        `g.addV('Contact').property('phonenumber', '${phoneNumber}').property('uid','${uid}')`
+        `g.addV('Contact').property('phoneNumber', '${phoneNumber}').property('uid','${uid}')`
       );
     }
     
@@ -438,6 +438,7 @@ async function uploadUserContacts(req, res) {
         weight = isFavorite ? EmojiContactsWeight : weight;
       }
 
+    
       const ContactVertex = await g.submit(
         "g.V().hasLabel('Contact').has('phoneNumber', phoneNumber)",
         { phoneNumber: contact.phoneNumber }
@@ -445,7 +446,7 @@ async function uploadUserContacts(req, res) {
 
       if (ContactVertex.length == 0) {
         const uid = uuid.v4();
-        
+       
         await g.submit(
           "g.addV('Contact').property('phoneNumber', phoneNumber).property('fav', isFavorite).property('weight', weight).property('photo', uploadResult).property('uid', uid)",
           {
@@ -456,18 +457,17 @@ async function uploadUserContacts(req, res) {
             uid: uid
           }
         );
+      
         await g.submit(
-          "g.V().hasLabel('User').has('uid', uid).addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber))",
-          { uid: uid, contactPhoneNumber: contact.phoneNumber }
+          "g.V().hasLabel('User').has('phoneNumber', phoneNumber).addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber))",
+          { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
         );
-
-        console.log("Contact Created and edge added");
       } else {
+        
         await g.submit(
           "g.V().hasLabel('User').has('phoneNumber', phoneNumber).V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber).addE('HAS_CONTACT_IN_APP')",
           { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
         );
-        console.log("Contact Edge added");
       }
 
     }
