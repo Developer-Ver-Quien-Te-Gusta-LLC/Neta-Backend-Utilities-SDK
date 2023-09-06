@@ -455,12 +455,12 @@ async function uploadUserContacts(req, res) {
           }
         );
         await g.submit(
-          "g.V().hasLabel('User').has('uid', uid).as('u').V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber).addE('HAS_CONTACT').from('u')",
+          "g.V().has('User', 'uid', uid).addE('HAS_CONTACT').to(g.V().has('Contact', 'phoneNumber', contactPhoneNumber))",
           { uid: uid, contactPhoneNumber: contact.phoneNumber }
         );
       } else {
         await g.submit(
-          "g.V().hasLabel('User').has('phoneNumber', phoneNumber).as('u').V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber).addE('HAS_CONTACT_IN_APP').from('u')",
+          "g.V().hasLabel('User').has('phoneNumber', phoneNumber).V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber).addE('HAS_CONTACT_IN_APP')",
           { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
         );
       }
