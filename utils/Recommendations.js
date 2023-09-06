@@ -323,51 +323,45 @@ async function GetRecommendationsExploreSection(
   };
 }
 
+function getRandomOffset(total) {
+  return Math.floor(Math.random() * total);
+}
+
 async function GetRecommendationsQuestions(uid, highschool, grade) {
+  const randomOffset = getRandomOffset(10); // You need to have TOTAL_USERS defined or calculated somewhere in your script
+
   const allUsers = await g.submit(`
     g.V().hasLabel('User').has('uid', "${uid}")
-    .union(
+    .coalesce(
       // Repeating traversal for contacts with 'fav' true
-      __.unfold().repeat(
-        __.outE('HAS_CONTACT').has('fav', true).inV()
-      ).times(${EmojiContactsWeightQuestions}),
+      __.repeat(__.outE('HAS_CONTACT').has('fav', true).inV()).times(${EmojiContactsWeightQuestions}),
       
       // Repeating traversal for contacts with photo
-      __.unfold().repeat(
-        __.outE('HAS_CONTACT').has('photo', true).inV()
-      ).times(${PhotoContactsWeightQuestions}),
+      __.repeat(__.outE('HAS_CONTACT').has('photo', true).inV()).times(${PhotoContactsWeightQuestions}),
       
       // Repeating traversal for contacts without 'fav' and without photo
-      __.unfold().repeat(
-        __.outE('HAS_CONTACT').inV()
-      ).times(${ContactsWeightQuestions}),
+      __.repeat(__.outE('HAS_CONTACT').inV()).times(${ContactsWeightQuestions}),
       
       // Repeating traversal for same high school
-      __.unfold().repeat(
-        __.has('highschool', "${highschool}")
-      ).times(${SameHighSchoolWeightQuestions}),
+      __.repeat(__.has('highschool', "${highschool}")).times(${SameHighSchoolWeightQuestions}),
       
       // Repeating traversal for friends
-      __.unfold().repeat(
-        __.out('FRIENDS_WITH')
-      ).times(${FriendsWeightQuestions}),
+      __.repeat(__.out('HAS_FRIEND')).times(${FriendsWeightQuestions}),
       
       // Repeating traversal for friends of friends
-      __.unfold().repeat(
-        __.out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self'))
-      ).times(${FriendsOfFriendsWeightQuestions}),
+      __.repeat(__.out('HAS_FRIEND').out('HAS_FRIEND').dedup().where(P.neq('self'))).times(${FriendsOfFriendsWeightQuestions}),
       
       // Repeating traversal for same grade in same high school
-      __.unfold().repeat(
-        __.has('highschool', "${highschool}").has('grade', "${grade}")
-      ).times(${SameGradeWeightQuestions}),
+      __.repeat(__.has('highschool', "${highschool}").has('grade', "${grade}")).times(${SameGradeWeightQuestions}),
       
       // Repeating traversal for top friends
       __.unfold().repeat(
         __.out('FRIENDS_WITH').order().by('PollsCount', decr)
       ).times(${TopFriendsWeightsQuestions})
     )
-    .sample(4)
+    .order().by(__.id().hashcode()) // Ordering pseudorandomly based on hashed ID
+    .range(${randomOffset}, ${randomOffset + 10}) // Paginate using the random offset
+    .fold()
     .coalesce(
       __.unfold(), 
       __.V().hasLabel('User').has('uid', "${uid}").out('HAS_CONTACT').limit(4)
@@ -382,6 +376,7 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
     console.error(error);
   });
 }
+
 
 
 
