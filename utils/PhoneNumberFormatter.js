@@ -3,7 +3,7 @@ function formatPhoneNumber(phoneNumber) {
     let cleanedNumber = phoneNumber.replace(/\D/g, '');
 
     // Insert a space between every digit
-    let formattedNumber = cleanedNumber.split('').join(' ');
+    let formattedNumber = cleanedNumber.split('').join('');
 
     return formattedNumber;
 }
