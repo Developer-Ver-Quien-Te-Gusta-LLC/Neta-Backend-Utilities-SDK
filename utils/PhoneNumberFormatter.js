@@ -1,13 +1,11 @@
 function formatPhoneNumber(phoneNumber) {
-    // Check if phone number contains any non-digit characters (excluding + and spaces)
-    if (/[^0-9+\s]/.test(phoneNumber)) {
-        throw new Error("Invalid characters in phone number. Only digits, '+' and spaces are allowed.");
-    }
+    // Remove all non-digit characters
+    let cleanedNumber = phoneNumber.replace(/\D/g, '');
 
-    // Remove + and spaces
-    let formattedNumber = phoneNumber.replace(/[+\s]/g, '');
+    // Insert a space between every digit
+    let formattedNumber = cleanedNumber.split('').join(' ');
 
     return formattedNumber;
 }
 
-module.exports = formatPhoneNumber;
+module.exports = { formatPhoneNumber };
