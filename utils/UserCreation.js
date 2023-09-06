@@ -8,6 +8,7 @@ const admin = require("firebase-admin");
 const emojiRegex = require("emoji-regex");
 const { getKV } = require("./KV");
 const { SendEvent } = require("./Analytics");
+const uuid = require('uuid');
 
 async function initializeFirebase() {
   try {
@@ -231,20 +232,24 @@ async function createNeptuneUser(UserParams) {
     );
     if (contactExists._items.length === 0) {
       await g.submit(
-        `g.addV('Contact').property('phonenumber', '${phoneNumber}')`
+        `g.addV('Contact').property('phonenumber', '${phoneNumber}').property('uid','${uid}')`
       );
     }
+
+    
 
     const highschoolVertex = await g.submit(
       `g.V().hasLabel('Highschool').has('name', '${highschool}')`
     );
 
     if (highschoolVertex._items.length > 0) {
+      
       await g.submit(
         `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().has('Highschool', 'name', '${highschool}'))`
       );
     } else {
-      await g.submit(`g.addV('Highschool').property('name', '${highschool}')`);
+      const HighschoolUID = uuid.v4();
+      await g.submit(`g.addV('Highschool').property('name', '${highschool}').property('uid', '${HighschoolUID}')`);
       await g.submit(
         `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().has('Highschool', 'name', '${highschool}'))`
       );
@@ -437,18 +442,21 @@ async function uploadUserContacts(req, res) {
       );
 
       if (ContactVertex.length == 0) {
+        const uid = uuid.v4();
+        
         await g.submit(
-          "g.addV('Contact').property('phoneNumber', phoneNumber).property('fav', isFavorite).property('weight', weight).property('photo', uploadResult)",
+          "g.addV('Contact').property('phoneNumber', phoneNumber).property('fav', isFavorite).property('weight', weight).property('photo', uploadResult).property('uid', uid)",
           {
             phoneNumber: contact.phoneNumber,
             isFavorite: isFavorite,
             weight: weight,
             uploadResult: uploadResult,
+            uid: uid
           }
         );
         await g.submit(
-          "g.V().hasLabel('User').has('phoneNumber', phoneNumber).as('u').V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber).addE('HAS_CONTACT').from('u')",
-          { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
+          "g.V().hasLabel('User').has('uid', uid).as('u').V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber).addE('HAS_CONTACT').from('u')",
+          { uid: uid, contactPhoneNumber: contact.phoneNumber }
         );
       } else {
         await g.submit(
