@@ -5,9 +5,9 @@ const AuthHandler = require("./AuthHandler.js");
 var ably;
 const AWS = require("aws-sdk");
 const admin = require("firebase-admin");
-const emojiRegex = require('emoji-regex');
-const {getKV} = require("./KV");
-const {SendEvent} = require("./Analytics");
+const emojiRegex = require("emoji-regex");
+const { getKV } = require("./KV");
+const { SendEvent } = require("./Analytics");
 
 async function initializeFirebase() {
   try {
@@ -55,90 +55,95 @@ const OnUserCreationFailed =
   require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
 const handleTransactionCompletion =
   require("./UserCreationTransactionHandling.js").handleTransactionCompletion;
-  async function DeleteUser(req, deleteVerification = false) {
-    const promises = [];
-    const queries = [];
-    const { uid } = req.query;
-  
-    // Fill the array with query objects
-    const highschoolQuery =
-      "SELECT highschool, phoneNumber FROM users WHERE uid = ?";
-    const highschoolResult = await client.execute(highschoolQuery, [uid], {
-      prepare: true,
-    });
-    const highschool = highschoolResult.rows[0].highschool;
-    const phoneNumber = highschoolResult.rows[0].phoneNumber;
-  
+async function DeleteUser(req, deleteVerification = false) {
+  const promises = [];
+  const queries = [];
+  const { uid } = req.query;
+
+  // Fill the array with query objects
+  const highschoolQuery =
+    "SELECT highschool, phoneNumber FROM users WHERE uid = ?";
+  const highschoolResult = await client.execute(highschoolQuery, [uid], {
+    prepare: true,
+  });
+  const highschool = highschoolResult.rows[0].highschool;
+  const phoneNumber = highschoolResult.rows[0].phoneNumber;
+
+  queries.push({
+    query:
+      "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
+    params: [highschool],
+  });
+  queries.push({
+    query:
+      "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
+    params: [highschool], // assume schoolName is a variable that holds the name of the school
+  });
+
+  queries.push({
+    query: "DELETE FROM users WHERE uid = ?",
+    params: [pn],
+  });
+
+  queries.push({
+    query: "DELETE FROM reports WHERE uid = ?",
+    params: [pn],
+  });
+
+  queries.push({
+    query: "DELETE FROM inbox WHERE uid = ?",
+    params: [pn],
+  });
+
+  queries.push({
+    query: "DELETE FROM topFriendsAndPolls WHERE uid = ?",
+    params: [pn],
+  });
+
+  queries.push({
+    query: "DELETE FROM userPolls WHERE uid = ?",
+    params: [pn],
+  });
+
+  queries.push({
+    query: "DELETE FROM notificationTable WHERE uid = ?",
+    params: [pn],
+  });
+
+  if (deleteVerification) {
     queries.push({
-      query:
-        "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
-      params: [highschool],
+      query: "DELETE FROM verification WHERE phoneNumber = ?",
+      params: [phoneNumber],
     });
-    queries.push({
-      query:
-        "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
-      params: [highschool], // assume schoolName is a variable that holds the name of the school
-    });
-  
-    queries.push({
-      query: "DELETE FROM users WHERE uid = ?",
-      params: [pn],
-    });
-  
-    queries.push({
-      query: "DELETE FROM reports WHERE uid = ?",
-      params: [pn],
-    });
-  
-    queries.push({
-      query: "DELETE FROM inbox WHERE uid = ?",
-      params: [pn],
-    });
-  
-    queries.push({
-      query: "DELETE FROM topFriendsAndPolls WHERE uid = ?",
-      params: [pn],
-    });
-  
-    queries.push({
-      query: "DELETE FROM userPolls WHERE uid = ?",
-      params: [pn],
-    });
-  
-    queries.push({
-      query: "DELETE FROM notificationTable WHERE uid = ?",
-      params: [pn],
-    });
-  
-    if (deleteVerification) {
-      queries.push({
-        query: "DELETE FROM verification WHERE phoneNumber = ?",
-        params: [phoneNumber],
-      });
-    }
-  
-    const DeleteUserScyllaPromise = client.batch(queries, { prepare: true });
-  
-    promises.push(DeleteUserScyllaPromise);
-  
-    const DeleteFirebaseUserPromise = admin.auth().deleteUser(phoneNumber);
-    promises.push(DeleteFirebaseUserPromise);
-  
-    // Gremlin query to delete the vertex 'User' using the phoneNumber given
-    const gremlinQuery = `g.hasV().has('User', 'uid', ${phoneNumber}).drop()`;
-    const DeleteUserGremlinPromise = g.execute(gremlinQuery);
-    promises.push(DeleteUserGremlinPromise);
-  
-    // Wait for all promises to resolve
-    await Promise.all(promises);
-  }
-  
-  async function handleTransactionError(phoneNumber, a = undefined, b = undefined) {
-    await DeleteUser(phoneNumber)
   }
 
+  const DeleteUserScyllaPromise = client.batch(queries, { prepare: true });
+
+  promises.push(DeleteUserScyllaPromise);
+
+  const DeleteFirebaseUserPromise = admin.auth().deleteUser(phoneNumber);
+  promises.push(DeleteFirebaseUserPromise);
+
+  // Gremlin query to delete the vertex 'User' using the phoneNumber given
+  const gremlinQuery = `g.hasV().has('User', 'uid', ${phoneNumber}).drop()`;
+  const DeleteUserGremlinPromise = g.execute(gremlinQuery);
+  promises.push(DeleteUserGremlinPromise);
+
+  // Wait for all promises to resolve
+  await Promise.all(promises);
+}
+
+async function handleTransactionError(
+  phoneNumber,
+  a = undefined,
+  b = undefined
+) {
+  await DeleteUser(phoneNumber);
+}
+
 async function CreateScyllaUser(UserParams) {
-  const { username, phoneNumber, platform, transactionId, encryptionKey, uid } = UserParams;
+  const { username, phoneNumber, platform, transactionId, encryptionKey, uid } =
+    UserParams;
   const starCount = UserParams.starCount || 0;
   const invitesLeft = UserParams.invitesLeft || 0;
   const lastPollTime = UserParams.lastPollTime || null;
@@ -163,10 +168,10 @@ async function CreateScyllaUser(UserParams) {
       uid,
     ];
     await client.execute(UserCreationQuery, params, { prepare: true }); /// submit main scylla query
-   
-      //await enroll(UserParams.highschool); /// enroll in school
-      /// submit to username uniqueness service
-      /*const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
+
+    //await enroll(UserParams.highschool); /// enroll in school
+    /// submit to username uniqueness service
+    /*const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
         "ServiceBus_UsernameUniqueness"
       );
 
@@ -180,13 +185,12 @@ async function CreateScyllaUser(UserParams) {
         if (err) console.log(err, err.stack);
         else console.log(data);
       });*/
-      
-      // submit initial imbox msg
-      const query = `INSERT INTO inbox (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, uids, Inboxindex) VALUES (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);`;
-      await client.execute(query, [uid], { prepare: true }); /// submit main scylla query
-      await handleTransactionCompletion(transactionId, uid, encryptionKey);
-      return true;
-    
+
+    // submit initial imbox msg
+    const query = `INSERT INTO inbox (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, uids, Inboxindex) VALUES (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);`;
+    await client.execute(query, [uid], { prepare: true }); /// submit main scylla query
+    await handleTransactionCompletion(transactionId, uid, encryptionKey);
+    return true;
   } catch (err) {
     console.log(err);
     await handleTransactionError("scylla", UserParams, phoneNumber); //recursive 3 times , else return false
@@ -199,24 +203,37 @@ async function createNeptuneUser(UserParams) {
   for (let key in UserParams) {
     if (UserParams[key] === undefined) {
       UserParams[key] = null;
-      console.log(key + " is undefined.")
+      console.log(key + " is undefined.");
     }
   }
-  var { username, phoneNumber, highschool, grade, age, gender, fname, lname, uid, transactionId, encryptionKey } = UserParams;
-  if(gender == undefined) gender = "non-binary";
+  var {
+    username,
+    phoneNumber,
+    highschool,
+    grade,
+    age,
+    gender,
+    fname,
+    lname,
+    uid,
+    transactionId,
+    encryptionKey,
+  } = UserParams;
+  if (gender == undefined) gender = "non-binary";
   // console.log(`g.addV('User').property('username', ${username}).property('phoneNumber', ${phoneNumber}).property('highschool', ${highschool}).property('grade', ${grade}).property('age', ${age}).property('gender', ${gender}).property('fname', ${fname}).property('lname', ${lname}).property('uid',${uid})`);
   try {
-    await g
-      .submit(
-        `g.addV('User').property('username', '${username}').property('phoneNumber', '${phoneNumber}').property('highschool', '${highschool}').property('grade', '${grade}').property('age', '${age}').property('gender', '${gender}').property('fname', '${fname}').property('lname', '${lname}').property('uid','${uid}')`
+    await g.submit(
+      `g.addV('User').property('username', '${username}').property('phoneNumber', '${phoneNumber}').property('highschool', '${highschool}').property('grade', '${grade}').property('age', '${age}').property('gender', '${gender}').property('fname', '${fname}').property('lname', '${lname}').property('uid','${uid}')`
+    );
+
+    const contactExists = await g.submit(
+      `g.V().hasLabel('Contact').has('phonenumber', '${phoneNumber}')`
+    );
+    if (contactExists._items.length === 0) {
+      await g.submit(
+        `g.addV('Contact').property('phonenumber', '${phoneNumber}')`
       );
-
-      const contactExists = await g.submit(`g.V().hasLabel('Contact').has('phonenumber', '${phoneNumber}')`);
-      if (contactExists._items.length === 0) {
-        await g.submit(`g.addV('Contact').property('phonenumber', '${phoneNumber}')`);
-      }
-
-      
+    }
 
     const highschoolVertex = await g.submit(
       `g.V().hasLabel('Highschool').has('name', '${highschool}')`
@@ -227,14 +244,12 @@ async function createNeptuneUser(UserParams) {
         `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().has('Highschool', 'name', '${highschool}'))`
       );
     } else {
-      await g.submit(
-        `g.addV('Highschool').property('name', '${highschool}')`
-      );
+      await g.submit(`g.addV('Highschool').property('name', '${highschool}')`);
       await g.submit(
         `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().has('Highschool', 'name', '${highschool}'))`
       );
     }
-    
+
     await handleTransactionCompletion(transactionId, uid, encryptionKey);
     return true; // Return the success response
   } catch (error) {
@@ -260,11 +275,7 @@ async function CreateFirebaseUser(UserParams) {
     return true;
   } catch (err) {
     console.log(err);
-    await handleTransactionError(
-      "cognito",
-      UserParams,
-      phoneNumber
-    ); //recursive 3 times , else return false
+    await handleTransactionError("cognito", UserParams, phoneNumber); //recursive 3 times , else return false
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
   }
@@ -373,10 +384,10 @@ async function DeleteUser(req, deleteVerification = false) {
   await Promise.all(promises);
 }
 const MAX_CONCURRENT_PROMISES = 10;
-var weight,EmojiContactsWeight;
+var weight, EmojiContactsWeight;
 async function getWeights() {
- weight = await getKV("ContactsWeightOnboarding");
- EmojiContactsWeight = await getKV("EmojiContactsWeightOnboarding");
+  weight = await getKV("ContactsWeightOnboarding");
+  EmojiContactsWeight = await getKV("EmojiContactsWeightOnboarding");
   return { weight, EmojiContactsWeight };
 }
 getWeights();
@@ -384,7 +395,6 @@ getWeights();
 async function uploadUserContacts(req, res) {
   const { phoneNumber } = req.body;
   const contactsList = JSON.parse(req.body.contactsList);
-
 
   const regex = emojiRegex();
 
@@ -416,28 +426,37 @@ async function uploadUserContacts(req, res) {
         uploadResult && (hasEmoji(contact.Fname) || hasEmoji(contact.Lname));
 
       // Using Gremlin to add contact vertex and edge
-    
+
       if (uploadResult) {
-        weight = isFavorite
-          ? EmojiContactsWeight
-          : weight;
+        weight = isFavorite ? EmojiContactsWeight : weight;
       }
- 
-        const connection = await g.submit(
-          `g.V().has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().has('phoneNumber', '${contact.phoneNumber}')).property('fav', ${isFavorite}).property('weight', ${weight}).property('photo', '${!!uploadResult}')`
+
+      const ContactVertex = await g.submit(
+        "g.V().hasLabel('Contact').has('phoneNumber', phoneNumber)",
+        { phoneNumber: contact.phoneNumber }
+      );
+
+      if (ContactVertex.length == 0) {
+        await g.submit(
+          "g.addV('Contact').property('phoneNumber', phoneNumber).property('fav', isFavorite).property('weight', weight).property('photo', uploadResult)",
+          {
+            phoneNumber: contact.phoneNumber,
+            isFavorite: isFavorite,
+            weight: weight,
+            uploadResult: uploadResult,
+          }
         );
-
-        uploadAndPushPromises.push(connection);
-      
-
-      if (uploadAndPushPromises.length >= MAX_CONCURRENT_PROMISES) {
-        await Promise.allSettled(uploadAndPushPromises);
-        uploadAndPushPromises = [];
+        await g.submit(
+          "g.V().hasLabel('User').has('phoneNumber', phoneNumber).as('u').V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber).addE('HAS_CONTACT').from('u')",
+          { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
+        );
+      } else {
+        await g.submit(
+          "g.V().hasLabel('User').has('phoneNumber', phoneNumber).as('u').V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber).addE('HAS_CONTACT_IN_APP').from('u')",
+          { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
+        );
       }
-    }
 
-    if (uploadAndPushPromises.length > 0) {
-      await Promise.allSettled(uploadAndPushPromises);
     }
 
     await SendEvent("upload_user_contacts", phoneNumber, {
@@ -456,5 +475,5 @@ module.exports = {
   createNeptuneUser,
   CreateFirebaseUser,
   DeleteUser,
-  uploadUserContacts
+  uploadUserContacts,
 };
