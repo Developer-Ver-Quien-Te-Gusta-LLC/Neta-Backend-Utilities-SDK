@@ -245,15 +245,15 @@ async function createNeptuneUser(UserParams) {
     if (highschoolVertex._items.length > 0) {
       
       await g.submit(
-        `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().has('Highschool', 'name', '${highschool}'))`
+        `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', '${highschool}'))`
       );
     } else {
       const HighschoolUID = uuid.v4();
       await g.submit(`g.addV('Highschool').property('name', '${highschool}').property('uid', '${HighschoolUID}')`);
-      await g.submit(
-        `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().has('Highschool', 'name', '${highschool}'))`
-      );
     }
+    await g.submit(
+      `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', '${highschool}'))`
+    );
 
     await handleTransactionCompletion(transactionId, uid, encryptionKey);
     return true; // Return the success response
