@@ -455,14 +455,17 @@ async function uploadUserContacts(req, res) {
           }
         );
         await g.submit(
-          "g.V().has('User', 'uid', uid).addE('HAS_CONTACT').to(g.V().has('Contact', 'phoneNumber', contactPhoneNumber))",
+          "g.V().hasLabel('User').has('uid', uid).addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber))",
           { uid: uid, contactPhoneNumber: contact.phoneNumber }
         );
+
+        console.log("Contact Created and edge added");
       } else {
         await g.submit(
           "g.V().hasLabel('User').has('phoneNumber', phoneNumber).V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber).addE('HAS_CONTACT_IN_APP')",
           { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
         );
+        console.log("Contact Edge added");
       }
 
     }
