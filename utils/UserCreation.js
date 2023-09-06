@@ -234,6 +234,7 @@ async function createNeptuneUser(UserParams) {
       await g.submit(
         `g.addV('Contact').property('phonenumber', '${phoneNumber}').property('uid','${uid}')`
       );
+      await g.submit(`g.V().hasLabel('User').has('uid',uid).addE("SELF_CONTACT").to(g.V().hasLabel('Contact').has('phoneNumber',phoneNumber))`,{uid:uid,phoneNumber:phoneNumber})
     }
 
     
