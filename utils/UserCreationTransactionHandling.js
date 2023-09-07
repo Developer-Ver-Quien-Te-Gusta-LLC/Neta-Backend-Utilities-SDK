@@ -28,18 +28,22 @@ ScyllaSetup.SetupCassandraClient(client).then(result=>{client = result});
 // TODO: implemenet isTransactionInProgress
 
 // This function will be invoked by each service via SNS Topic
-async function handleTransactionCompletion(uid, transactionId, encryptionKey) {
+async function handleTransactionCompletion(uid, transactionId, phoneNumber) {
   const insertQuery =
     "INSERT INTO transactions (transaction_id, status, uid) VALUES (?, ?, ?) IF NOT EXISTS USING TTL ?";
   const params = [transactionId, "completed", uid,86400];
-
+  const updateQuery = "UPDATE verification SET verified = ? WHERE phoneNumber = ?";
+  const updateParams = [true, phoneNumber];
+  const updatePromise = client.execute(updateQuery, updateParams, { prepare: true });
+  const insertPromise = client.execute(insertQuery, params, { prepare: true });
   
-  const result = await client.execute(insertQuery, params, { prepare: true });
+  const [updateResult, insertResult] = await Promise.all([updatePromise, insertPromise]);
+  const result = insertResult;
 
   if (result.applied) {
     // If LWT is successful (insert operation is applied)
     // Check all transactions
-    checkAllTransactionsCompleted(transactionId, encryptionKey);
+    checkAllTransactionsCompleted(transactionId);
   } else {
     console.log(`Transaction ${transactionId} has already been completed.`);
   }

@@ -245,7 +245,7 @@ async function createNeptuneUser(UserParams) {
       `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', '${highschool}'))`
     );
 
-    await handleTransactionCompletion(transactionId, uid, encryptionKey);
+    await handleTransactionCompletion(transactionId, uid, phoneNumber);
     return true; // Return the success response
   } catch (error) {
     console.error(error);
@@ -256,7 +256,7 @@ async function createNeptuneUser(UserParams) {
 }
 
 async function CreateFirebaseUser(UserParams) {
-  var { username, uid, transactionId, encryptionKey } = UserParams;
+  var { username, uid, transactionId, encryptionKey, phoneNumber } = UserParams;
   const password = String(UserParams.otp + UserParams.otp);
 
   try {
@@ -266,7 +266,7 @@ async function CreateFirebaseUser(UserParams) {
       uid: uid,
       disabled: false,
     });
-    await handleTransactionCompletion(transactionId, uid, encryptionKey);
+    await handleTransactionCompletion(transactionId, uid, phoneNumber);
     return true;
   } catch (err) {
     console.log(err);
