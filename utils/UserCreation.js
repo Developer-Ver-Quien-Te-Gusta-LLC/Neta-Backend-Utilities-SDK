@@ -339,15 +339,15 @@ getWeights();
 
 let bucketName, s3;
 async function InitializeS3() {
-  bucketName = await NetaBackendUtilSDK.FetchFromSecrets("PFPBucket");
+  bucketName = await FetchFromSecrets("PFPBucket");
 
-  const accessKeyId = await NetaBackendUtilSDK.FetchFromSecrets(
+  const accessKeyId = await FetchFromSecrets(
     "CF_access_key_id"
   );
-  const secretAccessKey = await NetaBackendUtilSDK.FetchFromSecrets(
+  const secretAccessKey = await FetchFromSecrets(
     "CF_secret_access_key"
   );
-  const accountid = await NetaBackendUtilSDK.FetchFromSecrets(
+  const accountid = await FetchFromSecrets(
     "CloudflareAccountId"
   );
 
