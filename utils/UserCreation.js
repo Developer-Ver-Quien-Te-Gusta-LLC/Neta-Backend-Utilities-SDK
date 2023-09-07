@@ -143,6 +143,7 @@ async function handleTransactionError(
 }
 
 async function CreateScyllaUser(UserParams) {
+  console.log('CreateScyllaUser with ' + UserParams)
   const { username, phoneNumber, platform, transactionId, encryptionKey, uid } =
     UserParams;
   const starCount = UserParams.starCount || 0;
@@ -168,6 +169,9 @@ async function CreateScyllaUser(UserParams) {
       UserParams.grade,
       uid,
     ];
+    const populatedQuery = UserCreationQuery.replace(/\?/g, function() { return params.shift(); });
+    console.log(`Executing query: ${populatedQuery}`);
+    
     await client.execute(UserCreationQuery, params, { prepare: true }); /// submit main scylla query
 
     //await enroll(UserParams.highschool); /// enroll in school
@@ -214,8 +218,8 @@ async function createNeptuneUser(UserParams) {
     grade,
     age,
     gender,
-    fname,
-    lname,
+    firstName,
+    lastName,
     uid,
     transactionId,
     encryptionKey,
@@ -224,7 +228,7 @@ async function createNeptuneUser(UserParams) {
   // console.log(`g.addV('User').property('username', ${username}).property('phoneNumber', ${phoneNumber}).property('highschool', ${highschool}).property('grade', ${grade}).property('age', ${age}).property('gender', ${gender}).property('fname', ${fname}).property('lname', ${lname}).property('uid',${uid})`);
   try {
     await g.submit(
-      `g.addV('User').property('username', '${username}').property('phoneNumber', '${phoneNumber}').property('highschool', '${highschool}').property('grade', '${grade}').property('age', '${age}').property('gender', '${gender}').property('fname', '${fname}').property('lname', '${lname}').property('uid','${uid}')`
+      `g.addV('User').property('username', '${username}').property('phoneNumber', '${phoneNumber}').property('highschool', '${highschool}').property('grade', '${grade}').property('age', '${age}').property('gender', '${gender}').property('fname', '${firstName}').property('lname', '${lastName}').property('uid','${uid}')`
     );
 
     const contactExists = await g.submit(
