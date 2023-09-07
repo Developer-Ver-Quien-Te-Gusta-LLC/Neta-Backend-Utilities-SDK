@@ -160,35 +160,40 @@ async function createNeptuneUser(UserParams) {
     transactionId,
   } = UserParams;
   if (gender == undefined) gender = "non-binary";
-  // console.log(`g.addV('User').property('username', ${username}).property('phoneNumber', ${phoneNumber}).property('highschool', ${highschool}).property('grade', ${grade}).property('age', ${age}).property('gender', ${gender}).property('fname', ${fname}).property('lname', ${lname}).property('uid',${uid})`);
   try {
+    //Add user vertex
     await g.submit(
       `g.addV('User').property('username', '${username}').property('phoneNumber', '${phoneNumber}').property('highschool', '${highschool}').property('grade', '${grade}').property('age', '${age}').property('gender', '${gender}').property('fname', '${firstName}').property('lname', '${lastName}').property('uid','${uid}')`
     );
 
-    const contactExists = await g.submit(
+    //Check if contact for user vertex exists anywhere
+    const ContactVertex = await g.submit(
       `g.V().hasLabel('Contact').has('phoneNumber', '${phoneNumber}')`
     );
-    if (contactExists._items.length === 0) {
+    if (ContactVertex._items.length === 0) {
+      //if contact vertex for the user does not exist , create it
       await g.submit(
         `g.addV('Contact').property('phoneNumber', '${phoneNumber}').property('uid','${uid}')`
       );
     } 
     else {
-      // Create a new edge with the new name
-      await g.submit(
-        `g.V().hasLabel('User').has('uid', uid)
-         .addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('uid',ContactUID))`,
-        { uid: uid,
-         ContactUID:uid}
+      //#region if contact vertex exists , create an edge from all the users connected as "HAS_CONTACT" to "HAS_CONTACT_IN_APP"
+      const UsersWithContactEdge = await g.submit(
+        `g.V().hasLabel('User').outE('HAS_CONTACT').inV().hasLabel('Contact').has('uid', '${uid}').values('uid')`
       );
 
-      // Delete the old edge
-      await g.submit(
-        `g.V().hasLabel('User').has('uid', uid)
-        .outE('HAS_CONTACT').drop()`,
-        { uid: uid }
-      );
+      // For each user, delete the old edge "HAS_CONTACT" and create a new edge "HAS_CONTACT_IN_APP"
+      for (let user of UsersWithContactEdge) {
+        await g.submit(
+          `g.V(${user.id}).outE('HAS_CONTACT').drop()`
+        );
+        await g.submit(
+          `g.V(${user.id}).addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('uid', '${uid}'))`
+        );
+      }
+
+      console.log(`user ${username} already existed in the db , replaced all Contact Edge Connections while creating`);
+      //#endregion
     }
 
     await g.submit(
@@ -393,15 +398,14 @@ async function uploadUserContacts(req, res) {
           }
         );
 
-       await g.submit(
-          "g.V().hasLabel('User').has('phoneNumber', phoneNumber).addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber))",
-          { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
+        await g.submit(
+          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.PhoneNumber}'))`
         );
       
       } else {
         if(UserVertex.length>0){
         await g.submit(
-          "g.V().hasLabel('User').has('uid', uid).addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber))",
+          "g.V().hasLabel('User').has('phoneNumber', phoneNumber).addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber))",
           { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
         );
         }

@@ -241,13 +241,50 @@ async function GetRecommendationsExploreSection(
   //#region GraphDB calls
 
   // Fetch friends of the given user
-  const userFriendsPromise = g.submit("g.V().has('uid', uid).out('FRIENDS_WITH').values('uid')", {uid: uid});
-  const AllUsersInSchoolPromise = g.submit(`g.V().union(__.V().hasLabel('User').has('highschool', '${highschool}').range(${offset_FriendsOfFriends}, ${page_FriendsOfFriends} * ${pagesize_FriendsOfFriends}), __.V().hasLabel('User').has('highschool', '${highschool}').has('grade', '${grade}').range(${offset_FriendsOfFriends}, ${page_FriendsOfFriends} * ${pagesize_FriendsOfFriends}).not(__.inE('FRIENDS_WITH').has('uid', '${uid}'))`);
-
-  const AllUsersInContactsPromise = g.submit("g.V().hasLabel('User').has('uid', uid).outE('HAS_CONTACT').choose(__.has('fav', true), __.inV().property('weight', EmojiContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)).choose(__.has('photo', true), __.inV().property('weight', PhotoContactsWeightQuestions), __.inV().property('weight', ContactsWeightQuestions)).not(__.inE('FRIENDS_WITH').has('uid', uid)).range(offset_Contacts, page_Contacts * pagesize_Contacts)", { EmojiContactsWeightQuestions: EmojiContactsWeightQuestions, ContactsWeightQuestions: ContactsWeightQuestions, PhotoContactsWeightQuestions: PhotoContactsWeightQuestions, uid: uid, offset_Contacts: offset_Contacts, page_Contacts: page_Contacts, pagesize_Contacts: pagesize_Contacts});
-
-  const FriendsOfFriendsPromise = g.submit("g.V().hasLabel('User').has('uid', uid).out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().where(P.neq('self')).not(__.inE('FRIENDS_WITH').has('uid', uid)).range(offset_SchoolUsers, page_SchoolUsers * pagesize_SchoolUsers).valueMap('uid')", {uid: uid, offset_SchoolUsers: offset_SchoolUsers, page_SchoolUsers: page_SchoolUsers, pagesize_SchoolUsers: pagesize_SchoolUsers});
-
+  const RecommendationsPromise =  g.submit(
+    `
+    g.V().hasLabel('User').has('uid', uid).project(
+    'InvitationRecommendation'
+    'AllUsersInSchool',
+    'AllUsersInContacts',
+    'FriendsOfFriends',
+    'FriendCount'
+  ).
+  by(out('HAS_CONTACT').values('phoneNumber').fold()).
+  by(union(
+       g.V().hasLabel('User').outE('ATTENDS_SCHOOL').inV().has('name',highschool).values('uid').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
+       g.V().hasLabel('User').outE('ATTENDS_SCHOOL').inV().has('name',highschool).has('grade', grade).not(inE('FRIENDS_WITH').has('uid', uid)).values('uid').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends)
+     ).fold()).
+  by(outE('HAS_CONTACT_IN_APP').
+  union(
+    choose(has('fav', true),  outV().has('weight', EmojiContactsWeightQuestions),  outV().has('weight', ContactsWeightQuestions)),
+    choose(has('photo', true),  outV().has('weight', PhotoContactsWeightQuestions),  outV().has('weight', ContactsWeightQuestions))
+  ).
+     not(inE('FRIENDS_WITH').has('uid', uid)).
+     values('uid').
+     range(offset_Contacts, page_Contacts * pagesize_Contacts).
+     fold()).
+  by(out('FRIENDS_WITH').out('FRIENDS_WITH').values('uid').dedup().fold()).
+  by(outE('FRIENDS_WITH').count())
+`,
+    {
+      uid: uid,
+      highschool: highschool,
+      offset_FriendsOfFriends: offset_FriendsOfFriends,
+      page_FriendsOfFriends: page_FriendsOfFriends,
+      pagesize_FriendsOfFriends: pagesize_FriendsOfFriends,
+      grade: grade,
+      EmojiContactsWeightQuestions: EmojiContactsWeightQuestions,
+      ContactsWeightQuestions: ContactsWeightQuestions,
+      PhotoContactsWeightQuestions: PhotoContactsWeightQuestions,
+      offset_Contacts: offset_Contacts,
+      page_Contacts: page_Contacts,
+      pagesize_Contacts: pagesize_Contacts,
+      offset_SchoolUsers: offset_SchoolUsers,
+      page_SchoolUsers: page_SchoolUsers,
+      pagesize_SchoolUsers: pagesize_SchoolUsers,
+    }
+  );
   //#endregion
 
   const FriendRequestQuery = "SELECT friendRequests FROM friends WHERE uid =?";
@@ -255,69 +292,29 @@ async function GetRecommendationsExploreSection(
     prepare: true,
   });
 
-  const UserDataScyllaQuery =
-    "SELECT contactsList,favcontactsList,FriendsCount FROM users WHERE uid = ?";
-  const UserDataScyllaPromise = client.execute(UserDataScyllaQuery, [uid]);
-
   const InviteSentQuery = "SELECT * FROM active_links WHERE inviter =?";
   const AllInvitesSentPromise = client.execute(InviteSentQuery, [uid]);
 
   const [
-    userFriends,
-    AllUsersInSchool,
-    FriendsOfFriends,
+    Recommendations,
     friendRequests,
-    AllUsersInContacts,
-    AllUserData,
     AllInvitesSent,
   ] = await Promise.allSettled([
-    userFriendsPromise,
-    AllUsersInSchoolPromise,
-    FriendsOfFriendsPromise,
+    RecommendationsPromise,
     friendRequestsPromise,
-    AllUsersInContactsPromise,
-    UserDataScyllaPromise,
     AllInvitesSentPromise,
   ]);
 
-  // Fetch contactlist and favcontactsList from AllUserData
-  let contactList = [];
-  let favContactList = [];
-  let TotalFriends = 0;
-  
-  if (AllUserData && AllUserData.length > 0) {
-    contactList = AllUserData[0].contactsList ? AllUserData[0].contactsList : [];
-    favContactList = AllUserData[0].favcontactsList ? AllUserData[0].favcontactsList : [];
-    TotalFriends = AllUserData[0].TotalFriends;
-  }
 
-  // Initialize FilteredInvitationRecommendations array
-  const FilteredInvitationRecommendations = [];
-
-  // Iterate through contactList and favContactList
-  [...contactList, ...favContactList].forEach(phoneNumber => {
-    // Check if phoneNumber is not a property of any user in userFriends
-    if (!userFriends.some(user => user.phoneNumber === phoneNumber)) {
-      // If it's not, add the number to FilteredInvitationRecommendations
-      FilteredInvitationRecommendations.push(phoneNumber);
-    }
-  });
-  
-
-  //#region Filtering
-  await InsertMutualCount(uid, AllUsersInSchool);
-  await InsertMutualCount(uid, FriendsOfFriends);
-
-  //#endregion
 
   return {
     page_FriendsOfFriends: page_FriendsOfFriends,
-    FriendsOfFriends: FriendsOfFriends,
-    UsersInContacts: AllUsersInContacts,
+    FriendsOfFriends: Recommendations[0].FriendsOfFriends,
+    UsersInContacts: Recommendations[0].AllUsersInContacts,
     page_SchoolUsers: page_SchoolUsers,
-    UsersInSchool: AllUsersInSchool,
-    InvitationRecommendation: FilteredInvitationRecommendations,
-    TotalFriends: TotalFriends,
+    UsersInSchool: Recommendations[0].AllUsersInSchool,
+    InvitationRecommendation: Recommendations[0].InvitationRecommendation,
+    TotalFriends: Recommendations[0].FriendCount,
     FriendRequests: friendRequests.value,
     InvitesSent: AllInvitesSent,
   };
