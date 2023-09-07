@@ -1,8 +1,6 @@
 const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 const cassandra = require("cassandra-driver");
 
-var queueURL;
-
 const UserCreation = require("./UserCreation.js");
 
 const AWS = require("aws-sdk");
@@ -98,11 +96,11 @@ async function handleTransactionError(phoneNumber, a = undefined, b = undefined)
 }
 
 //#region Fetching params stored in SQS , completely different from error handling
-async function fetchRequestsFromSQS(queueURL) {
+async function fetchRequestsFromSQS(queueURL, numberOfMessages = 10) {
   //TODO: fetch max requests from KV
   const params = {
     QueueUrl: queueURL,
-    MaxNumberOfMessages: 10,
+    MaxNumberOfMessages: numberOfMessages,
     WaitTimeSeconds: 10, // Maximum wait time for messages (long polling)
   };
 
