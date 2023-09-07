@@ -1,5 +1,7 @@
 const { SetupGraphDB } = require("./SetupGraphDB.js");
-SetupGraphDB().then(result =>{ global.g = result;});
+SetupGraphDB().then((result) => {
+  global.g = result;
+});
 
 const { getKV } = require("./KV.js");
 const cassandra = require("./SetupCassandra.js");
@@ -39,7 +41,7 @@ async function fetchWeights() {
     FriendsWeightQuestions_,
     SameGradeWeightQuestions_,
     TopFriendsWeightsQuestions_,
-    FriendsOfFriendsWeightQuestions_
+    FriendsOfFriendsWeightQuestions_,
   ] = await Promise.allSettled([
     getKV(["SameGradeWeightOnboarding"]),
     getKV(["SameHighSchoolWeightOnboarding"]),
@@ -53,7 +55,7 @@ async function fetchWeights() {
     getKV(["FriendsWeightQuestions"]),
     getKV(["SameGradeWeightQuestions"]),
     getKV(["TopFriendsWeightsQuestions"]),
-    getKV(["FriendsOfFriendsWeightQuestions"])
+    getKV(["FriendsOfFriendsWeightQuestions"]),
   ]);
 
   // Assign weights to the initialized vars
@@ -154,7 +156,7 @@ async function getMutualFriends(uid, otheruid) {
 
 async function InsertMutualCount(uid, filteredList) {
   index = 0;
-  for(let index = 0; index < filteredList.length; index++) {
+  for (let index = 0; index < filteredList.length; index++) {
     const mutualCount = await getMutualFriends(uid, filteredList[index].uid);
     filteredList[index].mutualCount = mutualCount;
   }
@@ -174,47 +176,50 @@ async function GetRecommendationsOnboarding(
   // Calculate the offset
   const offset_PeopleYouMayKnow =
     (page_peopleYouMayKnow - 1) * pagesize_PeopleYouMayKnow;
-  const offset_PeopleInContacts =
-    (page_peopleInContacts - 1) * pagesize_peopleInContacts;
-  const peopleYouMayKnowPromise = await g.submit(
-    `g.V().union(
-      __.V().hasLabel('User').has('highschool', highschool)
-        .range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow), 
-      __.V().hasLabel('User').has('highschool', highschool).has('grade', grade)
-        .values('username')
-        .range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow)
-    )`,
+
+
+  const OnboardingRecommendationsPromise = await g.submit(
+    `g.v().hasLabel('User').has('uid', uid).project(
+      'PeopleYouMayKnow',
+      'peopleInContacts'
+    ).
+    by(union(
+      g.V().hasLabel('User').outE('ATTENDS_SCHOOL').inV().has('name',highschool).values('uid').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
+      g.V().hasLabel('User').outE('ATTENDS_SCHOOL').inV().has('name',highschool).has('grade', grade).not(inE('FRIENDS_WITH').has('uid', uid)).values('uid').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends)
+    ).fold()).
+    by(outE('HAS_CONTACT_IN_APP').
+  union(
+    choose(has('fav', true),  outV().has('weight', EmojiContactsWeightQuestions),  outV().has('weight', ContactsWeightQuestions)),
+    choose(has('photo', true),  outV().has('weight', PhotoContactsWeightQuestions),  outV().has('weight', ContactsWeightQuestions))
+  ).
+     not(inE('FRIENDS_WITH').has('uid', uid)).
+     values('uid').
+     range(offset_Contacts, page_Contacts * pagesize_Contacts).
+     fold())`,
     {
       highschool: highschool,
       offset_PeopleYouMayKnow: offset_PeopleYouMayKnow,
       page_peopleYouMayKnow: page_peopleYouMayKnow,
       pagesize_PeopleYouMayKnow: pagesize_PeopleYouMayKnow,
       grade: grade,
+      uid: uid,
+      EmojiContactsWeightOnboarding: EmojiContactsWeightOnboarding,
+      ContactsWeightOnboarding: ContactsWeightOnboarding,
+      PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
     }
   );
 
-  const peopleInContactsPromise = await g.submit(
-    "g.V().hasLabel('User').has('uid', uid).outE('HAS_CONTACT')" +
-    ".choose(__.has('fav', true), __.inV().property('weight', EmojiContactsWeightOnboarding), __.inV().property('weight', ContactsWeightOnboarding))" +
-    ".choose(__.has('photo', true), __.inV().property('weight', PhotoContactsWeightOnboarding), __.inV().property('weight', ContactsWeightOnboarding))",
-  {
-    uid: uid,
-    EmojiContactsWeightOnboarding: EmojiContactsWeightOnboarding,
-    ContactsWeightOnboarding: ContactsWeightOnboarding,
-    PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding
-  });
-
-  const [PeopleYouMayKnow, PeopleInContacts] = await Promise.allSettled([
-    peopleYouMayKnowPromise,
-    peopleInContactsPromise,
+  const [Recommendations] = await Promise.allSettled([
+    OnboardingRecommendationsPromise
   ]);
+  
   // Return both the result and the next page number for paging
   return {
     success: true,
     page_peopleYouMayKnow: page_peopleYouMayKnow,
-    People_You_May_Know: PeopleYouMayKnow,
+    People_You_May_Know: Recommendations[0].PeopleYouMayKnow,
     page_peopleInContacts: page_peopleInContacts,
-    PeopleInContacts: PeopleInContacts,
+    PeopleInContacts: Recommendations[0].PeopleInContacts,
   };
 }
 
@@ -241,10 +246,10 @@ async function GetRecommendationsExploreSection(
   //#region GraphDB calls
 
   // Fetch friends of the given user
-  const RecommendationsPromise =  g.submit(
+  const RecommendationsPromise = g.submit(
     `
     g.V().hasLabel('User').has('uid', uid).project(
-    'InvitationRecommendation'
+    'InvitationRecommendation',
     'AllUsersInSchool',
     'AllUsersInContacts',
     'FriendsOfFriends',
@@ -295,17 +300,12 @@ async function GetRecommendationsExploreSection(
   const InviteSentQuery = "SELECT * FROM active_links WHERE inviter =?";
   const AllInvitesSentPromise = client.execute(InviteSentQuery, [uid]);
 
-  const [
-    Recommendations,
-    friendRequests,
-    AllInvitesSent,
-  ] = await Promise.allSettled([
-    RecommendationsPromise,
-    friendRequestsPromise,
-    AllInvitesSentPromise,
-  ]);
-
-
+  const [Recommendations, friendRequests, AllInvitesSent] =
+    await Promise.allSettled([
+      RecommendationsPromise,
+      friendRequestsPromise,
+      AllInvitesSentPromise,
+    ]);
 
   return {
     page_FriendsOfFriends: page_FriendsOfFriends,
@@ -327,7 +327,9 @@ function getRandomOffset(total) {
 async function GetRecommendationsQuestions(uid, highschool, grade) {
   const randomOffset = getRandomOffset(10); // You need to have TOTAL_USERS defined or calculated somewhere in your script
 
-  const allUsers = await g.submit(`
+  const allUsers = await g
+    .submit(
+      `
     g.V().hasLabel('User').has('uid', "${uid}")
     .coalesce(
       // Repeating traversal for contacts with 'fav' true
@@ -357,29 +359,27 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
       ).times(${TopFriendsWeightsQuestions})
     )
     .order().by(__.id().hashcode()) // Ordering pseudorandomly based on hashed ID
-    .range(${randomOffset}, ${randomOffset + 10}) // Paginate using the random offset
+    .range(${randomOffset}, ${
+        randomOffset + 10
+      }) // Paginate using the random offset
     .fold()
     .coalesce(
       __.unfold(), 
       __.V().hasLabel('User').has('uid', "${uid}").out('HAS_CONTACT').limit(4)
     )
-  `)
-  .then(result => {
-    const allUsers = result;
-    console.log(allUsers);
-    return allUsers;
-  })
-  .catch(error => {
-    console.error(error);
-  });
+  `
+    )
+    .then((result) => {
+      const allUsers = result;
+      console.log(allUsers);
+      return allUsers;
+    })
+    .catch((error) => {
+      console.error(error);
+    });
 }
 
-
-
-
-
 //#endregion
-
 
 module.exports = {
   FetchFriendsWithSubsActive,
