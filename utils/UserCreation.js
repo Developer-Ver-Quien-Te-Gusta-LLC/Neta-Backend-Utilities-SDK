@@ -9,7 +9,8 @@ const emojiRegex = require("emoji-regex");
 const { getKV } = require("./KV");
 const { SendEvent } = require("./Analytics");
 const uuid = require("uuid");
-
+const fs = require("fs");
+const sharp = require("sharp");
 async function initializeFirebase() {
   try {
     var credentials = await FetchFromSecrets("FCMAccountCredentials");
@@ -335,6 +336,30 @@ async function getWeights() {
   return { weight, EmojiContactsWeight };
 }
 getWeights();
+
+let bucketName, s3;
+async function InitializeS3() {
+  bucketName = await NetaBackendUtilSDK.FetchFromSecrets("PFPBucket");
+
+  const accessKeyId = await NetaBackendUtilSDK.FetchFromSecrets(
+    "CF_access_key_id"
+  );
+  const secretAccessKey = await NetaBackendUtilSDK.FetchFromSecrets(
+    "CF_secret_access_key"
+  );
+  const accountid = await NetaBackendUtilSDK.FetchFromSecrets(
+    "CloudflareAccountId"
+  );
+
+  s3 = new AWS.S3({
+    endpoint: `https://${accountid}.r2.cloudflarestorage.com`, //if this doesnt work , use https://9b990cf1afe1e9cd3e482c7d5c5a6422.r2.cloudflarestorage.com/netapfps
+    accessKeyId: accessKeyId,
+    secretAccessKey: secretAccessKey,
+    signatureVersion: "v4",
+  });
+}
+
+InitializeS3();
 
 async function uploadUserContacts(req, res) {
   const { phoneNumber } = req.body;
