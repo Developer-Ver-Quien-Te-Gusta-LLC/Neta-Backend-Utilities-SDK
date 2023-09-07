@@ -8,7 +8,7 @@ const admin = require("firebase-admin");
 const emojiRegex = require("emoji-regex");
 const { getKV } = require("./KV");
 const { SendEvent } = require("./Analytics");
-const uuid = require('uuid');
+const uuid = require("uuid");
 
 async function initializeFirebase() {
   try {
@@ -56,83 +56,6 @@ const OnUserCreationFailed =
   require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
 const handleTransactionCompletion =
   require("./UserCreationTransactionHandling.js").handleTransactionCompletion;
-async function DeleteUser(req, deleteVerification = false) {
-  const promises = [];
-  const queries = [];
-  const { uid } = req.query;
-
-  // Fill the array with query objects
-  const highschoolQuery =
-    "SELECT highschool, phoneNumber FROM users WHERE uid = ?";
-  const highschoolResult = await client.execute(highschoolQuery, [uid], {
-    prepare: true,
-  });
-  const highschool = highschoolResult.rows[0].highschool;
-  const phoneNumber = highschoolResult.rows[0].phoneNumber;
-
-  queries.push({
-    query:
-      "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
-    params: [highschool],
-  });
-  queries.push({
-    query:
-      "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
-    params: [highschool], // assume schoolName is a variable that holds the name of the school
-  });
-
-  queries.push({
-    query: "DELETE FROM users WHERE uid = ?",
-    params: [pn],
-  });
-
-  queries.push({
-    query: "DELETE FROM reports WHERE uid = ?",
-    params: [pn],
-  });
-
-  queries.push({
-    query: "DELETE FROM inbox WHERE uid = ?",
-    params: [pn],
-  });
-
-  queries.push({
-    query: "DELETE FROM topFriendsAndPolls WHERE uid = ?",
-    params: [pn],
-  });
-
-  queries.push({
-    query: "DELETE FROM userPolls WHERE uid = ?",
-    params: [pn],
-  });
-
-  queries.push({
-    query: "DELETE FROM notificationTable WHERE uid = ?",
-    params: [pn],
-  });
-
-  if (deleteVerification) {
-    queries.push({
-      query: "DELETE FROM verification WHERE phoneNumber = ?",
-      params: [phoneNumber],
-    });
-  }
-
-  const DeleteUserScyllaPromise = client.batch(queries, { prepare: true });
-
-  promises.push(DeleteUserScyllaPromise);
-
-  const DeleteFirebaseUserPromise = admin.auth().deleteUser(phoneNumber);
-  promises.push(DeleteFirebaseUserPromise);
-
-  // Gremlin query to delete the vertex 'User' using the phoneNumber given
-  const gremlinQuery = `g.hasV().has('User', 'uid', ${phoneNumber}).drop()`;
-  const DeleteUserGremlinPromise = g.execute(gremlinQuery);
-  promises.push(DeleteUserGremlinPromise);
-
-  // Wait for all promises to resolve
-  await Promise.all(promises);
-}
 
 async function handleTransactionError(
   phoneNumber,
@@ -143,9 +66,19 @@ async function handleTransactionError(
 }
 
 async function CreateScyllaUser(UserParams) {
-  const { 
-    username, phoneNumber, platform, transactionId, encryptionKey, uid, 
-    gender, highschool, grade, firstName, lastName, school
+  const {
+    username,
+    phoneNumber,
+    platform,
+    transactionId,
+    encryptionKey,
+    uid,
+    gender,
+    highschool,
+    grade,
+    firstName,
+    lastName,
+    school,
   } = UserParams;
 
   const invitesLeft = UserParams.invitesLeft || 0;
@@ -191,7 +124,7 @@ async function CreateScyllaUser(UserParams) {
       null, // pfpMediumHash
       null, // pfpSmall
       null, // pfpSmallHash
-      school
+      school,
     ];
 
     await client.execute(UserCreationQuery, params, { prepare: true });
@@ -206,8 +139,6 @@ async function CreateScyllaUser(UserParams) {
     return false;
   }
 }
-
-
 
 async function createNeptuneUser(UserParams) {
   for (let key in UserParams) {
@@ -226,7 +157,7 @@ async function createNeptuneUser(UserParams) {
     firstName,
     lastName,
     uid,
-    transactionId
+    transactionId,
   } = UserParams;
   if (gender == undefined) gender = "non-binary";
   // console.log(`g.addV('User').property('username', ${username}).property('phoneNumber', ${phoneNumber}).property('highschool', ${highschool}).property('grade', ${grade}).property('age', ${age}).property('gender', ${gender}).property('fname', ${fname}).property('lname', ${lname}).property('uid',${uid})`);
@@ -242,24 +173,42 @@ async function createNeptuneUser(UserParams) {
       await g.submit(
         `g.addV('Contact').property('phoneNumber', '${phoneNumber}').property('uid','${uid}')`
       );
-    }
-    
-    await g.submit(`g.V().hasLabel('User').has('uid',uid).addE("SELF_CONTACT").to(g.V().hasLabel('Contact').has('phoneNumber',phoneNumber))`,{uid:uid,phoneNumber:phoneNumber})
+    } 
+    else {
+      // Create a new edge with the new name
+      await g.submit(
+        `g.V().hasLabel('User').has('uid', uid)
+         .addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('uid',ContactUID))`,
+        { uid: uid,
+         ContactUID:uid}
+      );
 
-    
+      // Delete the old edge
+      await g.submit(
+        `g.V().hasLabel('User').has('uid', uid)
+        .outE('HAS_CONTACT').drop()`,
+        { uid: uid }
+      );
+    }
+
+    await g.submit(
+      `g.V().hasLabel('User').has('uid',uid).addE("SELF_CONTACT").to(g.V().hasLabel('Contact').has('phoneNumber',phoneNumber))`,
+      { uid: uid, phoneNumber: phoneNumber }
+    );
 
     const highschoolVertex = await g.submit(
       `g.V().hasLabel('Highschool').has('name', '${highschool}')`
     );
 
     if (highschoolVertex._items.length > 0) {
-      
       await g.submit(
         `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', '${highschool}'))`
       );
     } else {
       const HighschoolUID = uuid.v4();
-      await g.submit(`g.addV('Highschool').property('name', '${highschool}').property('uid', '${HighschoolUID}')`);
+      await g.submit(
+        `g.addV('Highschool').property('name', '${highschool}').property('uid', '${HighschoolUID}')`
+      );
     }
     await g.submit(
       `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', '${highschool}'))`
@@ -293,31 +242,6 @@ async function CreateFirebaseUser(UserParams) {
     await handleTransactionError("cognito", UserParams, phoneNumber); //recursive 3 times , else return false
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
-  }
-}
-
-//decrease the number of students in a highschool
-async function enroll(highschoolName) {
-  const query =
-    "UPDATE highschool SET numofstudents = numofstudents - 1 WHERE name = ?";
-
-  try {
-    await client.execute(query, [highschoolName], { prepare: true });
-    console.log(`Number of students decreased for ${highschoolName}`);
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-//increase the number of students in a highschool
-async function unenroll(highschoolName) {
-  const query =
-    "UPDATE highschools SET num_students = num_students + 1 WHERE name = ?";
-  try {
-    await client.execute(query, [highschoolName], { prepare: true });
-    console.log(`Number of students increased for ${highschoolName}`);
-  } catch (err) {
-    console.error(err);
   }
 }
 
@@ -398,7 +322,7 @@ async function DeleteUser(req, deleteVerification = false) {
   // Wait for all promises to resolve
   await Promise.all(promises);
 }
-const MAX_CONCURRENT_PROMISES = 10;
+
 var weight, EmojiContactsWeight;
 async function getWeights() {
   weight = await getKV("ContactsWeightOnboarding");
@@ -446,15 +370,18 @@ async function uploadUserContacts(req, res) {
         weight = isFavorite ? EmojiContactsWeight : weight;
       }
 
-    
       const ContactVertex = await g.submit(
         "g.V().hasLabel('Contact').has('phoneNumber', phoneNumber)",
         { phoneNumber: contact.phoneNumber }
       );
+      const UserVertex = await g.submit(
+        "g.V().hasLabel('User').has('phoneNumber', phoneNumber)",
+        { phoneNumber: phoneNumber }
+      );
 
       if (ContactVertex.length == 0) {
         const uid = uuid.v4();
-       
+
         await g.submit(
           "g.addV('Contact').property('phoneNumber', phoneNumber).property('fav', isFavorite).property('weight', weight).property('photo', uploadResult).property('uid', uid)",
           {
@@ -462,22 +389,29 @@ async function uploadUserContacts(req, res) {
             isFavorite: isFavorite,
             weight: weight,
             uploadResult: uploadResult,
-            uid: uid
+            uid: uid,
           }
         );
-      
-        await g.submit(
+
+       await g.submit(
           "g.V().hasLabel('User').has('phoneNumber', phoneNumber).addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber))",
           { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
         );
+      
       } else {
-        
+        if(UserVertex.length>0){
         await g.submit(
-          "g.V().hasLabel('User').has('phoneNumber', phoneNumber).V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber).addE('HAS_CONTACT_IN_APP')",
+          "g.V().hasLabel('User').has('uid', uid).addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber))",
           { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
         );
+        }
+        else{
+          await g.submit(
+            "g.V().hasLabel('User').has('phoneNumber', phoneNumber).addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber))",
+            { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
+          );
+        }
       }
-
     }
 
     await SendEvent("upload_user_contacts", phoneNumber, {
