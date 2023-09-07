@@ -143,15 +143,19 @@ async function handleTransactionError(
 }
 
 async function CreateScyllaUser(UserParams) {
-  console.log('CreateScyllaUser with ' + UserParams)
-  const { username, phoneNumber, platform, transactionId, encryptionKey, uid } =
-    UserParams;
+  console.log('CreateScyllaUser with ', UserParams);
+  const { 
+    username, phoneNumber, platform, transactionId, encryptionKey, uid, 
+    gender, highschool, grade 
+  } = UserParams;
+
   const starCount = UserParams.starCount || 0;
   const invitesLeft = UserParams.invitesLeft || 0;
   const lastPollTime = UserParams.lastPollTime || null;
 
   try {
     const UserCreationQuery = `INSERT INTO users (username, phoneNumber, topPolls, topFriends, starCount, coins, invitesLeft, lastPollTime, pollIndex, numberOfStars, platform, gender, highschool, grade, uid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
     const params = [
       username,
       phoneNumber,
@@ -164,45 +168,25 @@ async function CreateScyllaUser(UserParams) {
       -1,
       0,
       platform,
-      UserParams.gender,
-      UserParams.highschool,
-      UserParams.grade,
+      gender,
+      highschool,
+      grade,
       uid,
     ];
-    const populatedQuery = UserCreationQuery.replace(/\?/g, function() { return params.shift(); });
-    console.log(`Executing query: ${populatedQuery}`);
-    
-    await client.execute(UserCreationQuery, params, { prepare: true }); /// submit main scylla query
 
-    //await enroll(UserParams.highschool); /// enroll in school
-    /// submit to username uniqueness service
-    /*const ARN = await NetaBackendUtilitiesSDK.FetchFromSecrets(
-        "ServiceBus_UsernameUniqueness"
-      );
+    await client.execute(UserCreationQuery, params, { prepare: true });
 
-      /// submit to /createScyllaUser
-      const SNSParams = {
-        Message: JSON.stringify({ uid, requestedUsername: username }),
-        TopicArn: ARN, // replace with your SNS Topic ARN
-      };
+    // ... [rest of your function]
 
-      sns.publish(SNSParams, function (err, data) {
-        if (err) console.log(err, err.stack);
-        else console.log(data);
-      });*/
-
-    // submit initial imbox msg
-    const query = `INSERT INTO inbox (uid, pushedTime, anonymousMode, grade, school, gender, question, asset, uids, Inboxindex) VALUES (?, toTimestamp(now()), false, null, null, null, null, null, null, -1);`;
-    await client.execute(query, [uid], { prepare: true }); /// submit main scylla query
-    await handleTransactionCompletion(transactionId, uid, encryptionKey);
     return true;
   } catch (err) {
     console.log(err);
-    await handleTransactionError("scylla", UserParams, phoneNumber); //recursive 3 times , else return false
+    await handleTransactionError("scylla", UserParams, phoneNumber);
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
   }
 }
+
 
 async function createNeptuneUser(UserParams) {
   for (let key in UserParams) {
