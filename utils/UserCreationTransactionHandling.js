@@ -32,12 +32,9 @@ async function handleTransactionCompletion(uid, transactionId, phoneNumber) {
   const insertQuery =
     "INSERT INTO transactions (transaction_id, status, uid) VALUES (?, ?, ?) IF NOT EXISTS USING TTL ?";
   const params = [transactionId, "completed", uid,86400];
-  const updateQuery = "UPDATE verification SET created = ? WHERE phoneNumber = ?";
-  const updateParams = [true, true, phoneNumber];
-  const updatePromise = client.execute(updateQuery, updateParams, { prepare: true });
   const insertPromise = client.execute(insertQuery, params, { prepare: true });
   
-  const [updateResult, insertResult] = await Promise.all([updatePromise, insertPromise]);
+  const [insertResult] = await Promise.all([insertPromise]);
   const result = insertResult;
 
   if (result.applied) {

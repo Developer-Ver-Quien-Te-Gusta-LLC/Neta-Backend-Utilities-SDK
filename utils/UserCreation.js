@@ -226,8 +226,7 @@ async function createNeptuneUser(UserParams) {
     firstName,
     lastName,
     uid,
-    transactionId,
-    encryptionKey,
+    transactionId
   } = UserParams;
   if (gender == undefined) gender = "non-binary";
   // console.log(`g.addV('User').property('username', ${username}).property('phoneNumber', ${phoneNumber}).property('highschool', ${highschool}).property('grade', ${grade}).property('age', ${age}).property('gender', ${gender}).property('fname', ${fname}).property('lname', ${lname}).property('uid',${uid})`);
