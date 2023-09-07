@@ -168,23 +168,17 @@ async function UpdateDataInNeptune(uid, data, value) {
 
 async function AddFriendRelationInNeptune(uid, friend) {
   try {
-    const encryptedUser1Id = uid;
-    const encryptedUser2Id = friend;
-
     const query = `
-      g.V().has('User', 'uid', '${uid}')
+      g.V().hasLabel('User').has('uid', '${uid}')
         .addE('FRIENDS_WITH')
-        .to(g.V().has('User', 'username', ${friend}))
+        .to(g.V().hasLabel('User').has('uid', '${friend}'))
     `;
 
-    return gremlinQuery(query).then((response) => {
-      if (!response.success) {
-        handleTransactionError("graphdb", req.query);
-      }
-
+    await g.submit(query).then((response) => {
       return { success: true, data: response.result.data }; // Return the success response
     });
   } catch (encryptionerror) {
+    handleTransactionError("graphdb", req.query);
     return encryptionerror;
   }
 }
