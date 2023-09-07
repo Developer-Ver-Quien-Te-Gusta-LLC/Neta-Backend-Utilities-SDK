@@ -143,35 +143,55 @@ async function handleTransactionError(
 }
 
 async function CreateScyllaUser(UserParams) {
-  console.log('CreateScyllaUser with ', UserParams);
   const { 
     username, phoneNumber, platform, transactionId, encryptionKey, uid, 
-    gender, highschool, grade 
+    gender, highschool, grade, firstName, lastName, school
   } = UserParams;
 
-  const starCount = UserParams.starCount || 0;
   const invitesLeft = UserParams.invitesLeft || 0;
-  const lastPollTime = UserParams.lastPollTime || null;
 
   try {
-    const UserCreationQuery = `INSERT INTO users (username, phoneNumber, topPolls, topFriends, starCount, coins, invitesLeft, lastPollTime, pollIndex, numberOfStars, platform, gender, highschool, grade, uid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const UserCreationQuery = `
+      INSERT INTO users (
+        username, phoneNumber, topPolls, topFriends, coins, invitesLeft, 
+        pollIndex, numberOfStars, platform, gender, highschool, grade, uid,
+        albyTopicName, anonymousMode, blocklist, firstName, lastName, friendList, 
+        friendRequests, hideList, lastPollTime, numberOfPolls, online, pfp, 
+        pfpHash, pfpMedium, pfpMediumHash, pfpSmall, pfpSmallHash, school
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const params = [
       username,
       phoneNumber,
-      null,
-      null,
-      starCount,
-      0,
+      [], // topPolls
+      [], // topFriends
+      0, // coins
       invitesLeft,
-      lastPollTime,
-      -1,
-      0,
+      -1, // pollIndex
+      0, // numberOfStars
       platform,
       gender,
       highschool,
       grade,
       uid,
+      null, // albyTopicName
+      false, // anonymousMode
+      [], // blocklist
+      firstName,
+      lastName,
+      [], // friendsList
+      [], // friendRequests
+      [], // hideList
+      null, // lastPollTime
+      0, // numberOfPolls
+      false, // online
+      null, // pfp
+      null, // pfpHash
+      null, // pfpMedium
+      null, // pfpMediumHash
+      null, // pfpSmall
+      null, // pfpSmallHash
+      school
     ];
 
     await client.execute(UserCreationQuery, params, { prepare: true });
@@ -186,6 +206,7 @@ async function CreateScyllaUser(UserParams) {
     return false;
   }
 }
+
 
 
 async function createNeptuneUser(UserParams) {
