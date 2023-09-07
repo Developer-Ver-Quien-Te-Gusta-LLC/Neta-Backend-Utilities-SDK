@@ -102,6 +102,7 @@ async function fetchRequestsFromSQS(queueURL, numberOfMessages = 10) {
     QueueUrl: queueURL,
     MaxNumberOfMessages: numberOfMessages,
     WaitTimeSeconds: 10, // Maximum wait time for messages (long polling)
+    VisibilityTimeout: 30, // for example, 30 seconds
   };
 
   return new Promise((resolve, reject) => {
