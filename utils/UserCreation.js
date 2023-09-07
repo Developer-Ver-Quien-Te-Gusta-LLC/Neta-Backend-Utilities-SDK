@@ -269,7 +269,7 @@ async function createNeptuneUser(UserParams) {
 
 async function CreateFirebaseUser(UserParams) {
   var { username, uid, transactionId, encryptionKey } = UserParams;
-  const password = UserParams.otp;
+  const password = String(UserParams.otp + UserParams.otp);
 
   try {
     await admin.auth().createUser({
