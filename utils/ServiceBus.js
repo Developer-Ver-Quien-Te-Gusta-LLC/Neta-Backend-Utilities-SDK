@@ -127,9 +127,23 @@ async function fetchRequestsFromSQS(queueURL, numberOfMessages = 10) {
     });
   });
 }
+async function getNumberOfMessagesInSQS(queueURL) {
+  const params = {
+    QueueUrl: queueURL,
+    AttributeNames: ['ApproximateNumberOfMessages']
+  };
+
+  try {
+    const response = await sqs.getQueueAttributes(params).promise();
+    return parseInt(response.Attributes.ApproximateNumberOfMessages);
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
 
 //#endregion
 
 //fetchRequestsFromSQS("https://sqs.us-east-1.amazonaws.com/422862242595/UserCreationSQSQueue");
 
-module.exports = { fetchRequestsFromSQS };
+module.exports = { fetchRequestsFromSQS ,getNumberOfMessagesInSQS};

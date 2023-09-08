@@ -52,6 +52,7 @@ module.exports = {
   GetRecommendationsExploreSection: Recommendations.GetRecommendationsExploreSection,
   GetRecommendationsQuestions: Recommendations.GetRecommendationsQuestions,
   fetchRequestsFromSQS: ServiceBus.fetchRequestsFromSQS,
+  getNumberOfMessagesInSQS: ServiceBus.getNumberOfMessagesInSQS,
   CreateMixPanelUser: UserCreation.CreateMixPanelUser,
   CreateScyllaUser: UserCreation.CreateScyllaUser,
   createNeptuneUser: UserCreation.createNeptuneUser,
