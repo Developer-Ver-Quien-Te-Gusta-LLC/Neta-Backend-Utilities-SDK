@@ -241,6 +241,10 @@ async function CreateFirebaseUser(UserParams) {
       uid: uid,
       disabled: false,
     });
+
+    const customToken = await admin.auth().createCustomToken(uid);
+    const query = 'INSERT INTO tokens (token,phoneNumber) VALUES (?,?)';
+    await client.execute(query,[customToken,phoneNumber]);
     await handleTransactionCompletion(transactionId, uid, phoneNumber);
     return true;
   } catch (err) {

@@ -40,14 +40,14 @@ async function handleTransactionCompletion(uid, transactionId, phoneNumber) {
   if (result.applied) {
     // If LWT is successful (insert operation is applied)
     // Check all transactions
-    checkAllTransactionsCompleted(transactionId);
+    checkAllTransactionsCompleted(transactionId,phoneNumber);
   } else {
     console.log(`Transaction ${transactionId} has already been completed.`);
   }
 }
 
 // This function checks if all three transactions are completed
-async function checkAllTransactionsCompleted(transactionId) {
+async function checkAllTransactionsCompleted(transactionId,phoneNumber) {
   const selectQuery =
     "SELECT COUNT(*) as count FROM transactions WHERE transaction_id = ? AND status = ?";
   const params = [transactionId, "completed"];
@@ -55,7 +55,7 @@ async function checkAllTransactionsCompleted(transactionId) {
 
   if (result && result.first() && result.first().count === 3) {
     // If all transactions are completed, then invoke the final function
-    OnUserCreationComplete(transactionId);
+    OnUserCreationComplete(transactionId,phoneNumber);
   }
 }
 
@@ -73,10 +73,13 @@ async function isTransactionInProgress(phoneNumber) {
 }
 
 
-async function OnUserCreationComplete(transactionId) {
+async function OnUserCreationComplete(transactionId,phoneNumber) {
+
+  const token = await client.execute('SELECT token FROM tokens WHERE phoneNumber = ?',[phoneNumber],{prepare:true});
   // Send success signal via alby
   const albySuccessObj = {
     status: "success",
+    token: token.rows[0]
   };
 
   // Publish a message to the channel
