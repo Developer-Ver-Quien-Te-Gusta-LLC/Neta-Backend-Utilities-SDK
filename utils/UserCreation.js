@@ -251,6 +251,12 @@ async function CreateFirebaseUser(UserParams) {
   }
 }
 
+async function CreateMixPanelUser(UserParams) {
+  mixpanel.people.set(UserParams.username, {
+    $first_name: UserParams.firstname,
+    $last_name: UserParams.lastname
+  });
+}
 async function DeleteUser(req, deleteVerification = false) {
   const promises = [];
   const queries = [];
@@ -460,4 +466,5 @@ module.exports = {
   CreateFirebaseUser,
   DeleteUser,
   uploadUserContacts,
+  CreateMixPanelUser
 };
