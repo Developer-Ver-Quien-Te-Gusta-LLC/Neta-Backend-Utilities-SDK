@@ -75,7 +75,7 @@ async function isTransactionInProgress(phoneNumber) {
 
 async function OnUserCreationComplete(transactionId,phoneNumber) {
 
-  const token = await client.execute('SELECT token FROM tokens WHERE phoneNumber = ?',[phoneNumber],{prepare:true});
+  const token = await client.execute('SELECT UserToken FROM tokens WHERE phoneNumber = ?',[phoneNumber],{prepare:true});
   // Send success signal via alby
   const albySuccessObj = {
     status: "success",
