@@ -1,13 +1,16 @@
 const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
 const  FetchChannelId  = require("./AlbyToken.js").FetchChannelId;
 const  getDataFromScyalla  = require("./DataBaseQueriesHandler.js").getDataFromScyalla;
+const getKV = require('./KV.js').getKV
 
 const Ably = require('ably');
 
 var ably;
+let sendRedundantly
 async function fetchAlby() {
   ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
   await ably.connection.once("connected");
+  sendRedundantly = getKV("RedundantNotifications")
 }
 fetchAlby();
 
@@ -79,6 +82,11 @@ async function publishFCMMessage(userToken, message) {
 async function SendNotification(userId, payload) {
   let userStatus = await getDataFromScyalla("users", userId, "online");
   if (userStatus == undefined || userStatus == null) userStatus = false /// no value defaults to false
+
+  if (sendRedundantly) {
+    const userToken = await getDataFromScyalla("users", userId, "uid");
+    await Promise.allSettled([publishAlbyMessage(userId, payload), publishFCMMessage(userToken, JSON.stringify(payload))])
+  }
 
   if (userStatus == true) {
     await publishAlbyMessage(userId, payload);
