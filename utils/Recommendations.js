@@ -75,7 +75,7 @@ async function fetchWeights() {
   TopFriendsWeightsQuestions = TopFriendsWeightsQuestions_.value;
   FriendsOfFriendsWeightQuestions = FriendsOfFriendsWeightQuestions_.value;
 
- // const Recommendations = await GetRecommendationsOnboarding("999d360e-7a23-49f6-8349-cbcdf59ce84a",1,10,1,10,10,"neta");
+ const Recommendations = await GetRecommendationsQuestions("999d360e-7a23-49f6-8349-cbcdf59ce84a","neta",10);
  
 }
 fetchWeights(); // fetch the weights as soon as the module is imported
@@ -330,43 +330,43 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
   const allUsers = await g
     .submit(
       `
-    g.V().hasLabel('User').has('uid', "${uid}")
-    .coalesce(
-      // Repeating traversal for contacts with 'fav' true
-      __.repeat(__.outE('HAS_CONTACT').has('fav', true).inV()).times(${EmojiContactsWeightQuestions}),
-      
-      // Repeating traversal for contacts with photo
-      __.repeat(__.outE('HAS_CONTACT').has('photo', true).inV()).times(${PhotoContactsWeightQuestions}),
-      
-      // Repeating traversal for contacts without 'fav' and without photo
-      __.repeat(__.outE('HAS_CONTACT').inV()).times(${ContactsWeightQuestions}),
-      
-      // Repeating traversal for same high school
-      __.repeat(__.has('highschool', "${highschool}")).times(${SameHighSchoolWeightQuestions}),
-      
-      // Repeating traversal for friends
-      __.repeat(__.out('HAS_FRIEND')).times(${FriendsWeightQuestions}),
-      
-      // Repeating traversal for friends of friends
-      __.repeat(__.out('HAS_FRIEND').out('HAS_FRIEND').dedup().where(P.neq('self'))).times(${FriendsOfFriendsWeightQuestions}),
-      
-      // Repeating traversal for same grade in same high school
-      __.repeat(__.has('highschool', "${highschool}").has('grade', "${grade}")).times(${SameGradeWeightQuestions}),
-      
-      // Repeating traversal for top friends
-      __.unfold().repeat(
-        __.out('FRIENDS_WITH').order().by('PollsCount', decr)
-      ).times(${TopFriendsWeightsQuestions})
-    )
-    .order().by(__.id().hashcode()) // Ordering pseudorandomly based on hashed ID
-    .range(${randomOffset}, ${
-        randomOffset + 10
-      }) // Paginate using the random offset
-    .fold()
-    .coalesce(
-      __.unfold(), 
-      __.V().hasLabel('User').has('uid', "${uid}").out('HAS_CONTACT').limit(4)
-    )
+      g.V().hasLabel('User').has('uid', "${uid}")
+      .coalesce(
+        // Repeating traversal for contacts with 'fav' true
+        __.repeat(__.outE('HAS_CONTACT').has('fav', true).inV()).times(${EmojiContactsWeightQuestions}),
+        
+        // Repeating traversal for contacts with photo
+        __.repeat(__.outE('HAS_CONTACT').has('photo', true).inV()).times(${PhotoContactsWeightQuestions}),
+        
+        // Repeating traversal for contacts without 'fav' and without photo
+        __.repeat(__.outE('HAS_CONTACT').inV()).times(${ContactsWeightQuestions}),
+        
+        // Repeating traversal for same high school
+        __.repeat(__.has('highschool', "${highschool}")).times(${SameHighSchoolWeightQuestions}),
+        
+        // Repeating traversal for friends
+        __.repeat(__.out('HAS_FRIEND')).times(${FriendsWeightQuestions}),
+        
+        // Repeating traversal for friends of friends
+        __.repeat(__.out('HAS_FRIEND').out('HAS_FRIEND').dedup().where(P.neq('self'))).times(${FriendsOfFriendsWeightQuestions}),
+        
+        // Repeating traversal for same grade in same high school
+        __.repeat(__.has('highschool', "${highschool}").has('grade', "${grade}")).times(${SameGradeWeightQuestions}),
+        
+        // Repeating traversal for top friends
+        __.unfold().repeat(
+          __.out('FRIENDS_WITH').order().by('PollsCount', decr)
+        ).times(${TopFriendsWeightsQuestions})
+      )
+      .order().by(__.id().hashcode()) // Ordering pseudorandomly based on hashed ID
+      .range(${randomOffset}, ${
+          randomOffset + 10
+        }) // Paginate using the random offset
+      .fold()
+      .coalesce(
+        __.unfold(), 
+        __.V().hasLabel('User').has('uid', "${uid}").out('HAS_CONTACT').limit(4)
+      )
   `
     )
     .then((result) => {
