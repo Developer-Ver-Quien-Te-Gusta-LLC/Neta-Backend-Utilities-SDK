@@ -119,6 +119,8 @@ async function pushSchools(reqs, db) {
     let queryname = req.query.queryname;
     let geohashValue = req.query.geohashValue;
 
+    console.log([req.query.latitude, req.query.longitude])
+
     const coordinates = !geohashValue ? [req.query.latitude, req.query.longitude] : ngeohash.decode(geohashValue);
     const limitValue = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 10;
     const skipValue = req.query.nextPageToken ? parseInt(req.query.nextPageToken, 10) : 0;
