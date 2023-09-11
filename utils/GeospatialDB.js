@@ -119,7 +119,16 @@ async function pushSchools(reqs, db) {
     let queryname = req.query.queryname;
     let geohashValue = req.query.geohashValue;
 
-    const coordinates = !geohashValue ? {longitude: req.query.longitude, latitude:req.query.latitude} : ngeohash.decode(geohashValue);
+    if (!geohashValue && (!req.query.longitude || !req.query.latitude)) {
+        throw new Error('Either geohash or longitude and latitude must be provided');
+    }
+    if (req.query.longitude && isNaN(parseFloat(req.query.longitude))) {
+        throw new Error('Longitude must be a decimal');
+    }
+    if (req.query.latitude && isNaN(parseFloat(req.query.latitude))) {
+        throw new Error('Latitude must be a decimal');
+    }
+    const coordinates = !geohashValue ? {longitude: parseFloat(req.query.longitude), latitude: parseFloat(req.query.latitude)} : ngeohash.decode(geohashValue);
     const limitValue = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 10;
     const skipValue = req.query.nextPageToken ? parseInt(req.query.nextPageToken, 10) : 0;
     const conversionFactor = unit === 'mi' ? 6371 / 1.60934 : 6371;
