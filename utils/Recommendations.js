@@ -10,7 +10,9 @@ const cassandra = require("./SetupCassandra.js");
 let client;
 cassandra
   .SetupCassandraClient(client)
-  .then((CassandraClient) => (client = CassandraClient));
+  .then(async (CassandraClient) => {
+    client = CassandraClient;
+  });
 
 var SameGradeWeightOnboarding,
   SameHighSchoolWeightOnboarding,
@@ -72,6 +74,9 @@ async function fetchWeights() {
   SameGradeWeightQuestions = SameGradeWeightQuestions_.value;
   TopFriendsWeightsQuestions = TopFriendsWeightsQuestions_.value;
   FriendsOfFriendsWeightQuestions = FriendsOfFriendsWeightQuestions_.value;
+
+ // const Recommendations = await GetRecommendationsOnboarding("999d360e-7a23-49f6-8349-cbcdf59ce84a",1,10,1,10,10,"neta");
+ 
 }
 fetchWeights(); // fetch the weights as soon as the module is imported
 //#endregion
@@ -291,9 +296,10 @@ async function GetRecommendationsExploreSection(
     prepare: true,
   });
 
-  const InviteSentQuery = "SELECT * FROM active_links WHERE inviter =?";
+  const InviteSentQuery = "SELECT * FROM active_links WHERE inviter =? ALLOW FILTERING";
   const AllInvitesSentPromise = client.execute(InviteSentQuery, [uid]);
 
+  try{
   const [Recommendations, friendRequests, AllInvitesSent] =
     await Promise.allSettled([
       RecommendationsPromise,
@@ -303,15 +309,15 @@ async function GetRecommendationsExploreSection(
 
   return {
     page_FriendsOfFriends: page_FriendsOfFriends,
-    FriendsOfFriends: Recommendations[0].FriendsOfFriends,
-    UsersInContacts: Recommendations[0].AllUsersInContacts,
     page_SchoolUsers: page_SchoolUsers,
-    UsersInSchool: Recommendations[0].AllUsersInSchool,
-    InvitationRecommendation: Recommendations[0].InvitationRecommendation,
-    TotalFriends: Recommendations[0].FriendCount,
+    Recommendations : Recommendations,
     FriendRequests: friendRequests.value,
     InvitesSent: AllInvitesSent,
   };
+}
+catch(err){
+  console.log(err);
+}
 }
 
 function getRandomOffset(total) {
