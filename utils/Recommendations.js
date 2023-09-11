@@ -12,7 +12,7 @@ cassandra
   .SetupCassandraClient(client)
   .then((CassandraClient) => (client = CassandraClient));
 
-let SameGradeWeightOnboarding,
+var SameGradeWeightOnboarding,
   SameHighSchoolWeightOnboarding,
   PhotoContactsWeightOnboarding,
   EmojiContactsWeightOnboarding,
@@ -174,28 +174,21 @@ async function GetRecommendationsOnboarding(
   highschool
 ) {
   // Calculate the offset
-  const offset_PeopleYouMayKnow =
-    (page_peopleYouMayKnow - 1) * pagesize_PeopleYouMayKnow;
-
+  const offset_PeopleYouMayKnow = (page_peopleYouMayKnow - 1) * pagesize_PeopleYouMayKnow;
+  const offset_peopleInContacts = (page_peopleInContacts -1 ) * pagesize_peopleInContacts;
 
   const OnboardingRecommendationsPromise = await g.submit(
     `g.v().hasLabel('User').has('uid', uid).project(
       'PeopleYouMayKnow',
       'peopleInContacts'
     ).
-    by(union(
-      g.V().hasLabel('User').outE('ATTENDS_SCHOOL').inV().has('name',highschool).values('uid').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
-      g.V().hasLabel('User').outE('ATTENDS_SCHOOL').inV().has('name',highschool).has('grade', grade).not(inE('FRIENDS_WITH').has('uid', uid)).values('uid').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends)
-    ).fold()).
-    by(outE('HAS_CONTACT_IN_APP').
-  union(
-    choose(has('fav', true),  outV().has('weight', EmojiContactsWeightQuestions),  outV().has('weight', ContactsWeightQuestions)),
-    choose(has('photo', true),  outV().has('weight', PhotoContactsWeightQuestions),  outV().has('weight', ContactsWeightQuestions))
-  ).
-     not(inE('FRIENDS_WITH').has('uid', uid)).
+    by( outE('ATTENDS_SCHOOL').inV().has('name',highschool).values('uid').range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow).fold()).
+    by(outE('HAS_CONTACT_IN_APP').union(
+    choose(has('fav', true),  outV().has('weight', EmojiContactsWeightOnboarding),  outV().has('weight', ContactsWeightOnboarding)),
+    choose(has('photo', true),  outV().has('weight', PhotoContactsWeightOnboarding),  outV().has('weight', ContactsWeightOnboarding)).
      values('uid').
-     range(offset_Contacts, page_Contacts * pagesize_Contacts).
-     fold())`,
+     range(offset_peopleInContacts, page_peopleInContacts * pagesize_peopleInContacts).
+     fold()))`,
     {
       highschool: highschool,
       offset_PeopleYouMayKnow: offset_PeopleYouMayKnow,
@@ -206,6 +199,9 @@ async function GetRecommendationsOnboarding(
       EmojiContactsWeightOnboarding: EmojiContactsWeightOnboarding,
       ContactsWeightOnboarding: ContactsWeightOnboarding,
       PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
+      offset_peopleInContacts:offset_peopleInContacts,
+      pagesize_peopleInContacts : pagesize_peopleInContacts,
+      page_peopleInContacts:page_peopleInContacts
     }
   );
 
@@ -216,10 +212,8 @@ async function GetRecommendationsOnboarding(
   // Return both the result and the next page number for paging
   return {
     success: true,
-    page_peopleYouMayKnow: page_peopleYouMayKnow,
-    People_You_May_Know: Recommendations[0].PeopleYouMayKnow,
     page_peopleInContacts: page_peopleInContacts,
-    PeopleInContacts: Recommendations[0].PeopleInContacts,
+    Recommendations:Recommendations.value
   };
 }
 
