@@ -119,7 +119,7 @@ async function pushSchools(reqs, db) {
     let queryname = req.query.queryname;
     let geohashValue = req.query.geohashValue;
 
-    const coordinates = !geohashValue ? [req.query.longitude, req.query.latitude] : ngeohash.decode(geohashValue);
+    const coordinates = !geohashValue ? {longitude: req.query.longitude, latitude:req.query.latitude} : ngeohash.decode(geohashValue);
     const limitValue = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 10;
     const skipValue = req.query.nextPageToken ? parseInt(req.query.nextPageToken, 10) : 0;
     const conversionFactor = unit === 'mi' ? 6371 / 1.60934 : 6371;
