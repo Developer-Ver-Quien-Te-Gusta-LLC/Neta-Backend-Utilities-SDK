@@ -145,7 +145,8 @@ async function pushSchools(reqs, db) {
     };
 
     if (queryname) {
-        filter["name"] = new RegExp(`${queryname}`, "i");  // Contains search
+        filter["name"] = { $regex: `^${queryname}`, $options: 'i' };  // Prefix search
+    
     }
 
     const results = await db.collection('schools').find(filter).skip(skipValue).limit(limitValue).toArray();
