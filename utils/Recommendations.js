@@ -75,7 +75,7 @@ async function fetchWeights() {
   TopFriendsWeightsQuestions = TopFriendsWeightsQuestions_.value;
   FriendsOfFriendsWeightQuestions = FriendsOfFriendsWeightQuestions_.value;
 
- const Recommendations = await GetRecommendationsOnboarding("999d360e-7a23-49f6-8349-cbcdf59ce84a",1,10,1,10,10,"neta");
+ //const Recommendations = await GetRecommendationsOnboarding("999d360e-7a23-49f6-8349-cbcdf59ce84a",1,10,1,10,10,"neta");
  
 }
 fetchWeights(); // fetch the weights as soon as the module is imported
