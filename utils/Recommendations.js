@@ -75,7 +75,7 @@ async function fetchWeights() {
   TopFriendsWeightsQuestions = TopFriendsWeightsQuestions_.value;
   FriendsOfFriendsWeightQuestions = FriendsOfFriendsWeightQuestions_.value;
 
- //const Recommendations = await GetRecommendationsQuestions("999d360e-7a23-49f6-8349-cbcdf59ce84a","neta",10);
+ const Recommendations = await GetRecommendationsOnboarding("999d360e-7a23-49f6-8349-cbcdf59ce84a",1,10,1,10,10,"neta");
  
 }
 fetchWeights(); // fetch the weights as soon as the module is imported
@@ -187,11 +187,11 @@ async function GetRecommendationsOnboarding(
       'PeopleYouMayKnow',
       'peopleInContacts'
     ).
-    by( outE('ATTENDS_SCHOOL').inV().has('name',highschool).values('uid').range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow).fold()).
+    by( g.V().hasLabel('User').outE('ATTENDS_SCHOOL').range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow).dedup().fold()).
     by(outE('HAS_CONTACT_IN_APP').union(
     choose(has('fav', true),  outV().has('weight', EmojiContactsWeightOnboarding),  outV().has('weight', ContactsWeightOnboarding)),
     choose(has('photo', true),  outV().has('weight', PhotoContactsWeightOnboarding),  outV().has('weight', ContactsWeightOnboarding)).
-     values('uid').
+     values('uid','fname','username').
      range(offset_peopleInContacts, page_peopleInContacts * pagesize_peopleInContacts).
      fold()))`,
     {
@@ -213,6 +213,7 @@ async function GetRecommendationsOnboarding(
   const [Recommendations] = await Promise.allSettled([
     OnboardingRecommendationsPromise
   ]);
+  console.log(Recommendations.value);
   
   // Return both the result and the next page number for paging
   return {
