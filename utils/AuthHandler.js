@@ -44,7 +44,6 @@ async function ExtractData(token){
 
     try {
         const decodedToken = await admin.auth().verifyIdToken(token);
-        console.log(decodedToken);
         const uid = decodedToken.uid;
         return {uid:decodedToken.uid,phoneNumber:decodedToken.uid};  // This will return the full decoded token along with the UID.
     } catch (error) {
