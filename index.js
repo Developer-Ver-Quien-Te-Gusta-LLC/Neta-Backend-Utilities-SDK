@@ -59,6 +59,7 @@ module.exports = {
   CreateFirebaseUser: UserCreation.CreateFirebaseUser,
   uploadUserContacts: UserCreation.uploadUserContacts,
   handleTransactionCompletion: UserCreationTransactionHandling.handleTransactionCompletion,
+  onTransactionStart : UserCreationTransactionHandling.onTransactionStart,
   checkAllTransactionsCompleted: UserCreationTransactionHandling.checkAllTransactionsCompleted,
   isTransactionInProgress: UserCreationTransactionHandling.isTransactionInProgress,
   OnUserCreationFailed: UserCreationTransactionHandling.OnUserCreationFailed,

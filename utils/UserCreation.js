@@ -220,7 +220,7 @@ async function createNeptuneUser(UserParams) {
       `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', '${highschool}'))`
     );
 
-    await handleTransactionCompletion(transactionId, uid, phoneNumber);
+    await handleTransactionCompletion(uid, transactionId, phoneNumber);
     return true; // Return the success response
   } catch (error) {
     console.error(error);
@@ -247,7 +247,7 @@ async function CreateFirebaseUser(UserParams) {
     console.log(`Token For user ${username} is ${customToken}`);
     const query = 'INSERT INTO tokens (UserToken,phoneNumber) VALUES (?,?)';
     await client.execute(query,[customToken,phoneNumber]);
-    await handleTransactionCompletion(transactionId, uid, phoneNumber);
+    await handleTransactionCompletion(uid, transactionId, phoneNumber);
     return true;
   } catch (err) {
     console.log(err);
