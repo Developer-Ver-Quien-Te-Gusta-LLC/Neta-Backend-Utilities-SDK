@@ -49,7 +49,7 @@ async function handleTransactionCompletion(uid, transactionId, phoneNumber) {
 // This function checks if all three transactions are completed
 async function checkAllTransactionsCompleted(transactionId,phoneNumber) {
   const selectQuery =
-    "SELECT COUNT(*) as count FROM transactions WHERE transaction_id = ? AND status = ?";
+    "SELECT COUNT(*) as count FROM transactions WHERE transaction_id = ? AND status = ? ALLOW FILTERING";
   const params = [transactionId, "completed"];
   const result = await client.execute(selectQuery, params, { prepare: true });
 
@@ -61,7 +61,7 @@ async function checkAllTransactionsCompleted(transactionId,phoneNumber) {
 
 async function isTransactionInProgress(phoneNumber) {
   const selectQuery =
-    "SELECT COUNT(*) as count FROM transactions WHERE phoneNumber = ? AND status = ?";
+    "SELECT COUNT(*) as count FROM transactions WHERE phoneNumber = ? AND status = ? ALLOW FILTERING";
   const params = [phoneNumber, "in progress"];
   const result = await client.execute(selectQuery, params, { prepare: true });
 
