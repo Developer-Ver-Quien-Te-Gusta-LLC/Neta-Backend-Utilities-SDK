@@ -113,6 +113,11 @@ async function pushSchools(reqs, db) {
     });
   }
 
+  async function clearSchools(db) {
+    await db.collection('schools').deleteMany({});
+  }
+  
+
   async function fetchSchools(req, db) {
     const DEFAULT_UNIT = "km";
     let unit = req.query.unit || DEFAULT_UNIT;
@@ -170,4 +175,4 @@ async function pushSchools(reqs, db) {
 
 
 
-module.exports = { SetupGeospatialDB, fetchSchools, pushSchools }
+module.exports = { SetupGeospatialDB, fetchSchools, pushSchools, clearSchools }

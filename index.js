@@ -55,6 +55,7 @@ module.exports = {
   getNumberOfMessagesInSQS: ServiceBus.getNumberOfMessagesInSQS,
   CreateMixPanelUser: UserCreation.CreateMixPanelUser,
   CreateScyllaUser: UserCreation.CreateScyllaUser,
+  clearSchools : GeospatialDB.clearSchools,
   createNeptuneUser: UserCreation.createNeptuneUser,
   CreateFirebaseUser: UserCreation.CreateFirebaseUser,
   uploadUserContacts: UserCreation.uploadUserContacts,
