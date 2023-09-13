@@ -36,7 +36,7 @@ async function ExtractData(token){
     if (!token) {
         await SendEvent('authorization_failed', null, { headers: req.headers, body: req.body, qstring: req.query });
         console.log("no token");
-        return { success: false, err: "A token is required for authentication" };
+        return { Success: false, err: "A token is required for authentication" };
     }
 
     try {
