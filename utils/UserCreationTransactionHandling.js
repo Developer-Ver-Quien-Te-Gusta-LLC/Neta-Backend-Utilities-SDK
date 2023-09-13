@@ -7,7 +7,7 @@
 ///
 /// Assign user a 'pollIndex' that is inclusive 0 -> num(polls)
 ///
-const ScyllaSetup = require("./SetupCassandra.js");
+const CassandraClient = require("./SetupCassandra");
 
 
 const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
@@ -21,9 +21,11 @@ async function fetchAlby() {
   await ably.connection.once("connected");
 }
 fetchAlby()
+let client;
 
-var client;
-ScyllaSetup.SetupCassandraClient(client).then(result=>{client = result});
+CassandraClient.SetupCassandraClient(client).then((result) => {
+  client = result;
+});
 
 // TODO: implemenet isTransactionInProgress
 
@@ -52,6 +54,7 @@ async function checkAllTransactionsCompleted(transactionId,phoneNumber) {
     "SELECT COUNT(*) as count FROM transactions WHERE transaction_id = ? AND status = ? ALLOW FILTERING";
   const params = [transactionId, "completed"];
   const result = await client.execute(selectQuery, params, { prepare: true });
+  console.log("RESULT!!! " + JSON.stringify(result))
 
   if (result && result.first() && result.first().count === 3) {
     // If all transactions are completed, then invoke the final function
