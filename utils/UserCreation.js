@@ -158,7 +158,6 @@ async function createNeptuneUser(UserParams) {
     firstName,
     lastName,
     uid,
-    transactionId,
   } = UserParams;
   if (gender == undefined) gender = "non-binary";
   try {
@@ -220,7 +219,7 @@ async function createNeptuneUser(UserParams) {
       `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', '${highschool}'))`
     );
 
-    await handleTransactionCompletion(uid, transactionId, phoneNumber);
+    await handleTransactionCompletion(uid, phoneNumber);
     return true; // Return the success response
   } catch (error) {
     console.error(error);
