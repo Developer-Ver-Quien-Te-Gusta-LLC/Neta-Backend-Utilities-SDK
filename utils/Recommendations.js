@@ -187,7 +187,7 @@ async function GetRecommendationsOnboarding(
       'PeopleYouMayKnow',
       'peopleInContacts'
     ).
-    by( g.V().hasLabel('User').outE('ATTENDS_SCHOOL').range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow).dedup().fold()).
+    by( g.V().hasLabel('User').outE('ATTENDS_SCHOOL').outV().range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow).dedup().fold()).
     by(outE('HAS_CONTACT_IN_APP').union(
     choose(has('fav', true),  outV().has('weight', EmojiContactsWeightOnboarding),  outV().has('weight', ContactsWeightOnboarding)),
     choose(has('photo', true),  outV().has('weight', PhotoContactsWeightOnboarding),  outV().has('weight', ContactsWeightOnboarding)).
