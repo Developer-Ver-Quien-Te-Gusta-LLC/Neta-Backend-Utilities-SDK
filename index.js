@@ -59,6 +59,8 @@ module.exports = {
   CreateFirebaseUser: UserCreation.CreateFirebaseUser,
   uploadUserContacts: UserCreation.uploadUserContacts,
   handleTransactionCompletion: UserCreationTransactionHandling.handleTransactionCompletion,
+  checkAllTransactionsCompleted: UserCreationTransactionHandling.checkAllTransactionsCompleted,
+  isTransactionInProgress: UserCreationTransactionHandling.isTransactionInProgress,
   OnUserCreationFailed: UserCreationTransactionHandling.OnUserCreationFailed,
   publishAlbyMessage: NotificationSystem.publishAlbyMessage,
   publishAlbyMessageNaive: NotificationSystem.publishAlbyMessageNaive,

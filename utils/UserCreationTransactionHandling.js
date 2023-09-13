@@ -30,8 +30,8 @@ ScyllaSetup.SetupCassandraClient(client).then(result=>{client = result});
 // This function will be invoked by each service via SNS Topic
 async function handleTransactionCompletion(uid, transactionId, phoneNumber) {
   const insertQuery =
-    "INSERT INTO transactions (transaction_id, status, uid) VALUES (?, ?, ?) IF NOT EXISTS USING TTL ?";
-  const params = [transactionId, "completed", uid,86400];
+    "INSERT INTO transactions (transaction_id, status, uid) VALUES (?, ?, ?) IF NOT EXISTS?";
+  const params = [transactionId, "completed", uid];
   const insertPromise = client.execute(insertQuery, params, { prepare: true });
   
   const [insertResult] = await Promise.all([insertPromise]);
