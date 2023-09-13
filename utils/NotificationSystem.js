@@ -41,21 +41,13 @@ async function publishAlbyMessageNaive(user_id, message) {
   return { message: `Published a message to the topic: ${topicName}` };
 }
 
-async function publishAlbyMessage(user_id, message) {
-  const temp = await FetchChannelId(user_id, true); //await DataHandler.getDataFromScyalla("Users", user_id, "AlbyTopicName");
-  var topicName = temp.topicId;
-  var encryptionKey = temp.encryptionKey;
-
-  if (!topicName) {
+async function publishAlbyMessage(ChannelID, message) {
+  if (!ChannelID) {
     return { message: "No topic name found for user" };
   }
 
-  const channel = ably.channels.get(topicName);
-
-  if (typeof(message) == "object") message = JSON.stringify(message)
-
-  const EncryptedMessage = await encrypt(message, encryptionKey);
-  await channel.publish(JSON.stringify(EncryptedMessage));
+  const channel = ably.channels.get(ChannelID);
+  await channel.publish(message);
 
   return { message: `Published a message to the topic: ${topicName}` };
 }
@@ -79,20 +71,26 @@ async function publishFCMMessage(userToken, message) {
     });
 }
 
-async function SendNotification(userId, payload) {
-  let userStatus = await getDataFromScyalla("users", userId, "online");
-  if (userStatus == undefined || userStatus == null) userStatus = false /// no value defaults to false
+async function SendNotification(uid, payload) {
+  /*if (sendRedundantly) {
+    const userToken = await getDataFromScyalla("users", uid, "FCMToken");
+    await Promise.allSettled([publishAlbyMessage(uid, payload), publishFCMMessage(userToken, JSON.stringify(payload))])
+  }*/
 
-  if (sendRedundantly) {
-    const userToken = await getDataFromScyalla("users", userId, "uid");
-    await Promise.allSettled([publishAlbyMessage(userId, payload), publishFCMMessage(userToken, JSON.stringify(payload))])
-  }
-
-  if (userStatus == true) {
-    await publishAlbyMessage(userId, payload);
-  } else {
-    const userToken = await getDataFromScyalla("users", userId, "uid");
-    await publishFCMMessage(userToken, JSON.stringify(payload));
-  }
+  const ChannelID = await FetchChannelId(user_id, true);
+  const channel = ably.channels.get(ChannelID);
+  await channel.presence.get(async (err, members) => {
+    if (err) {
+      console.error('Error fetching presence data:', err);
+    } else {
+      if (members.length > 0) {
+        await publishAlbyMessage(ChannelID, payload);
+      }
+      else{
+        const userToken = await getDataFromScyalla("users", uid, "FCMToken");
+        await publishFCMMessage(userToken, JSON.stringify(payload));
+      }
+    }
+  });
 }
 module.exports = { SendNotification ,publishAlbyMessage, publishAlbyMessageNaive };
