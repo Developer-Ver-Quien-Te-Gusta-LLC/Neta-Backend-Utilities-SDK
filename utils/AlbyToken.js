@@ -16,8 +16,7 @@ async function FetchChannelId(uid) {
     const result = await client.execute(query, [uid]);
 
     if (result.rowLength > 0) {
-        let transaction_id = result.rows[0];
-        return transaction_id;
+        return result.rows[0].transaction_id;
     } 
     else {
         // If no user found, do nothing
