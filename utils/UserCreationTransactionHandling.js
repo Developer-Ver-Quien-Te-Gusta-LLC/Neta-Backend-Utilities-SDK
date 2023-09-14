@@ -8,7 +8,8 @@ const Ably = require('ably');
 var ably;
 
 async function fetchAlby() {
-  ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
+  const key = await FetchFromSecrets("AblyAPIKey");
+  ably = new Ably.Realtime({key:key});
   await ably.connection.once("connected");
 }
 fetchAlby()
