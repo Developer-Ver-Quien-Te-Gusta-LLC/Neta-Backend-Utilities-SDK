@@ -12,7 +12,7 @@ SetupCassandraClient(client).then(result=>{client = result;});
 /// included for redundancy purposes
 async function FetchChannelId(uid) {
     // Fetch AlbyTopicName and creation date from Cassandra
-    const query = 'SELECT transaction_id FROM transactions WHERE uid = ?';
+    const query = 'SELECT transaction_id FROM transactions WHERE uid = ? ALLOW FILTERING';
     const result = await client.execute(query, [uid]);
 
     if (result.rowLength > 0) {
