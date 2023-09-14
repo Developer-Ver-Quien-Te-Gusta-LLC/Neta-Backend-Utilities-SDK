@@ -79,7 +79,7 @@ async function SendNotification(uid, payload) {
     await Promise.allSettled([publishAlbyMessage(uid, payload), publishFCMMessage(userToken, JSON.stringify(payload))])
   }*/
 
-  const ChannelID = await FetchChannelId(user_id);
+  const ChannelID = await FetchChannelId(uid);
   const channel = ably.channels.get(ChannelID);
   await channel.presence.get(async (err, members) => {
     if (err) {
