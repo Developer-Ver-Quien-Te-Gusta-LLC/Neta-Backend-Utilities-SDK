@@ -81,6 +81,7 @@ async function SendNotification(uid, payload) {
 
   const ChannelID = await FetchChannelId(uid);
   const channel = ably.channels.get(ChannelID);
+  console.log("Channel name" + ChannelID);
   await channel.presence.get(async (err, members) => {
     if (err) {
       console.error('Error fetching presence data:', err);
