@@ -8,13 +8,13 @@ const Ably = require('ably');
 var ably;
 let sendRedundantly
 async function fetchAlby() {
-  ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
+  const key = await FetchFromSecrets("AblyAPIKey");
+  ably = new Ably.Realtime({key:key});
   await ably.connection.once("connected");
-  sendRedundantly = getKV("RedundantNotifications")
+  //sendRedundantly = getKV("RedundantNotifications")
 }
 fetchAlby();
 
-console.log("Connected to Ably!");
 const admin = require("firebase-admin");
 
 let Credentials;
@@ -36,7 +36,8 @@ async function publishAlbyMessageNaive(user_id, message) {
   const channel = ably.channels.get(topicName);
 
   if (typeof(message) == "object") message = JSON.stringify(message)
-  await channel.publish(message);
+  await channel.publish("event",message);
+
 
   return { message: `Published a message to the topic: ${topicName}` };
 }
@@ -47,13 +48,14 @@ async function publishAlbyMessage(ChannelID, message) {
   }
 
   const channel = ably.channels.get(ChannelID);
-  await channel.publish(message);
+  await channel.publish("event",message);
 
   return { message: `Published a message to the topic: ${topicName}` };
 }
 
 async function publishFCMMessage(userToken, message) {
   const payload = {
+    token: userToken,
     notification: {
       title: "tbd",
       body: typeof(message) == "object" ? message : JSON.stringify(message),
@@ -62,7 +64,7 @@ async function publishFCMMessage(userToken, message) {
 
   admin
     .messaging()
-    .sendToDevice(userToken, payload)
+    .send( payload)
     .then((response) => {
       console.log("Notification sent successfully:", response);
     })
