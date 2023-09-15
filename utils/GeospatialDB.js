@@ -66,7 +66,7 @@ async function getLocationString(lon, lat) {
     }
 }
 (async () => {
-    console.log(await getLocationString(-99.1332, 19.4326));  // Mexico City
+    //console.log(await getLocationString(-99.1332, 19.4326));  // Mexico City
 })();
 function chunkArray(array, size) {
     const chunked = [];
