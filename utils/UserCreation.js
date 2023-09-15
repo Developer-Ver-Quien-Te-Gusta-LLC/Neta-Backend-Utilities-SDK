@@ -53,7 +53,7 @@ GraphDB.SetupGraphDB().then((result) => {
   g = result;
 });
 
-const {OnUserCreationFailed,handleTransactionCompletion,onTransactionStart} = require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
+const {OnUserCreationFailed,handleTransactionCompletion,onTransactionStart} = require("./UserCreationTransactionHandling.js");
 
 async function handleTransactionError(
   phoneNumber,
