@@ -49,12 +49,12 @@ async function handleTransactionCompletion(uid, phoneNumber) {
   checkAllTransactionsCompleted(transactionId, phoneNumber);
 }
 async function checkAllTransactionsCompleted(transactionId,phoneNumber) {
-  console.log("Checking for transactions complete");
+ 
 
     const selectQuery = "SELECT COUNT(*) as count FROM transactions WHERE phoneNumber = ? AND status = ? ALLOW FILTERING";
     const params = [phoneNumber, "completed"];
     const result = await client.execute(selectQuery, params, { prepare: true });
-
+    console.log("Checking for transactions complete"+ result.rows[0].count);
     if (result.rows[0].count === 3) {
       OnUserCreationComplete(transactionId, phoneNumber);
       return true
