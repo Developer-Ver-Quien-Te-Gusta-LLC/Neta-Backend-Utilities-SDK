@@ -328,7 +328,7 @@ function getRandomOffset(total) {
 async function GetRecommendationsQuestions(uid, highschool, grade) {
   const randomOffset = getRandomOffset(10); // You need to have TOTAL_USERS defined or calculated somewhere in your script
 
-  const allUsers = await g
+   /* await g
     .submit(
       `
       g.V().hasLabel('User').has('uid', "${uid}")
@@ -371,14 +371,25 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
   `
     )
     .then((result) => {
-      const allUsers = result;
       console.log(allUsers);
-      return allUsers;
+      return result;
+    })
+    .catch((error) => {
+      console.error(error);
+    });*/
+    await g
+    .submit(
+      `
+      g.V().hasLabel('User').LIMIT(4)
+  `
+    )
+    .then((result) => {
+      return result;
     })
     .catch((error) => {
       console.error(error);
     });
-}
+  }
 
 //#endregion
 
