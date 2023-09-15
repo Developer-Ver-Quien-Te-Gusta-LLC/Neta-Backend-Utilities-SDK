@@ -53,19 +53,19 @@ async function handleTransactionCompletion(uid, phoneNumber) {
   }
 }
 async function checkAllTransactionsCompleted(phoneNumber) {
+  console.log("Checking for transactions complete");
   const selectQuery2 = "SELECT transaction_id FROM transactions WHERE phoneNumber = ? ALLOW FILTERING";
   const selectParams = [phoneNumber];
   const selectResult = await client.execute(selectQuery2, selectParams, { prepare: true });
-  if (selectResult.first() == undefined) return false
-  const transactionId = selectResult.first().transaction_id;
+  
+  const transactionId = selectResult.rows[0].transaction_id;
 
     const selectQuery = "SELECT COUNT(*) as count FROM transactions WHERE phoneNumber = ? AND status = ? ALLOW FILTERING";
     const params = [phoneNumber, "completed"];
     const result = await client.execute(selectQuery, params, { prepare: true });
 
-    console.log(result.first().count)
 
-    if (result && result.first() && result.first().count === 4) {
+    if (result.rows[0].count === 4) {
       OnUserCreationComplete(transactionId, phoneNumber);
     }
     return transactionId
@@ -79,6 +79,7 @@ async function isTransactionInProgress(phoneNumber) {
 }
 
 async function OnUserCreationComplete(transactionId, phoneNumber) {
+  console.log("transactions complete");
   const token = await client.execute('SELECT UserToken FROM tokens WHERE phoneNumber = ?', [phoneNumber], { prepare: true });
   const albySuccessObj = {
     status: "success",
@@ -88,6 +89,9 @@ async function OnUserCreationComplete(transactionId, phoneNumber) {
   ably.channels.get(transactionId).publish("event", JSON.stringify(albySuccessObj), (err) => {
     if (err) {
       console.log("Unable to publish message; err = " + err.message);
+    }
+    else{
+      console.log("published to ably");
     }
   });
 }
