@@ -20,7 +20,7 @@ CassandraClient.SetupCassandraClient(client).then((result) => {
 });
 
 // To initiate a transaction when user creation starts
-async function onTransactionStart(phoneNumber) {
+async function onTransactionStart(transaction_id,phoneNumber) {
   const isInProgress = await isTransactionInProgress(phoneNumber);
   
   if (isInProgress) {
@@ -29,7 +29,7 @@ async function onTransactionStart(phoneNumber) {
   } else {
     const transactionId = uuidv4();
     const insertQuery = "INSERT INTO transactions (pk, transaction_id, status, phoneNumber) VALUES (?, ?, ?, ?)";
-    const params = [uuidv4(), uuidv4(), "in progress", phoneNumber];
+    const params = [uuidv4(), transaction_id, "in progress", phoneNumber];
     await client.execute(insertQuery, params, { prepare: true });
     return transactionId;
   }
@@ -40,8 +40,8 @@ async function handleTransactionCompletion(uid, phoneNumber) {
   const selectParams = [phoneNumber];
   const selectResult = await client.execute(selectQuery, selectParams, { prepare: true });
  
-  const transactionId = selectResult.rows[0].transaction_id;
-  
+  var transactionId = String(selectResult.rows[0].transaction_id);
+
   const insertQuery = "INSERT INTO transactions (pk, transaction_id, status, uid, phoneNumber) VALUES (?, ?, ?, ?, ?)";
   const params = [uuidv4(), transactionId, "completed", uid, phoneNumber];
   

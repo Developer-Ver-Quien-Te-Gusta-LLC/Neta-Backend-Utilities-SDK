@@ -53,10 +53,7 @@ GraphDB.SetupGraphDB().then((result) => {
   g = result;
 });
 
-const OnUserCreationFailed =
-  require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
-const handleTransactionCompletion =
-  require("./UserCreationTransactionHandling.js").handleTransactionCompletion;
+const {OnUserCreationFailed,handleTransactionCompletion,onTransactionStart} = require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
 
 async function handleTransactionError(
   phoneNumber,
@@ -256,6 +253,12 @@ async function CreateFirebaseUser(UserParams) {
   }
 }
 
+async function StartUserCreation(UserParams){
+  await onTransactionStart(UserParams.transactionId,UserParams.phoneNumber);
+  await CreateScyllaUser(UserParams);
+  await createNeptuneUser(UserParams);
+  await CreateFirebaseUser(UserParams);
+}
 async function CreateMixPanelUser(UserParams) {
   mixpanel.people.set(UserParams.username, {
     $first_name: UserParams.firstname,
@@ -471,5 +474,6 @@ module.exports = {
   CreateFirebaseUser,
   DeleteUser,
   uploadUserContacts,
-  CreateMixPanelUser
+  CreateMixPanelUser,
+  StartUserCreation
 };
