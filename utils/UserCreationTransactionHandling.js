@@ -61,7 +61,7 @@ async function checkAllTransactionsCompleted(phoneNumber) {
     const result = await client.execute(selectQuery, params, { prepare: true });
 
 
-    if (result.rows[0].count === 3) {
+    if (result.rows[0].count === 4) {
       OnUserCreationComplete(transactionId, phoneNumber);
     }
     return transactionId
@@ -71,7 +71,7 @@ async function isTransactionInProgress(phoneNumber) {
   const selectQuery = "SELECT COUNT(*) as count FROM transactions WHERE phoneNumber = ? AND status = ? ALLOW FILTERING";
   const params = [phoneNumber, "in progress"];
   const result = await client.execute(selectQuery, params, { prepare: true });
-  return (result && result.first() && result.first().count > 0);
+  return (result.rows[0].count > 0);
 }
 
 async function OnUserCreationComplete(transactionId, phoneNumber) {
