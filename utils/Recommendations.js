@@ -377,18 +377,14 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
     .catch((error) => {
       console.error(error);
     });*/
-    await g
+    const result = await g
     .submit(
       `
       g.V().hasLabel('User').LIMIT(4)
   `
-    )
-    .then((result) => {
-      return result;
-    })
-    .catch((error) => {
-      console.error(error);
-    });
+    );
+
+    return result;
   }
 
 //#endregion
