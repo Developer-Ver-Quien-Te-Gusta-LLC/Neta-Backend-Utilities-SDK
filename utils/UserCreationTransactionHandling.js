@@ -4,11 +4,11 @@ const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 const FetchChannelId = require('./AlbyToken.js').FetchChannelId;
 const uuidv4 = require('uuid').v4;
 const Ably = require('ably');
-
+const {getKV} = require("./KV");
 var ably;
 
 async function fetchAlby() {
-  const key = await FetchFromSecrets("AblyAPIKey");
+  const key = await getKV("AblyAPIKey");
   ably = new Ably.Realtime({key:key});
   await ably.connection.once("connected");
 }
