@@ -80,6 +80,8 @@ async function OnUserCreationComplete(transactionId, phoneNumber) {
     token: String(token.rows[0].UserToken)
   };
 
+  console.log(transactionId);
+
   ably.channels.get(transactionId).publish("event", JSON.stringify(albySuccessObj), (err) => {
     if (err) {
       console.log("Unable to publish message; err = " + err.message);
