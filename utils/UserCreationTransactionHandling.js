@@ -39,18 +39,14 @@ async function handleTransactionCompletion(uid, phoneNumber) {
   const selectQuery = "SELECT transaction_id FROM transactions WHERE phoneNumber = ? ALLOW FILTERING";
   const selectParams = [phoneNumber];
   const selectResult = await client.execute(selectQuery, selectParams, { prepare: true });
-  if (selectResult.first() == undefined) return false
-  const transactionId = selectResult.first().transaction_id;
+ 
+  const transactionId = selectResult.rows[0].transaction_id;
   
   const insertQuery = "INSERT INTO transactions (pk, transaction_id, status, uid, phoneNumber) VALUES (?, ?, ?, ?, ?)";
   const params = [uuidv4(), transactionId, "completed", uid, phoneNumber];
-  const insertResult = await client.execute(insertQuery, params, { prepare: true });
   
-  if (insertResult.applied) {
-    checkAllTransactionsCompleted(transactionId, phoneNumber);
-  } else {
-    console.log(`Transaction ${transactionId} has already been completed.`);
-  }
+  await client.execute(insertQuery, params, { prepare: true });
+  checkAllTransactionsCompleted(transactionId, phoneNumber);
 }
 async function checkAllTransactionsCompleted(phoneNumber) {
   console.log("Checking for transactions complete");
@@ -65,7 +61,7 @@ async function checkAllTransactionsCompleted(phoneNumber) {
     const result = await client.execute(selectQuery, params, { prepare: true });
 
 
-    if (result.rows[0].count === 4) {
+    if (result.rows[0].count === 3) {
       OnUserCreationComplete(transactionId, phoneNumber);
     }
     return transactionId

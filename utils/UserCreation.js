@@ -47,12 +47,12 @@ Cassandraclient.SetupCassandraClient(client).then((result) => {
 });
 
 var GraphDB = require("./SetupGraphDB.js");
+
 let g;
 GraphDB.SetupGraphDB().then((result) => {
   g = result;
 });
 
-const ServiceBus = require("./ServiceBus.js");
 const OnUserCreationFailed =
   require("./UserCreationTransactionHandling.js").OnUserCreationFailed;
 const handleTransactionCompletion =
@@ -130,7 +130,7 @@ async function CreateScyllaUser(UserParams) {
 
     await client.execute(UserCreationQuery, params, { prepare: true });
 
-    // ... [rest of your function]
+    await handleTransactionCompletion(uid, phoneNumber);
 
     return true;
   } catch (err) {
@@ -246,7 +246,7 @@ async function CreateFirebaseUser(UserParams) {
     console.log(`Token For user ${username} is ${customToken}`);
     const query = 'INSERT INTO tokens (UserToken,phoneNumber) VALUES (?,?)';
     await client.execute(query,[customToken,phoneNumber]);
-    await handleTransactionCompletion(uid, transactionId, phoneNumber);
+    await handleTransactionCompletion(uid, phoneNumber);
     return true;
   } catch (err) {
     console.log(err);
