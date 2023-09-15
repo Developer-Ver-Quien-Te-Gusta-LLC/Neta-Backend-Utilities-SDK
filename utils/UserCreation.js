@@ -240,7 +240,7 @@ async function CreateFirebaseUser(UserParams) {
 
     const customToken = await admin.auth().createCustomToken(uid);
 
-    console.log(`Token For user ${username} is ${customToken}`);
+    //console.log(`Token For user ${username} is ${customToken}`);
     const query = 'INSERT INTO tokens (UserToken,phoneNumber) VALUES (?,?)';
     await client.execute(query,[customToken,phoneNumber]);
     await handleTransactionCompletion(uid, phoneNumber);
