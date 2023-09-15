@@ -351,30 +351,6 @@ async function getWeights() {
 }
 getWeights();
 
-let bucketName, s3;
-async function InitializeS3() {
-  bucketName = await FetchFromSecrets("PFPBucket");
-
-  const accessKeyId = await FetchFromSecrets(
-    "CF_access_key_id"
-  );
-  const secretAccessKey = await FetchFromSecrets(
-    "CF_secret_access_key"
-  );
-  const accountid = await FetchFromSecrets(
-    "CloudflareAccountId"
-  );
-
-  s3 = new AWS.S3({
-    endpoint: `https://${accountid}.r2.cloudflarestorage.com`, //if this doesnt work , use https://9b990cf1afe1e9cd3e482c7d5c5a6422.r2.cloudflarestorage.com/netapfps
-    accessKeyId: accessKeyId,
-    secretAccessKey: secretAccessKey,
-    signatureVersion: "v4",
-  });
-}
-
-InitializeS3();
-
 async function uploadUserContacts(req, res) {
   const { phoneNumber } = req.body;
   const contactsList = JSON.parse(req.body.contactsList);
@@ -387,28 +363,16 @@ async function uploadUserContacts(req, res) {
   }
 
   try {
-    let uploadAndPushPromises = [];
     for (let i = 0; i < contactsList.length; i++) {
       let contact = contactsList[i];
-      let uploadResult = null;
-
-      if (req.files && req.files[i]) {
-        const file = req.files[i];
-        const buffer = await sharp(file.buffer).jpeg().toBuffer();
-        const uploadParams = {
-          Bucket: bucketName,
-          Key: `${Date.now()}_${file.originalname}`,
-          Body: buffer,
-        };
-
-        uploadResult = await s3.upload(uploadParams).promise();
-      }
 
       // Check if the contact is implicitly a favorite based on the presence of emojis
       const isFavorite =
-        uploadResult && (hasEmoji(contact.Fname) || hasEmoji(contact.Lname));
+        (hasEmoji(contact.Fname) || hasEmoji(contact.Lname));
 
       // Using Gremlin to add contact vertex and edge
+
+      uploadResult = contact.photo;
 
       if (uploadResult) {
         weight = isFavorite ? EmojiContactsWeight : weight;
