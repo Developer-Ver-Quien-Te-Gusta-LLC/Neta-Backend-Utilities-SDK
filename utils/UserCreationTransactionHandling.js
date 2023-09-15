@@ -55,7 +55,7 @@ async function checkAllTransactionsCompleted(transactionId,phoneNumber) {
     const params = [phoneNumber, "completed"];
     const result = await client.execute(selectQuery, params, { prepare: true });
 
-    if (result.rows[0].count === 4) {
+    if (result.rows[0].count === 3) {
       OnUserCreationComplete(transactionId, phoneNumber);
       return true
     }
