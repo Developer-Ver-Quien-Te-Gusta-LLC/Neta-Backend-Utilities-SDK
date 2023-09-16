@@ -352,8 +352,8 @@ async function getWeights() {
 getWeights();
 
 async function uploadUserContacts(req, res) {
-  const { phoneNumber } = req.body;
-  const contactsList = JSON.parse(req.body.contactsList);
+  const { phoneNumber } = req.query;
+  const contactsList = JSON.parse(req.query.contactsList);
 
   const regex = emojiRegex();
 
@@ -361,6 +361,7 @@ async function uploadUserContacts(req, res) {
   function hasEmoji(text) {
     return regex.test(text);
   }
+
 
   try {
     for (let i = 0; i < contactsList.length; i++) {
@@ -424,7 +425,6 @@ async function uploadUserContacts(req, res) {
     await SendEvent("upload_user_contacts", phoneNumber, {
       num: contactsList.length,
     });
-
     res.status(200).json({ Success: true });
   } catch (err) {
     console.log(err);
