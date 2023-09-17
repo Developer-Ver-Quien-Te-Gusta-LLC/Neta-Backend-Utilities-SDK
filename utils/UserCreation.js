@@ -35,7 +35,7 @@ async function initializeFirebase() {
 initializeFirebase();
 
 async function fetchAlby() {
-  ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
+  ably = new Ably.Realtime.Promise(await getKV("AblyAPIKey"));
   await ably.connection.once("connected");
 }
 fetchAlby();

@@ -8,7 +8,7 @@ const Ably = require('ably');
 var ably;
 let sendRedundantly
 async function fetchAlby() {
-  const key = await FetchFromSecrets("AblyAPIKey");
+  const key = await getKV("AblyAPIKey");
   ably = new Ably.Realtime({key:key});
   await ably.connection.once("connected");
   //sendRedundantly = getKV("RedundantNotifications")
@@ -78,22 +78,10 @@ async function SendNotification(uid, payload) {
     const userToken = await getDataFromScyalla("users", uid, "FCMToken");
     await Promise.allSettled([publishAlbyMessage(uid, payload), publishFCMMessage(userToken, JSON.stringify(payload))])
   }*/
-
   const ChannelID = await FetchChannelId(uid);
-  const channel = ably.channels.get(ChannelID);
-  console.log("Channel name" + ChannelID);
-  await channel.presence.get(async (err, members) => {
-    if (err) {
-      console.error('Error fetching presence data:', err);
-    } else {
-      if (members.length > 0) {
-        await publishAlbyMessage(ChannelID, payload);
-      }
-      else{
-        const userToken = await getDataFromScyalla("users", uid, "FCMToken");
-        await publishFCMMessage(userToken, JSON.stringify(payload));
-      }
-    }
-  });
+
+  await publishAlbyMessage(ChannelID, payload);
+  const userToken = await getDataFromScyalla("users", uid, "FCMToken");
+  await publishFCMMessage(userToken, JSON.stringify(payload));
 }
 module.exports = { SendNotification ,publishAlbyMessage, publishAlbyMessageNaive };
