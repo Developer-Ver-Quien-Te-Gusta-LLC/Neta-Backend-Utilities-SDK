@@ -2,7 +2,7 @@ const AWSXRay = require('aws-xray-sdk-core');
 const expressMiddleware = AWSXRay.express;
 
 // Initialize AWS X-Ray
-AWSXRay.config([AWSXRay.plugins.EC2Plugin, AWSXRay.plugins.ECSPlugin]);
+//AWSXRay.config([AWSXRay.plugins.EC2Plugin, AWSXRay.plugins.ECSPlugin]);
 AWSXRay.setContextMissingStrategy('LOG_ERROR');
 
 /**
