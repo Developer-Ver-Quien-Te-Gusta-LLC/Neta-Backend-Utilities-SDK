@@ -42,7 +42,7 @@ fetchAlby();
 
 let client;
 
-Cassandraclient.SetupCassandraClient(client).then((result) => {
+Cassandraclient.GetClient().then((result) => {
   client = result;
 });
 

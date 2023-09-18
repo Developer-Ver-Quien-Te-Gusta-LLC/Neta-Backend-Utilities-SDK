@@ -21,5 +21,23 @@ async function SetupCassandraClient(_client) {
   return _client;
 }
 
+
+  async function GetClient(){
+    if (client === undefined) {
+      return new Promise((resolve) => {
+        const checkClient = setInterval(() => {
+          if (client !== undefined) {
+            clearInterval(checkClient);
+            resolve(client);
+          }
+        }, 1000);
+      });
+    } else {
+      return client;
+    }
+  }
+  
+
+
 SetupCassandraClient();
-module.exports={SetupCassandraClient,c: client};
+module.exports={SetupCassandraClient,GetClient};

@@ -15,7 +15,7 @@ async function fetchAlby() {
 fetchAlby()
 
 let client;
-CassandraClient.SetupCassandraClient(client).then((result) => {
+CassandraClient.GetClient().then((result) => {
   client = result;
 });
 

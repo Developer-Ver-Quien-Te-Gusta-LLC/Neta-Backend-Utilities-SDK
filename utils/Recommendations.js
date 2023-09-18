@@ -9,7 +9,7 @@ const cassandra = require("./SetupCassandra.js");
 //Setup scylla Client
 let client;
 cassandra
-  .SetupCassandraClient(client)
+  .GetClient()
   .then(async (CassandraClient) => {
     client = CassandraClient;
   });

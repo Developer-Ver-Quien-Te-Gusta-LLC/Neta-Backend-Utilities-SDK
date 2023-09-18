@@ -1,14 +1,14 @@
 const gremlin = require('gremlin');
 const AWS = require('aws-sdk');
 const cassandra = require('cassandra-driver');
-const SetupCassandraClient = require('./SetupCassandra').SetupCassandraClient
+const GetClient = require('./SetupCassandra').GetClient
 const  FetchFromSecrets  = require('./AwsSecrets.js').FetchFromSecrets;
 
 const { SetupGraphDB } = require("./SetupGraphDB.js");
 SetupGraphDB().then(result =>{ global.g = result});
 
 let client;
-SetupCassandraClient(client).then(result=>{client=result;})
+GetClient().then(result=>{client=result;})
 
 // Fetch data from ScyllaDB (for the given phone number)
 async function getDataFromScyalla(tableName, uid, data) {

@@ -6,10 +6,10 @@ const UserCreation = require("./UserCreation.js");
 const AWS = require("aws-sdk");
 
 const sqs = new AWS.SQS();
-const { SetupCassandraClient } = require("./SetupCassandra.js");
+const { GetClient } = require("./SetupCassandra.js");
 
 var client;
-SetupCassandraClient(client).then(
+GetClient().then(
   (Cassandraclient) => (client = Cassandraclient)
 );
 
