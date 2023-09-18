@@ -20,7 +20,7 @@ async function FetchChannelId(uid) {
     else {
         // If no user found, do nothing
         console.log("no user found");
-        return null;
+        return undefined;
     }
 }
 module.exports = {FetchChannelId};

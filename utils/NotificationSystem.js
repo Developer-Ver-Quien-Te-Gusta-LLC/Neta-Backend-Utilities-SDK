@@ -80,8 +80,10 @@ async function SendNotification(uid, payload) {
   }*/
   const ChannelID = await FetchChannelId(uid);
 
-  await publishAlbyMessage(ChannelID, payload);
+  if(ChannelID !=undefined) await publishAlbyMessage(ChannelID, payload);
+
   const userToken = await getDataFromScyalla("users", uid, "FCMToken");
-  await publishFCMMessage(userToken, JSON.stringify(payload));
+
+  if(userToken!=undefined)await publishFCMMessage(userToken, JSON.stringify(payload));
 }
 module.exports = { SendNotification ,publishAlbyMessage, publishAlbyMessageNaive };
