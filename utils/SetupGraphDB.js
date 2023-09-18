@@ -23,7 +23,7 @@ async function fetchSecrets() {
 var secrets;
 
 async function SetupGraphDB() {
-    if (stored) return stored;
+    if (stored != undefined) return stored;
    
     secrets = await fetchSecrets();
    // console.log(secrets.cosmosDBUsername)
@@ -43,5 +43,20 @@ async function SetupGraphDB() {
     const g = traversal().withRemote(new DriverRemoteConnection(secrets.endpoint, { authenticator }));
     return client;
 }
+SetupGraphDB();
+async function GetClient(){
+    if (stored === undefined) {
+      return new Promise((resolve) => {
+        const checkClient = setInterval(() => {
+          if (stored !== undefined) {
+            clearInterval(checkClient);
+            resolve(stored);
+          }
+        }, 1000);
+      });
+    } else {
+      return stored;
+    }
+  }
 
-module.exports = { SetupGraphDB };
+module.exports = { SetupGraphDB,GetClient };

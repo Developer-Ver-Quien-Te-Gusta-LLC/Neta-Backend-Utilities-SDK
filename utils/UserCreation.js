@@ -49,7 +49,7 @@ Cassandraclient.GetClient().then((result) => {
 var GraphDB = require("./SetupGraphDB.js");
 
 let g;
-GraphDB.SetupGraphDB().then((result) => {
+GraphDB.GetClient().then((result) => {
   g = result;
 });
 

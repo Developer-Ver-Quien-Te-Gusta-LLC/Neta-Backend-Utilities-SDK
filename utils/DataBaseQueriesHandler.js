@@ -4,8 +4,8 @@ const cassandra = require('cassandra-driver');
 const GetClient = require('./SetupCassandra').GetClient
 const  FetchFromSecrets  = require('./AwsSecrets.js').FetchFromSecrets;
 
-const { SetupGraphDB } = require("./SetupGraphDB.js");
-SetupGraphDB().then(result =>{ global.g = result});
+const graphDB= require("./SetupGraphDB.js");
+graphDB.GetClient().then(result =>{ global.g = result});
 
 let client;
 GetClient().then(result=>{client=result;})
