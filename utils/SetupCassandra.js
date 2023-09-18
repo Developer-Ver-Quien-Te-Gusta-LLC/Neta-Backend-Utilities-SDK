@@ -22,7 +22,7 @@ async function SetupCassandraClient(_client) {
 }
 
 
-  async function GetClient(){
+  async function GetClient(dummyinput=null){
     if (client === undefined) {
       return new Promise((resolve) => {
         const checkClient = setInterval(() => {
@@ -40,4 +40,4 @@ async function SetupCassandraClient(_client) {
 
 
 SetupCassandraClient();
-module.exports={SetupCassandraClient,GetClient};
+module.exports={SetupCassandraClient:GetClient,GetClient};
