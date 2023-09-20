@@ -185,8 +185,15 @@ function downloadAndHashImage(uri) {
 }
 
 async function clearSchools(db) {
-    await db.collection(COLLECTION_NAME).deleteMany({});
+    try {
+        await db.collection(COLLECTION_NAME).deleteMany({});
+        console.log('Successfully cleared all schools from the database.');
+    } catch (error) {
+        console.error('Error clearing schools:', error);
+        throw error; // Propagate the error
+    }
 }
+
 
 async function fetchSchools(req, db) {
     const DEFAULT_UNIT = "km";
