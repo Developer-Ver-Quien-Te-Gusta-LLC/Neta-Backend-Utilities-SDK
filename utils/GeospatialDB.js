@@ -186,14 +186,17 @@ function downloadAndHashImage(uri) {
 }
 
 async function clearSchools(db) {
+    const collection = db.collection(COLLECTION_NAME);
+    const filter = {}; // Empty filter to match all documents
+  
     try {
-        await db.collection(COLLECTION_NAME).deleteMany({});
-        console.log('Successfully cleared all schools from the database.');
+      const result = await collection.deleteMany(filter);
+      console.log(`${result.deletedCount} documents deleted`);
     } catch (error) {
-        console.error('Error clearing schools:', error);
-        throw error; // Propagate the error
+      console.error('Error deleting documents:', error);
+      throw error;
     }
-}
+  }
 
 
 async function fetchSchools(req, db) {
