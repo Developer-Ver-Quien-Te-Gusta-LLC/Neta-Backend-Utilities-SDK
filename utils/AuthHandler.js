@@ -44,13 +44,12 @@ async function ExtractData(token){
     try {
        // const decodedToken = await admin.auth().verifyIdToken(token);
        const decodedToken = jwt.decode(token); 
-       const uid = decodedToken.uid;
-        return {uid:decodedToken.uid,phoneNumber:decodedToken.uid};  // This will return the full decoded token along with the UID.
+       const uid = decodedToken.user_id;
+        return {uid:uid,phoneNumber:uid};  // This will return the full decoded token along with the UID.
     } catch (error) {
         console.log(error);
         return { Success: false, err: error };
     }
 }
-
 
 module.exports = { GetUserDataFromJWT,ExtractData};
