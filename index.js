@@ -42,6 +42,7 @@ module.exports = {
   measureRouteComputeLength : Datadog.measureRouteComputeLength,
   logSanitizedRequest : Datadog.logSanitizedRequest,
   SendNotification: NotificationSystem.SendNotification,
+  publishFCMMessage : NotificationSystem.publishFCMMessage,
   SendNotificationInApp: NotificationSystem.SendNotificationInApp,
   SendNotificationPush: NotificationSystem.SendNotificationPush,
   ExtractUsersFromJson: Recommendations.ExtractUsersFromJson,
