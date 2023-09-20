@@ -14,7 +14,8 @@ async function SetupGeospatialDB() {
     try {
         const client = await MongoClient.connect(connectionString, {
             useNewUrlParser: true,
-            useUnifiedTopology: true
+            useUnifiedTopology: true,
+            socketTimeoutMS: 60000 // 1 minute
         });
         console.log("Successfully connected to the database!");
         return client;
