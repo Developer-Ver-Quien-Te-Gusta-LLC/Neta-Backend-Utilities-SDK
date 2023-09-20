@@ -86,4 +86,4 @@ async function SendNotification(uid, payload) {
 
   if(userToken!=undefined)await publishFCMMessage(userToken, JSON.stringify(payload));
 }
-module.exports = { SendNotification ,publishAlbyMessage, publishAlbyMessageNaive };
+module.exports = { SendNotification,publishFCMMessage ,publishAlbyMessage, publishAlbyMessageNaive };
