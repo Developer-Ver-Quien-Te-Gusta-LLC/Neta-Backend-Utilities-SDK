@@ -2,6 +2,8 @@ const SendEvent = require('./Analytics.js').SendEvent;
 const admin = require('firebase-admin');
 const { FetchFromSecrets } = require('./AwsSecrets.js');
 const {isInitialized} = require('./KV.js');
+const jwt = require ("jsonwebtoken");
+
 
 async function initializeFirebase() {
     try {
@@ -40,8 +42,9 @@ async function ExtractData(token){
     }
 
     try {
-        const decodedToken = await admin.auth().verifyIdToken(token);
-        const uid = decodedToken.uid;
+       // const decodedToken = await admin.auth().verifyIdToken(token);
+       const decodedToken = jwt.decode(token); 
+       const uid = decodedToken.uid;
         return {uid:decodedToken.uid,phoneNumber:decodedToken.uid};  // This will return the full decoded token along with the UID.
     } catch (error) {
         console.log(error);
