@@ -23,6 +23,7 @@ module.exports = {
   SetupGeospatialDB: GeospatialDB.SetupGeospatialDB,
   fetchSchools: GeospatialDB.fetchSchools,
   pushSchools: GeospatialDB.pushSchools,
+  clearSchools: GeospatialDB.clearSchools,
   //encrypt: AwsEncryption.encrypt,
   //decrypt: AwsEncryption.decrypt,
   FetchFromSecrets: AwsSecrets.FetchFromSecrets,
