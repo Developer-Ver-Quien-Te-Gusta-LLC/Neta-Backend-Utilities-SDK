@@ -43,6 +43,28 @@ async function SetupGraphDB() {
     const g = traversal().withRemote(new DriverRemoteConnection(secrets.endpoint, { authenticator }));
     return client;
 }
+
+async function SetupGraphDB() {
+    if (stored != undefined) return stored;
+   
+    secrets = await fetchSecrets();
+   // console.log(secrets.cosmosDBUsername)
+   
+    const cosmosDBUsername = secrets.cosmosDBUsername
+    const authenticator = new gremlin.driver.auth.PlainTextSaslAuthenticator(cosmosDBUsername, secrets.primaryKey)
+    const client = new gremlin.driver.Client(
+        secrets.endpoint,
+        { 
+            traversalsource : "g",
+            authenticator,
+            rejectUnauthorized : true,
+            mimeType : "application/vnd.gremlin-v2.0+json"
+        }
+    );
+    console.log("Gremlin Client Set Up");
+    const g = traversal().withRemote(new DriverRemoteConnection(secrets.endpoint, { authenticator }));
+    return client;
+}
 SetupGraphDB();
 async function GetClient(){
     if (stored === undefined) {

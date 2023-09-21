@@ -1,5 +1,6 @@
 const { GetClient } = require("./SetupGraphDB.js");
-GetClient().then((result) => {
+
+GetClient().then(async (result) => {
   global.g = result;
 });
 
@@ -383,8 +384,14 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
       g.V().hasLabel('User').LIMIT(4)
   `
     );
+    
+    // Parse the result to only return an array of uids and phoneNumbers
+    const parsedResult = result._items.map(user => ({
+      uid: user.properties.uid[0].value,
+      phoneNumber: user.properties.phoneNumber[0].value
+    }));
 
-    return result;
+    return parsedResult;
   }
 
 //#endregion
