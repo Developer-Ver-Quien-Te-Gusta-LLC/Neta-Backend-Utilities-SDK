@@ -312,7 +312,7 @@ async function GetRecommendationsExploreSection(
   return {
     page_FriendsOfFriends: page_FriendsOfFriends,
     page_SchoolUsers: page_SchoolUsers,
-    Recommendations : Recommendations.value,
+    Recommendations : Recommendations.value ? Recommendations.value:[],
     FriendRequests: friendRequests.value?friendRequests.value.rows:[],
     InvitesSent: AllInvitesSent.value?AllInvitesSent.value.rows:[],
   };
