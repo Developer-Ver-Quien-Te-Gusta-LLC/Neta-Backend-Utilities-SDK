@@ -20,7 +20,7 @@ CassandraClient.GetClient().then((result) => {
 });
 
 // To initiate a transaction when user creation starts
-async function onTransactionStart(transaction_id,phoneNumber) {
+async function onTransactionStart(transaction_id,phoneNumber, uid) {
   const isInProgress = await isTransactionInProgress(phoneNumber);
   
   if (isInProgress) {
@@ -28,8 +28,8 @@ async function onTransactionStart(transaction_id,phoneNumber) {
     throw new Error('Transaction already in progress');
   } else {
     const transactionId = uuidv4();
-    const insertQuery = "INSERT INTO transactions (pk, transaction_id, status, phoneNumber) VALUES (?, ?, ?, ?)";
-    const params = [uuidv4(), transaction_id, "in progress", phoneNumber];
+    const insertQuery = "INSERT INTO transactions (pk, transaction_id, status, phoneNumber, uid) VALUES (?, ?, ?, ?, ?) USING TTL 3600";
+    const params = [uuidv4(), transaction_id, "in progress", phoneNumber, uid];
     await client.execute(insertQuery, params, { prepare: true });
     return transactionId;
   }
@@ -42,8 +42,8 @@ async function handleTransactionCompletion(uid, phoneNumber) {
  
   var transactionId = String(selectResult.rows[0].transaction_id);
 
-  const insertQuery = "INSERT INTO transactions (pk, transaction_id, status, uid, phoneNumber) VALUES (?, ?, ?, ?, ?)";
-  const params = [uuidv4(), transactionId, "completed", uid, phoneNumber];
+  const updateQuery = "UPDATE transactions SET status = ?, uid = ? WHERE phoneNumber = ?";
+  const params = ["completed", uid, phoneNumber];
   
   await client.execute(insertQuery, params, { prepare: true });
   checkAllTransactionsCompleted(transactionId, phoneNumber);
@@ -75,9 +75,15 @@ async function OnUserCreationComplete(transactionId, phoneNumber) {
   console.log("transactions complete");
   const token = await client.execute('SELECT UserToken FROM tokens WHERE phoneNumber = ? ALLOW FILTERING', [phoneNumber], { prepare: true });
   
+  const uidQuery = "SELECT uid FROM transactions WHERE phoneNumber = ?";
+  const uidParams = [phoneNumber];
+  const uidResult = await client.execute(uidQuery, uidParams, { prepare: true });
+  const uid = uidResult.rows[0].uid;
+  
   const albySuccessObj = {
     status: "success",
-    token: String(token.rows[0].UserToken)
+    token: String(token.rows[0].UserToken),
+    uid: uid
   };
 
   //console.log(transactionId);

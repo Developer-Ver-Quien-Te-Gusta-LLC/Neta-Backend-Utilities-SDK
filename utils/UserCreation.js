@@ -64,19 +64,20 @@ async function handleTransactionError(
 }
 
 async function CreateScyllaUser(UserParams) {
-  const {
-    username,
+  var {
+    age,
+    firstName,
+    gender,
+    grade,
+    highschool,
+    lastName,
+    otp,
     phoneNumber,
     platform,
+    username,
     transactionId,
     encryptionKey,
-    uid,
-    gender,
-    highschool,
-    grade,
-    firstName,
-    lastName,
-    school,
+    uid
   } = UserParams;
 
   const invitesLeft = UserParams.invitesLeft || 0;
@@ -88,8 +89,8 @@ async function CreateScyllaUser(UserParams) {
         pollIndex, numberOfStars, platform, gender, highschool, grade, uid,
         albyTopicName, anonymousMode, blocklist, firstName, lastName, friendList, 
         friendRequests, hideList, lastPollTime, numberOfPolls, online, pfp, 
-        pfpHash, pfpMedium, pfpMediumHash, pfpSmall, pfpSmallHash, school
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        pfpHash, pfpMedium, pfpMediumHash, pfpSmall, pfpSmallHash, school, age
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const params = [
       username,
@@ -123,6 +124,7 @@ async function CreateScyllaUser(UserParams) {
       null, // pfpSmall
       null, // pfpSmallHash
       school,
+      age
     ];
 
     await client.execute(UserCreationQuery, params, { prepare: true });
@@ -146,15 +148,19 @@ async function createNeptuneUser(UserParams) {
     }
   }
   var {
-    username,
-    phoneNumber,
-    highschool,
-    grade,
     age,
-    gender,
     firstName,
+    gender,
+    grade,
+    highschool,
     lastName,
-    uid,
+    otp,
+    phoneNumber,
+    platform,
+    username,
+    transactionId,
+    encryptionKey,
+    uid
   } = UserParams;
   if (gender == undefined) gender = "non-binary";
   try {
@@ -254,7 +260,7 @@ async function CreateFirebaseUser(UserParams) {
 }
 
 async function StartUserCreation(UserParams){
-  await onTransactionStart(UserParams.transactionId,UserParams.phoneNumber);
+  await onTransactionStart(UserParams.transactionId,UserParams.phoneNumber, UserParams.uid);
   await CreateScyllaUser(UserParams);
   await createNeptuneUser(UserParams);
   await CreateFirebaseUser(UserParams);
