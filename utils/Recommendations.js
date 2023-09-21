@@ -312,9 +312,9 @@ async function GetRecommendationsExploreSection(
   return {
     page_FriendsOfFriends: page_FriendsOfFriends,
     page_SchoolUsers: page_SchoolUsers,
-    Recommendations : Recommendations,
+    Recommendations : Recommendations.value,
     FriendRequests: friendRequests.value,
-    InvitesSent: AllInvitesSent,
+    InvitesSent: AllInvitesSent.value,
   };
 }
 catch(err){
