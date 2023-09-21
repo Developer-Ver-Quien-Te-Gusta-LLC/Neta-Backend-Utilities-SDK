@@ -40,7 +40,7 @@ async function fetchAlby() {
 }
 fetchAlby();
 
-let client;
+var client;
 
 Cassandraclient.GetClient().then((result) => {
   client = result;
@@ -48,9 +48,10 @@ Cassandraclient.GetClient().then((result) => {
 
 var GraphDB = require("./SetupGraphDB.js");
 
-let g;
+var g;
 GraphDB.GetClient().then((result) => {
   g = result;
+  console.log("User Creation Initializedd");
 });
 
 const {OnUserCreationFailed,handleTransactionCompletion,onTransactionStart} = require("./UserCreationTransactionHandling.js");
