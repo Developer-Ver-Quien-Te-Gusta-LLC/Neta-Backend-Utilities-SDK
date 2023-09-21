@@ -42,14 +42,14 @@ fetchAlby();
 
 var client;
 
-Cassandraclient.GetClient().then((result) => {
+Cassandraclient.GetClient().then(async (result) => {
   client = result;
 });
 
 var GraphDB = require("./SetupGraphDB.js");
 
 var g;
-GraphDB.SetupGraphDB().then((result) => {
+GraphDB.GetClient().then(async (result) => {
   g = result;
 });
 
