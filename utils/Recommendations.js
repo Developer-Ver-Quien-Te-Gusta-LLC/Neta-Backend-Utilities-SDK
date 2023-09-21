@@ -15,6 +15,9 @@ cassandra
   .GetClient()
   .then(async (CassandraClient) => {
     client = CassandraClient;
+
+   // const value = (await GetRecommendationsExploreSection("13c39822-4a37-4096-9f77-6cb1d32eaaa7",1,1,1,10,10,10,"SERVICIOS EDUCATIVOS DE OCCIDENTE, S.C.",10));
+    //console.log(value.Recommendations)
   });
 
 var SameGradeWeightOnboarding,
@@ -261,8 +264,8 @@ async function GetRecommendationsExploreSection(
   ).
   by(out('HAS_CONTACT').values('phoneNumber').fold()).
   by(union(
-       outE('ATTENDS_SCHOOL').inV().has('name',highschool).values('uid').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
-       outE('ATTENDS_SCHOOL').inV().has('name',highschool).has('grade', grade).not(inE('FRIENDS_WITH').has('uid', uid)).values('uid').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends)
+       g.V().outE('ATTENDS_SCHOOL').inV().has('name',highschool).values('uid').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
+       g.V().outE('ATTENDS_SCHOOL').inV().has('name',highschool).has('grade', grade).not(inE('FRIENDS_WITH').has('uid', uid)).values('uid').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends)
      ).fold()).
   by(outE('HAS_CONTACT_IN_APP').
   union(
@@ -312,10 +315,11 @@ async function GetRecommendationsExploreSection(
       AllInvitesSentPromise,
     ]);
 
+
   return {
     page_FriendsOfFriends: page_FriendsOfFriends,
     page_SchoolUsers: page_SchoolUsers,
-    Recommendations : Recommendations.value ? Recommendations.value:[],
+    Recommendations : Recommendations.value ? Recommendations.value._items:[],
     FriendRequests: friendRequests.value?friendRequests.value.rows:[],
     InvitesSent: AllInvitesSent.value?AllInvitesSent.value.rows:[],
   };
