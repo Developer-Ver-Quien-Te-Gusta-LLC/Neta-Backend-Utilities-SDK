@@ -1,14 +1,16 @@
 const { SetupGraphDB } = require("./SetupGraphDB.js");
-
+var g;
 SetupGraphDB().then(async (result) => {
-  global.g = result;
+  g = result;
+
+ 
 });
 
 const { getKV } = require("./KV.js");
 const cassandra = require("./SetupCassandra.js");
 
 //Setup scylla Client
-let client;
+var client;
 cassandra
   .GetClient()
   .then(async (CassandraClient) => {
