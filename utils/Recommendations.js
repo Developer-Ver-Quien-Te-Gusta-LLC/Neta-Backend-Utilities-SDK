@@ -1,6 +1,6 @@
-const { GetClient } = require("./SetupGraphDB.js");
+const { SetupGraphDB } = require("./SetupGraphDB.js");
 
-GetClient().then(async (result) => {
+SetupGraphDB().then(async (result) => {
   global.g = result;
 });
 
