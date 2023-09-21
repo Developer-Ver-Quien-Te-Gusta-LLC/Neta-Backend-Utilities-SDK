@@ -236,6 +236,7 @@ async function GetRecommendationsExploreSection(
   highschool,
   grade
 ) {
+  try{
   // Calculate the offset
   const offset_FriendsOfFriends =
     (page_FriendsOfFriends - 1) * pagesize_FriendsOfFriends;
@@ -301,7 +302,7 @@ async function GetRecommendationsExploreSection(
   const InviteSentQuery = "SELECT * FROM active_links WHERE inviter =? ALLOW FILTERING";
   const AllInvitesSentPromise = client.execute(InviteSentQuery, [uid]);
 
-  try{
+
   const [Recommendations, friendRequests, AllInvitesSent] =
     await Promise.allSettled([
       RecommendationsPromise,
