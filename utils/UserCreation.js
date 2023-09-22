@@ -436,9 +436,13 @@ async function uploadUserContacts(req, res) {
           }
         );
 
+        console.log("contact vertex added");
+
         await g.submit(
-          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.PhoneNumber}'))`
+          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('uid', '${uid}'))`
         );
+
+        console.log("contact edge added");
       
       } else {
         if(UserVertex.length>0){
