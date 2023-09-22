@@ -394,7 +394,10 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
     // Parse the result to only return an array of uids and phoneNumbers
     const parsedResult = result._items.map(user => ({
       uid: user.properties.uid[0].value,
-      phoneNumber: user.properties.phoneNumber[0].value
+      phoneNumber: user.properties.phoneNumber[0].value,
+      fname: user.properties.fname[0].value,
+      lname:user.properties.lname[0].value,
+      username:user.properties.username[0].value,
     }));
 
     return parsedResult;
