@@ -314,12 +314,32 @@ async function GetRecommendationsExploreSection(
       AllInvitesSentPromise,
     ]);
 
+    if (friendRequests.value) {
+      const retrieveUserData = async (friendListName) => {
+          const udataQuery = "SELECT firstname, lastname, username, pfpsmall, pfpsmallhash FROM users WHERE uid = ?";
+          const list = [];
+          
+          const currentList = friendRequests.value.rows[0][friendListName];
+  
+          // Check if the current list is iterable and is not empty
+          if (Array.isArray(currentList) && currentList.length) {
+              for (const friend of currentList) {
+                  const udata = await client.execute(udataQuery, [friend], { prepare: true });
+                  list.push(udata.rows[0]);
+              }
+  
+              friendRequests.value.rows[0][friendListName] = list;
+          }
+      }
+      await retrieveUserData('friendrequests');
+    }
+
 
   return {
     page_FriendsOfFriends: page_FriendsOfFriends,
     page_SchoolUsers: page_SchoolUsers,
     Recommendations : Recommendations.value ? Recommendations.value._items:[],
-    FriendRequests: friendRequests.value?friendRequests.value.rows:[],
+    FriendRequests: friendRequests.value?friendRequests.value.rows[0]:[],
     InvitesSent: AllInvitesSent.value?AllInvitesSent.value.rows:[],
   };
 }
