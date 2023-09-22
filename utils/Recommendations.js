@@ -264,8 +264,8 @@ async function GetRecommendationsExploreSection(
   ).
   by(out('HAS_CONTACT').values('phoneNumber').fold()).
   by(union(
-       g.V().outE('ATTENDS_SCHOOL').inV().has('name',highschool).values('uid').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
-       g.V().outE('ATTENDS_SCHOOL').inV().has('name',highschool).has('grade', grade).not(inE('FRIENDS_WITH').has('uid', uid)).values('uid').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends)
+       g.V().outE('ATTENDS_SCHOOL').inV().has('name',highschool).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
+       g.V().outE('ATTENDS_SCHOOL').inV().has('name',highschool).has('grade', grade).not(inE('FRIENDS_WITH').has('uid', uid)).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends)
      ).fold()).
   by(outE('HAS_CONTACT_IN_APP').
   union(
@@ -273,10 +273,9 @@ async function GetRecommendationsExploreSection(
     choose(has('photo', true),  outV().has('weight', PhotoContactsWeightQuestions),  outV().has('weight', ContactsWeightQuestions))
   ).
      not(inE('FRIENDS_WITH').has('uid', uid)).
-     values('uid').
      range(offset_Contacts, page_Contacts * pagesize_Contacts).
      fold()).
-  by(out('FRIENDS_WITH').out('FRIENDS_WITH').values('uid').dedup().fold()).
+  by(out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().fold()).
   by(outE('FRIENDS_WITH').count())
 `,
     {
