@@ -35,21 +35,21 @@ async function initializeFirebase() {
 initializeFirebase();
 
 async function fetchAlby() {
-  ably = new Ably.Realtime.Promise(await getKV("AblyAPIKey"));
+  ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
   await ably.connection.once("connected");
 }
 fetchAlby();
 
-var client;
+let client;
 
-Cassandraclient.GetClient().then(async (result) => {
+Cassandraclient.SetupCassandraClient(client).then((result) => {
   client = result;
 });
 
 var GraphDB = require("./SetupGraphDB.js");
 
-var g;
-GraphDB.GetClient().then(async (result) => {
+let g;
+GraphDB.SetupGraphDB().then((result) => {
   g = result;
 });
 
@@ -64,20 +64,19 @@ async function handleTransactionError(
 }
 
 async function CreateScyllaUser(UserParams) {
-  var {
-    age,
-    firstName,
-    gender,
-    grade,
-    highschool,
-    lastName,
-    otp,
+  const {
+    username,
     phoneNumber,
     platform,
-    username,
     transactionId,
     encryptionKey,
-    uid
+    uid,
+    gender,
+    highschool,
+    grade,
+    firstName,
+    lastName,
+    school,
   } = UserParams;
 
   const invitesLeft = UserParams.invitesLeft || 0;
@@ -89,8 +88,8 @@ async function CreateScyllaUser(UserParams) {
         pollIndex, numberOfStars, platform, gender, highschool, grade, uid,
         albyTopicName, anonymousMode, blocklist, firstName, lastName, friendList, 
         friendRequests, hideList, lastPollTime, numberOfPolls, online, pfp, 
-        pfpHash, pfpMedium, pfpMediumHash, pfpSmall, pfpSmallHash, school, age
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        pfpHash, pfpMedium, pfpMediumHash, pfpSmall, pfpSmallHash
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const params = [
       username,
@@ -123,8 +122,6 @@ async function CreateScyllaUser(UserParams) {
       null, // pfpMediumHash
       null, // pfpSmall
       null, // pfpSmallHash
-      school,
-      age
     ];
 
     await client.execute(UserCreationQuery, params, { prepare: true });
@@ -148,19 +145,15 @@ async function createNeptuneUser(UserParams) {
     }
   }
   var {
-    age,
-    firstName,
-    gender,
-    grade,
-    highschool,
-    lastName,
-    otp,
-    phoneNumber,
-    platform,
     username,
-    transactionId,
-    encryptionKey,
-    uid
+    phoneNumber,
+    highschool,
+    grade,
+    age,
+    gender,
+    firstName,
+    lastName,
+    uid,
   } = UserParams;
   if (gender == undefined) gender = "non-binary";
   try {
@@ -260,7 +253,7 @@ async function CreateFirebaseUser(UserParams) {
 }
 
 async function StartUserCreation(UserParams){
-  await onTransactionStart(UserParams.transactionId,UserParams.phoneNumber, UserParams.uid);
+  await onTransactionStart(UserParams.transactionId,UserParams.phoneNumber);
   await CreateScyllaUser(UserParams);
   await createNeptuneUser(UserParams);
   await CreateFirebaseUser(UserParams);
@@ -357,6 +350,30 @@ async function getWeights() {
 }
 getWeights();
 
+let bucketName, s3;
+async function InitializeS3() {
+  bucketName = await FetchFromSecrets("PFPBucket");
+
+  const accessKeyId = await FetchFromSecrets(
+    "CF_access_key_id"
+  );
+  const secretAccessKey = await FetchFromSecrets(
+    "CF_secret_access_key"
+  );
+  const accountid = await FetchFromSecrets(
+    "CloudflareAccountId"
+  );
+
+  s3 = new AWS.S3({
+    endpoint: `https://${accountid}.r2.cloudflarestorage.com`, //if this doesnt work , use https://9b990cf1afe1e9cd3e482c7d5c5a6422.r2.cloudflarestorage.com/netapfps
+    accessKeyId: accessKeyId,
+    secretAccessKey: secretAccessKey,
+    signatureVersion: "v4",
+  });
+}
+
+InitializeS3();
+
 async function uploadUserContacts(req, res) {
   const { phoneNumber } = req.query;
   const contactsList = JSON.parse(req.query.contactsList);
@@ -368,18 +385,29 @@ async function uploadUserContacts(req, res) {
     return regex.test(text);
   }
 
-
   try {
+    let uploadAndPushPromises = [];
     for (let i = 0; i < contactsList.length; i++) {
       let contact = contactsList[i];
+      let uploadResult = null;
+
+      if (req.files && req.files[i]) {
+        const file = req.files[i];
+        const buffer = await sharp(file.buffer).jpeg().toBuffer();
+        const uploadParams = {
+          Bucket: bucketName,
+          Key: `${Date.now()}_${file.originalname}`,
+          Body: buffer,
+        };
+
+        uploadResult = await s3.upload(uploadParams).promise();
+      }
 
       // Check if the contact is implicitly a favorite based on the presence of emojis
       const isFavorite =
-        (hasEmoji(contact.Fname) || hasEmoji(contact.Lname));
+        uploadResult && (hasEmoji(contact.Fname) || hasEmoji(contact.Lname));
 
       // Using Gremlin to add contact vertex and edge
-
-      uploadResult = contact.photo;
 
       if (uploadResult) {
         weight = isFavorite ? EmojiContactsWeight : weight;
@@ -431,6 +459,7 @@ async function uploadUserContacts(req, res) {
     await SendEvent("upload_user_contacts", phoneNumber, {
       num: contactsList.length,
     });
+
     res.status(200).json({ Success: true });
   } catch (err) {
     console.log(err);
