@@ -298,7 +298,7 @@ async function GetRecommendationsExploreSection(
   );
   //#endregion
 
-  const FriendRequestQuery = "SELECT friendRequests FROM friends WHERE uid =?";
+  const FriendRequestQuery = "SELECT friendRequests FROM friends WHERE ownerPhoneNumber =?";
   const friendRequestsPromise = client.execute(FriendRequestQuery, [uid], {
     prepare: true,
   });
@@ -333,6 +333,9 @@ async function GetRecommendationsExploreSection(
       }
       await retrieveUserData('friendrequests');
     }
+
+    console.log(Recommendations);
+    console.log(friendRequests);
 
 
   return {
