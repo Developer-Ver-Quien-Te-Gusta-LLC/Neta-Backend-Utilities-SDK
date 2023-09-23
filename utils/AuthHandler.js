@@ -36,7 +36,7 @@ async function GetUserDataFromJWT(req) {
 
 async function ExtractData(token){
     if (!token) {
-        await SendEvent('authorization_failed', null, { headers: req.headers, body: req.body, qstring: req.query });
+       // await SendEvent('authorization_failed', null, { headers: req.headers, body: req.body, qstring: req.query });
         console.log("no token");
         return { Success: false, err: "A token is required for authentication" };
     }
