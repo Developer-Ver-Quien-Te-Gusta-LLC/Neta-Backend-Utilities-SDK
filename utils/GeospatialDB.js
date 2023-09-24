@@ -5,19 +5,22 @@ const ngeohash = require('ngeohash');
 const crypto = require('crypto');
 const fs = require('fs');
 const request = require('request');
+const getKV = require('./KV.js').getKV
 
 // Constants
 const COLLECTION_NAME = 'schools';
+let MaxDistance;
 
 async function SetupGeospatialDB() {
     const connectionString = await FetchFromSecrets("CosmosDBSpatialEndpoint");
+    MaxDistance = parseInt(await getKV("MaxDistance"));
     try {
         const client = await MongoClient.connect(connectionString, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
             socketTimeoutMS: 60000 // 1 minute
         });
-        console.log("Successfully connected to the database!");
+        console.log("Successfully connected to the `d`atabase!");
         return client;
     } catch (error) {
         console.error("Error connecting to the database:", error);
@@ -197,9 +200,7 @@ async function clearSchools(db) {
       throw error;
     }
   }
-
-
-async function fetchSchools(req, db) {
+  async function fetchSchools(req, db) {
     const DEFAULT_UNIT = "km";
     let unit = req.query.unit || DEFAULT_UNIT;
     let queryname = req.query.queryname;
@@ -221,11 +222,12 @@ async function fetchSchools(req, db) {
 
     let filter = {
         "location": {
-            $near: {
+            $nearSphere: {
                 $geometry: {
                     type: "Point",
                     coordinates: [coordinates.longitude, coordinates.latitude]
-                }
+                },
+                $maxDistance: MaxDistance  // Optional: You can specify a max distance in meters to limit the search radius
             }
         }
     };
@@ -234,7 +236,11 @@ async function fetchSchools(req, db) {
         filter["name"] = { $regex: `^${queryname}`, $options: 'i' };  // Prefix search
     }
 
-    const results = await db.collection(COLLECTION_NAME).find(filter).skip(skipValue).limit(limitValue).toArray();
+    const cursor = db.collection(COLLECTION_NAME).find(filter, { projection: { name: 1, location: 1 } }).limit(limitValue);
+    if (skipValue > 0) {
+        cursor.skip(skipValue);
+    }
+    const results = await cursor.toArray();
 
     return {
         rows: results.map(row => {
@@ -252,5 +258,7 @@ async function fetchSchools(req, db) {
         nextPageToken: results.length === limitValue ? (skipValue + results.length).toString() : null
     };
 }
+
+
 
 module.exports = { SetupGeospatialDB, fetchSchools, pushSchools, clearSchools };
