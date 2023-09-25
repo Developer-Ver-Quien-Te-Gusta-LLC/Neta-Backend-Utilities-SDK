@@ -236,7 +236,7 @@ async function clearSchools(db) {
         filter["name"] = { $regex: `^${queryname}`, $options: 'i' };  // Prefix search
     }
 
-    const cursor = db.collection(COLLECTION_NAME).find(filter, { projection: { name: 1, location: 1 } }).limit(limitValue);
+    const cursor = db.collection(COLLECTION_NAME).find(filter, { projection: { name: 1, location: 1,numberOfStudents: 1 } }).limit(limitValue);
     if (skipValue > 0) {
         cursor.skip(skipValue);
     }
