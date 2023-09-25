@@ -259,6 +259,24 @@ async function clearSchools(db) {
     };
 }
 
+async function incrementNumberOfStudents(schoolName, db) {
+    const collection = db.collection(COLLECTION_NAME);
+    
+    try {
+      const result = await collection.updateOne(
+        { name: schoolName },
+        { $inc: { numberOfStudents: 1 } }
+      );
+      
+      if (result.modifiedCount === 1) {
+        console.log(`Number of students incremented for ${schoolName}`);
+      } else {
+        console.log(`School ${schoolName} not found`);
+      }
+    } catch (error) {
+      console.error('Error incrementing number of students:', error);
+      throw error;
+    }
+  }
 
-
-module.exports = { SetupGeospatialDB, fetchSchools, pushSchools, clearSchools };
+module.exports = { SetupGeospatialDB, fetchSchools, pushSchools, clearSchools,incrementNumberOfStudents };
