@@ -351,13 +351,21 @@ catch(err){
 }
 }
 
-function getRandomOffset(total) {
-  return Math.floor(Math.random() * total);
-}
+
 
 async function GetRecommendationsQuestions(uid, highschool, grade) {
-  const randomOffset = getRandomOffset(10); // You need to have TOTAL_USERS defined or calculated somewhere in your script
-
+  const maxUsers = 10;  // Assume you have 100 users
+  const limit = 4;
+  
+  // Generate a random starting point
+  const randomOffset = Math.floor(Math.random() * (maxUsers - limit + 1));
+  
+  const query = `
+      g.V().hasLabel('User').range(${randomOffset}, ${randomOffset + limit})
+  `;
+  
+  const result = await g.submit(query);
+  
    /* await g
     .submit(
       `
@@ -407,12 +415,7 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
     .catch((error) => {
       console.error(error);
     });*/
-    const result = await g
-    .submit(
-      `
-      g.V().hasLabel('User').LIMIT(4)
-  `
-    );
+    
     
     // Parse the result to only return an array of uids and phoneNumbers
     const parsedResult = result._items.map(user => ({
