@@ -164,13 +164,15 @@ async function createNeptuneUser(UserParams) {
 
     //Check if contact for user vertex exists anywhere
     const ContactVertex = await g.submit(
-      `g.V().hasLabel('Contact').has('phoneNumber', ${phoneNumber})`
-    );
+      `g.V().hasLabel('Contact').has('phoneNumber', '${phoneNumber}')`
+);
+
     if (ContactVertex._items.length === 0) {
       //if contact vertex for the user does not exist , create it
       await g.submit(
-        `g.addV('Contact').property('phoneNumber', ${phoneNumber}).property('uid',${uid})`
+        `g.addV('Contact').property('phoneNumber', '${phoneNumber}').property('uid','${uid}')`
       );
+      
     } 
     else {
       //#region if contact vertex exists , create an edge from all the users connected as "HAS_CONTACT" to "HAS_CONTACT_IN_APP"
@@ -198,8 +200,9 @@ async function createNeptuneUser(UserParams) {
     );
 
     const highschoolVertex = await g.submit(
-      `g.V().hasLabel('Highschool').has('name', ${highschool})`
-    );
+      `g.V().hasLabel('Highschool').has('name', '${highschool}')`
+);
+
 
     if (highschoolVertex._items.length > 0) {
       await g.submit(
@@ -411,15 +414,19 @@ async function uploadUserContacts(req, res) {
       if (uploadResult) {
         weight = isFavorite ? EmojiContactsWeight : weight;
       }
+
+    
       const ContactVertex = await g.submit(
         `g.V().hasLabel('Contact').has('phoneNumber', '${contact.phoneNumber}')`
       );
+     
       const UserVertex = await g.submit(
         `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}')`
       );
 
       if (ContactVertex.length == 0) {
         const uid = uuid.v4();
+       
 
         await g.submit(
           `g.addV('Contact').property('phoneNumber', '${phoneNumber}').property('fav', '${isFavorite}').property('weight', '${weight}').property('photo', '${uploadResult}').property('uid', '${uid}')`
@@ -432,6 +439,7 @@ async function uploadUserContacts(req, res) {
         console.log("contact edge added");
       
       } else {
+       
         if(UserVertex.length>0){
         await g.submit(
           `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.phoneNumber}'))`
