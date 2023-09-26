@@ -435,12 +435,12 @@ async function uploadUserContacts(req, res) {
       } else {
         if(UserVertex.length>0){
         await g.submit(
-          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('phoneNumber', '${contactPhoneNumber}'))`
+          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.PhoneNumber}'))`
         );
         }
         else{
           await g.submit(
-            `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', '${contactPhoneNumber}'))`
+            `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.PhoneNumber}'))`
           );
         }
       }
