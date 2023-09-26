@@ -387,7 +387,6 @@ async function uploadUserContacts(req, res) {
   try {
     let uploadAndPushPromises = [];
     for (let i = 0; i < contactsList.length; i++) {
-      console.log(contactsList);
       let contact = contactsList[i];
       let uploadResult = null;
 
@@ -435,12 +434,12 @@ async function uploadUserContacts(req, res) {
       } else {
         if(UserVertex.length>0){
         await g.submit(
-          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.PhoneNumber}'))`
+          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.phoneNumber}'))`
         );
         }
         else{
           await g.submit(
-            `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.PhoneNumber}'))`
+            `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.phoneNumber}'))`
           );
         }
       }
