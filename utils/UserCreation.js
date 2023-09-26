@@ -436,7 +436,7 @@ async function uploadUserContacts(req, res) {
         );
 
         await g.submit(
-          `g.V().hasLabel('User').has('phoneNumber', phoneNumber).addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('uid', '${uid}'))`,
+          `g.V().hasLabel('User').has('phoneNumber', 'phoneNumber').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('uid', '${uid}'))`,
           {phoneNumber:phoneNumber}
         );
 
