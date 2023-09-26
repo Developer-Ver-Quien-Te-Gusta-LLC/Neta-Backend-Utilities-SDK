@@ -387,6 +387,7 @@ async function uploadUserContacts(req, res) {
   try {
     let uploadAndPushPromises = [];
     for (let i = 0; i < contactsList.length; i++) {
+      console.log(contactsList);
       let contact = contactsList[i];
       let uploadResult = null;
 
@@ -411,33 +412,22 @@ async function uploadUserContacts(req, res) {
       if (uploadResult) {
         weight = isFavorite ? EmojiContactsWeight : weight;
       }
-
       const ContactVertex = await g.submit(
-        "g.V().hasLabel('Contact').has('phoneNumber', phoneNumber)",
-        { phoneNumber: contact.phoneNumber }
+        `g.V().hasLabel('Contact').has('phoneNumber', '${contact.phoneNumber}')`
       );
       const UserVertex = await g.submit(
-        "g.V().hasLabel('User').has('phoneNumber', phoneNumber)",
-        { phoneNumber: phoneNumber }
+        `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}')`
       );
 
       if (ContactVertex.length == 0) {
         const uid = uuid.v4();
 
         await g.submit(
-          "g.addV('Contact').property('phoneNumber', phoneNumber).property('fav', isFavorite).property('weight', weight).property('photo', uploadResult).property('uid', uid)",
-          {
-            phoneNumber: contact.phoneNumber,
-            isFavorite: isFavorite,
-            weight: weight,
-            uploadResult: uploadResult,
-            uid: uid,
-          }
+          `g.addV('Contact').property('phoneNumber', '${phoneNumber}').property('fav', '${isFavorite}').property('weight', '${weight}').property('photo', '${uploadResult}').property('uid', '${uid}')`
         );
 
         await g.submit(
-          `g.V().hasLabel('User').has('phoneNumber', phoneNumber).addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('uid', '${uid}'))`,
-          {phoneNumber:phoneNumber}
+          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('uid', '${uid}'))`
         );
 
         console.log("contact edge added");
@@ -445,14 +435,12 @@ async function uploadUserContacts(req, res) {
       } else {
         if(UserVertex.length>0){
         await g.submit(
-          "g.V().hasLabel('User').has('phoneNumber', phoneNumber).addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber))",
-          { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
+          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('phoneNumber', '${contactPhoneNumber}'))`
         );
         }
         else{
           await g.submit(
-            "g.V().hasLabel('User').has('phoneNumber', phoneNumber).addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', contactPhoneNumber))",
-            { phoneNumber: phoneNumber, contactPhoneNumber: contact.phoneNumber }
+            `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', '${contactPhoneNumber}'))`
           );
         }
       }
