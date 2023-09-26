@@ -376,6 +376,7 @@ InitializeS3();
 
 async function uploadUserContacts(req, res) {
   const { phoneNumber, contactsList } = req.body;
+  console.log(phoneNumber);
 
   const regex = emojiRegex();
 
