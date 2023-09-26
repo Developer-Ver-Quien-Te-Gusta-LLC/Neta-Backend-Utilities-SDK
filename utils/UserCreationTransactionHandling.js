@@ -77,7 +77,7 @@ async function OnUserCreationComplete(transactionId, phoneNumber) {
   
   const albySuccessObj = {
     status: "success",
-    token: String(token.rows[0].UserToken)
+    token: String(token.rows[0].usertoken)
   };
 
   console.log(transactionId);
