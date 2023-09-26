@@ -164,18 +164,18 @@ async function createNeptuneUser(UserParams) {
 
     //Check if contact for user vertex exists anywhere
     const ContactVertex = await g.submit(
-      `g.V().hasLabel('Contact').has('phoneNumber', '${phoneNumber}')`
+      `g.V().hasLabel('Contact').has('phoneNumber', ${phoneNumber})`
     );
     if (ContactVertex._items.length === 0) {
       //if contact vertex for the user does not exist , create it
       await g.submit(
-        `g.addV('Contact').property('phoneNumber', '${phoneNumber}').property('uid','${uid}')`
+        `g.addV('Contact').property('phoneNumber', ${phoneNumber}).property('uid',${uid})`
       );
     } 
     else {
       //#region if contact vertex exists , create an edge from all the users connected as "HAS_CONTACT" to "HAS_CONTACT_IN_APP"
       const UsersWithContactEdge = await g.submit(
-        `g.V().hasLabel('User').outE('HAS_CONTACT').inV().hasLabel('Contact').has('uid', '${uid}').values('uid')`
+        `g.V().hasLabel('User').outE('HAS_CONTACT').inV().hasLabel('Contact').has('uid', ${uid}).values('uid')`
       );
 
       // For each user, delete the old edge "HAS_CONTACT" and create a new edge "HAS_CONTACT_IN_APP"
@@ -184,7 +184,7 @@ async function createNeptuneUser(UserParams) {
           `g.V(${user.id}).outE('HAS_CONTACT').drop()`
         );
         await g.submit(
-          `g.V(${user.id}).addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('uid', '${uid}'))`
+          `g.V(${user.id}).addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('uid', ${uid}))`
         );
       }
 
@@ -198,21 +198,21 @@ async function createNeptuneUser(UserParams) {
     );
 
     const highschoolVertex = await g.submit(
-      `g.V().hasLabel('Highschool').has('name', '${highschool}')`
+      `g.V().hasLabel('Highschool').has('name', ${highschool})`
     );
 
     if (highschoolVertex._items.length > 0) {
       await g.submit(
-        `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', '${highschool}'))`
+        `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', ${highschool}))`
       );
     } else {
       const HighschoolUID = uuid.v4();
       await g.submit(
-        `g.addV('Highschool').property('name', '${highschool}').property('uid', '${HighschoolUID}')`
+        `g.addV('Highschool').property('name', ${highschool}).property('uid', ${HighschoolUID})`
       );
     }
     await g.submit(
-      `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', '${highschool}'))`
+      `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', ${highschool}))`
     );
 
     await handleTransactionCompletion(uid, phoneNumber);
