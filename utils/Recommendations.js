@@ -264,7 +264,7 @@ async function GetRecommendationsExploreSection(
   ).
   by(out('HAS_CONTACT').values('phoneNumber').fold()).
   by(union(
-       g.V().outE('ATTENDS_SCHOOL').inV().has('name',highschool).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
+       g.V().has('name',highschool).in('ATTENDS_SCHOOL).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
        g.V().outE('ATTENDS_SCHOOL').inV().has('name',highschool).has('grade', grade).not(inE('FRIENDS_WITH').has('uid', uid)).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends)
      ).fold()).
   by(outE('HAS_CONTACT_IN_APP').
@@ -342,7 +342,7 @@ async function GetRecommendationsExploreSection(
     page_FriendsOfFriends: page_FriendsOfFriends,
     page_SchoolUsers: page_SchoolUsers,
     Recommendations : Recommendations.value ? Recommendations.value._items:[],
-    FriendRequests: friendRequests.value?friendRequests.value.rows[0]:[],
+    FriendRequests: friendRequests.value?friendRequests.value.rows[0]||[]:[],
     InvitesSent: AllInvitesSent.value?AllInvitesSent.value.rows:[],
   };
 }
@@ -429,6 +429,19 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
     return parsedResult;
   }
 
+
+  async function ExecuteCustomQuery(){
+    const RecommendationsPromise =await g.submit(
+      `g.V().has('name', 'CONALEP IZTAPALAPA 2').in('ATTENDS_SCHOOL')
+      `);
+
+      console.log(RecommendationsPromise);
+  }
+
+
+  setTimeout(() => {
+    ExecuteCustomQuery();
+  }, 5000);
 //#endregion
 
 module.exports = {
