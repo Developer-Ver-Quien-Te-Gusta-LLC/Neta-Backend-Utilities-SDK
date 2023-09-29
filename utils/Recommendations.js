@@ -264,7 +264,7 @@ async function GetRecommendationsExploreSection(
   ).
   by(out('HAS_CONTACT').values('phoneNumber').fold()).
   by(union(
-       g.V().has('name',highschool).in('ATTENDS_SCHOOL).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
+       g.V().has('name',highschool).in('ATTENDS_SCHOOL').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
        g.V().outE('ATTENDS_SCHOOL').inV().has('name',highschool).has('grade', grade).not(inE('FRIENDS_WITH').has('uid', uid)).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends)
      ).fold()).
   by(outE('HAS_CONTACT_IN_APP').
@@ -334,8 +334,8 @@ async function GetRecommendationsExploreSection(
       await retrieveUserData('friendrequests');
     }
 
-    console.log(Recommendations);
-    console.log(friendRequests);
+    //console.log(Recommendations);
+    //console.log(friendRequests);
 
 
   return {
@@ -440,8 +440,8 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
 
 
   setTimeout(() => {
-    ExecuteCustomQuery();
-  }, 5000);
+    //GetRecommendationsExploreSection("d81e8652-ba30-4f0c-8ee1-9e3abfe880ed",1,1,1,10,10,10,"CONALEP IZTAPALAPA 2","10");
+  }, 10000);
 //#endregion
 
 module.exports = {
