@@ -5,6 +5,13 @@ const AuthHandler = require("./AuthHandler.js");
 var ably;
 const AWS = require("aws-sdk");
 const admin = require("firebase-admin");
+const firebase = require("firebase");
+const firebaseConfig = {
+  apiKey: " AIzaSyCJ-pIfMEyavmWK9DcK1c2es78NCqSunhU ",
+  authDomain: "project-755055790640.firebaseapp.com",
+} // switch to kv later
+const app = firebase.initializeApp(firebaseConfig);
+
 const emojiRegex = require("emoji-regex");
 const { getKV } = require("./KV");
 const { SendEvent } = require("./Analytics");
@@ -241,10 +248,14 @@ async function CreateFirebaseUser(UserParams) {
     });
 
     const customToken = await admin.auth().createCustomToken(uid);
-
+    const auth = firebase.getAuth(app);
+    const userCredential = await firebase.signInWithCustomToken(auth, customToken);
+    const user = userCredential.user;
+    const idToken = await user.getIdToken(true);
+    await firebase.signOut(auth);
     //console.log(`Token For user ${username} is ${customToken}`);
-    const query = 'INSERT INTO tokens (UserToken,phoneNumber) VALUES (?,?)';
-    await client.execute(query,[customToken,phoneNumber]);
+    const query = 'INSERT INTO tokens (UserToken,phoneNumber,jwt) VALUES (?,?,?)';
+    await client.execute(query,[customToken,phoneNumber,idToken]);
     await handleTransactionCompletion(uid, phoneNumber);
     return true;
   } catch (err) {
