@@ -5,12 +5,15 @@ const AuthHandler = require("./AuthHandler.js");
 var ably;
 const AWS = require("aws-sdk");
 const admin = require("firebase-admin");
-const firebase = require("firebase");
+const { initializeApp } = require("firebase/app");
+const { getAuth, signInWithCustomToken, getIdToken, signOut } = require("firebase/auth");
+
 const firebaseConfig = {
   apiKey: " AIzaSyCJ-pIfMEyavmWK9DcK1c2es78NCqSunhU ",
   authDomain: "project-755055790640.firebaseapp.com",
 } // switch to kv later
-const app = firebase.initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 const emojiRegex = require("emoji-regex");
 const { getKV } = require("./KV");
@@ -213,7 +216,7 @@ async function createNeptuneUser(UserParams) {
 
     if (highschoolVertex._items.length > 0) {
       await g.submit(
-        `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', ${highschool}))`
+        `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', '${highschool}'))`
       );
     } else {
       const HighschoolUID = uuid.v4();
@@ -248,11 +251,10 @@ async function CreateFirebaseUser(UserParams) {
     });
 
     const customToken = await admin.auth().createCustomToken(uid);
-    const auth = firebase.getAuth(app);
-    const userCredential = await firebase.signInWithCustomToken(auth, customToken);
+    const userCredential = await signInWithCustomToken(auth,customToken);
     const user = userCredential.user;
-    const idToken = await user.getIdToken(true);
-    await firebase.signOut(auth);
+    const idToken = await getIdToken(user,true);
+    await signOut(auth);
     //console.log(`Token For user ${username} is ${customToken}`);
     const query = 'INSERT INTO tokens (UserToken,phoneNumber,jwt) VALUES (?,?,?)';
     await client.execute(query,[customToken,phoneNumber,idToken]);
