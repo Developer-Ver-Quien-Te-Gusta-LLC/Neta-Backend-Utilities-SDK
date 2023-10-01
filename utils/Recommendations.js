@@ -331,6 +331,7 @@ async function GetRecommendationsExploreSection(
               friendRequests.value.rows[0][friendListName] = list;
           }
       }
+      friendRequests.value.rows[0].friendRequestsUID = friendRequests.value.rows[0].friendrequests;
       await retrieveUserData('friendrequests');
     }
 
