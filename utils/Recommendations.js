@@ -158,24 +158,26 @@ async function FetchFriendsWithSubsActive(uid) {
 }
 
 async function getMutualFriends(uid, otheruid) {
-  // Find friends of the main user
-  const userFriends = await g.submit(
-    " g.V().has('uid', uid).out('FRIENDS_WITH').values('username')",
-    { uid: uid }
-  );
+  const session = driver.session();
 
-  // Find friends of the other user
-  const otherUserFriends = await g.submit(
-    "g.V().has('uid', otheruid).out('FRIENDS_WITH').values('username')",
-    { otheruid: otheruid }
-  );
+  try {
+    // Cypher query to find mutual friends based on username
+    const query = `
+      MATCH (user:User {uid: $uid})-[:FRIENDS_WITH]->(friend:User)<-[:FRIENDS_WITH]-(otherUser:User {uid: $otheruid})
+      RETURN friend.username as mutualFriend
+    `;
 
-  // Calculate mutual friends
-  const mutualFriends = userFriends.filter((friend) =>
-    otherUserFriends.includes(friend)
-  );
+    // Running the Cypher query
+    const result = await session.run(query, { uid: uid, otheruid: otheruid });
 
-  return mutualFriends.length;
+    // Extracting the mutual friends from the result
+    const mutualFriends = result.records.map(record => record.get('mutualFriend'));
+
+    return mutualFriends.length;
+  } catch (error) {
+    console.error('Error in getting mutual friends:', error);
+    return 0; // return 0 mutual friends in case of an error
+  } 
 }
 
 async function InsertMutualCount(uid, filteredList) {
