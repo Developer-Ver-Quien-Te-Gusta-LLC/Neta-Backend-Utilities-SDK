@@ -56,10 +56,7 @@ Cassandraclient.SetupCassandraClient(client).then((result) => {
 
 var GraphDB = require("./SetupGraphDB.js");
 
-let g;
-GraphDB.SetupGraphDB().then((result) => {
-  g = result;
-});
+
 
 const {OnUserCreationFailed,handleTransactionCompletion,onTransactionStart} = require("./UserCreationTransactionHandling.js");
 
@@ -425,42 +422,25 @@ async function uploadUserContacts(req, res) {
         weight = isFavorite ? EmojiContactsWeight : weight;
       }
 
-    
-      const ContactVertex = await g.submit(
-        `g.V().hasLabel('Contact').has('phoneNumber', '${contact.phoneNumber}')`
-      );
-     
-      const UserVertex = await g.submit(
-        `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}')`
-      );
+      // Using Cypher to add contact vertex and edge
+      let contactQuery = `
+        MERGE (c:Contact {phoneNumber: $contactPhone})
+        ON CREATE SET c.fav = $isFavorite, c.weight = $weight, c.photo = $uploadResult, c.uid = $uid
+        WITH c
+        MATCH (u:User {phoneNumber: $userPhone})
+        MERGE (u)-[:HAS_CONTACT {type: COALESCE(size((u)-[:HAS_CONTACT]->(:Contact {phoneNumber: $contactPhone})), 'HAS_CONTACT', 'HAS_CONTACT_IN_APP')}]->(c)
+      `;
 
-      if (ContactVertex.length == 0) {
-        const uid = uuid.v4();
-       
+      await session.run(contactQuery, {
+        contactPhone: contact.phoneNumber,
+        userPhone: phoneNumber,
+        isFavorite: isFavorite,
+        weight: weight,
+        uploadResult: uploadResult ? uploadResult.Location : null,  // Assuming Location stores the URL of the uploaded file
+        uid: uuid.v4()
+      });
 
-        await g.submit(
-          `g.addV('Contact').property('phoneNumber', '${phoneNumber}').property('fav', '${isFavorite}').property('weight', '${weight}').property('photo', '${uploadResult}').property('uid', '${uid}')`
-        );
-
-        await g.submit(
-          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('uid', '${uid}'))`
-        );
-
-        console.log("contact edge added");
-      
-      } else {
-       
-        if(UserVertex.length>0){
-        await g.submit(
-          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.phoneNumber}'))`
-        );
-        }
-        else{
-          await g.submit(
-            `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.phoneNumber}'))`
-          );
-        }
-      }
+      console.log("contact edge added");
     }
 
     await SendEvent("upload_user_contacts", phoneNumber, {
