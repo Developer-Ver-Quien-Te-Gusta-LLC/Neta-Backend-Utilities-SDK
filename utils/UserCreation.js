@@ -45,7 +45,7 @@ const uri = 'neo4j+s://7b7d8839.databases.neo4j.io'; //replace w kv
 const user = 'neo4j'; //replace w kv
 const password = 'bRgk7vO5PiadruWGGvcAMkVK7SAdg9sFUSc3EC77Wts'; //replace w kv
 const driver = neo4j.driver(uri, neo4j.auth.basic(user, password));
-const session = driver.session();
+
 
 
 let client;
@@ -140,6 +140,7 @@ async function CreateScyllaUser(UserParams) {
 }
 
 async function createNeptuneUser(UserParams) {
+  const session = driver.session();
   for (let key in UserParams) {
     if (UserParams[key] === undefined) {
       UserParams[key] = null;
@@ -225,10 +226,13 @@ async function createNeptuneUser(UserParams) {
     await handleTransactionCompletion(uid, phoneNumber);
     return true; // Return the success response
   } catch (error) {
+    session.close();
     console.error(error);
     await handleTransactionError("neptune", UserParams, phoneNumber);
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
+  }finally{
+    session.close();
   }
 }
 
@@ -382,6 +386,7 @@ async function InitializeS3() {
 InitializeS3();
 
 async function uploadUserContacts(req, res) {
+  const session = driver.session();
   const { phoneNumber, contactsList } = req.body;
 
   const regex = emojiRegex();
@@ -419,23 +424,33 @@ async function uploadUserContacts(req, res) {
         weight = isFavorite ? EmojiContactsWeight : weight;
       }
 
-      // Using Cypher to add contact vertex and edge
       let contactQuery = `
-        MERGE (c:Contact {phoneNumber: $contactPhone})
-        ON CREATE SET c.fav = $isFavorite, c.weight = $weight, c.photo = $uploadResult, c.uid = $uid
-        WITH c
-        MATCH (u:User {phoneNumber: $userPhone})
-        MERGE (u)-[:HAS_CONTACT {type: COALESCE(size((u)-[:HAS_CONTACT]->(:Contact {phoneNumber: $contactPhone})), 'HAS_CONTACT', 'HAS_CONTACT_IN_APP')}]->(c)
-      `;
-
-      await session.run(contactQuery, {
-        contactPhone: contact.phoneNumber,
-        userPhone: phoneNumber,
-        isFavorite: isFavorite,
-        weight: weight,
-        uploadResult: uploadResult ? uploadResult.Location : null,  // Assuming Location stores the URL of the uploaded file
-        uid: uuid.v4()
-      });
+      // Merge the contact
+      MERGE (c:Contact {phoneNumber: $contactPhone})
+      ON CREATE SET c.fav = $isFavorite, c.weight = $weight, c.photo = $uploadResult, c.uid = $uid
+      
+      // Match the user
+      WITH c
+      MATCH (u:User {phoneNumber: $userPhone})
+      
+      // Optionally match an existing HAS_CONTACT relationship
+      OPTIONAL MATCH (u)-[existingRel:HAS_CONTACT]->(c:Contact {phoneNumber: $contactPhone})
+      
+      // Conditionally merge the HAS_CONTACT relationship
+      WITH u, c, existingRel
+      MERGE (u)-[r:HAS_CONTACT]->(c)
+      ON CREATE SET r.type = COALESCE(CASE WHEN existingRel IS NULL THEN 'HAS_CONTACT' ELSE 'HAS_CONTACT_IN_APP' END, 'UNKNOWN')
+  `;
+  
+  await session.run(contactQuery, {
+      contactPhone: contact.phoneNumber,
+      userPhone: phoneNumber,
+      isFavorite: isFavorite,
+      weight: weight,
+      uploadResult: uploadResult ? uploadResult.Location : null,  // Assuming Location stores the URL of the uploaded file
+      uid: uuid.v4()
+  });
+  
 
       console.log("contact edge added");
     }
@@ -447,7 +462,11 @@ async function uploadUserContacts(req, res) {
     res.status(200).json({ Success: true });
   } catch (err) {
     console.log(err);
+    session.close();
     res.status(500).json({ Success: false, Error: err });
+  }
+  finally{
+    session.close();
   }
 }
 

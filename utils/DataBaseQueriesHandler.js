@@ -9,7 +9,7 @@ const uri = 'neo4j+s://7b7d8839.databases.neo4j.io'; //replace w kv
 const user = 'neo4j'; //replace w kv
 const password = 'bRgk7vO5PiadruWGGvcAMkVK7SAdg9sFUSc3EC77Wts'; //replace w kv
 const driver = neo4j.driver(uri, neo4j.auth.basic(user, password));
-const session = driver.session();
+
 
 let client;
 GetClient().then(result=>{client=result;})
@@ -70,85 +70,9 @@ async function UpdateDataInScyllaDBTTL(uid, data, value, ttl) {
   }
 }
 
-async function DeleteUser(req, deleteVerification = false) {
-  const promises = [];
-  const queries = [];
-  const { uid } = req.query;
-
-  // Fill the array with query objects
-  const highschoolQuery =
-    "SELECT highschool, phoneNumber FROM users WHERE uid = ?";
-  const highschoolResult = await client.execute(highschoolQuery, [uid], {
-    prepare: true,
-  });
-  const highschool = highschoolResult.rows[0].highschool;
-  const phoneNumber = highschoolResult.rows[0].phoneNumber;
-
-  queries.push({
-    query:
-      "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
-    params: [highschool],
-  });
-  queries.push({
-    query:
-      "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
-    params: [highschool], // assume schoolName is a variable that holds the name of the school
-  });
-
-  queries.push({
-    query: "DELETE FROM users WHERE uid = ?",
-    params: [pn],
-  });
-
-  queries.push({
-    query: "DELETE FROM reports WHERE uid = ?",
-    params: [pn],
-  });
-
-  queries.push({
-    query: "DELETE FROM inbox WHERE uid = ?",
-    params: [pn],
-  });
-
-  queries.push({
-    query: "DELETE FROM topFriendsAndPolls WHERE uid = ?",
-    params: [pn],
-  });
-
-  queries.push({
-    query: "DELETE FROM userPolls WHERE uid = ?",
-    params: [pn],
-  });
-
-  queries.push({
-    query: "DELETE FROM notificationTable WHERE uid = ?",
-    params: [pn],
-  });
-
-  if (deleteVerification) {
-    queries.push({
-      query: "DELETE FROM verification WHERE phoneNumber = ?",
-      params: [phoneNumber],
-    });
-  }
-
-  const DeleteUserScyllaPromise = client.batch(queries, { prepare: true });
-
-  promises.push(DeleteUserScyllaPromise);
-
-  const DeleteFirebaseUserPromise = admin.auth().deleteUser(phoneNumber);
-  promises.push(DeleteFirebaseUserPromise);
-
-  // Gremlin query to delete the vertex 'User' using the phoneNumber given
-  const gremlinQuery = `g.hasV().has('User', 'uid', ${phoneNumber}).drop()`;
-  const DeleteUserGremlinPromise = g.execute(gremlinQuery);
-  promises.push(DeleteUserGremlinPromise);
-
-  // Wait for all promises to resolve
-  await Promise.all(promises);
-}
 
 async function UpdateDataInNeptune(uid, data, value) {
+  const session = driver.session();
   try {
     const result = await session.run('MATCH (n) WHERE n.uid = $uid RETURN n[$data] as currentValue', { uid: uid, data: data });
     const singleRecord = result.records[0];
@@ -161,7 +85,10 @@ async function UpdateDataInNeptune(uid, data, value) {
     // Update the vertex with the new value
     await session.run('MATCH (n) WHERE n.uid = $uid SET n[$data] = $newValue', { uid: uid, data: data, newValue: newValue });
   } catch (error) {
+    session.close();
     console.error("Error querying Neo4j", error);
+  }finally{
+    session.close();
   } 
 }
 
@@ -178,8 +105,11 @@ async function AddFriendRelationInNeptune(uid, friend) {
 
     return { success: true };
   } catch (error) {
+    session.close();
    // handleTransactionError("graphdb", uid);  // Assuming you're passing uid to the error handler
     return error;
+  } finally{
+    session.close();
   } 
 }
 
@@ -212,8 +142,11 @@ async function removeFriendsRelation(uid, friend) {
 
     return { success: true };
   } catch (error) {
+    session.close();
     //handleTransactionError("graphdb", uid);  // Assuming you're passing uid to the error handler
     return error;
+  } finally{
+    session.close();
   } 
 }
 

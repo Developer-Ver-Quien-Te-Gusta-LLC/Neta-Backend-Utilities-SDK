@@ -102,8 +102,12 @@ async function CheckPlayerValidity(username) {
       return false;
     }
   } catch (error) {
+    session.close();
     console.error('Error checking player validity:', error);
     return false;
+  }
+  finally{
+    session.close();
   }
 }
 
@@ -172,6 +176,9 @@ async function getMutualFriends(uid, otheruid) {
     console.error('Error in getting mutual friends:', error);
     return 0; // return 0 mutual friends in case of an error
   } 
+  finally{
+    session.close();
+  }
 }
 
 async function InsertMutualCount(uid, filteredList) {
@@ -211,7 +218,8 @@ async function GetRecommendationsOnboarding(
     offset_peopleInContacts: offset_peopleInContacts,
     limit_peopleInContacts: page_peopleInContacts * pagesize_peopleInContacts,
   };
-
+  const session = driver.session();
+try{
   const cypherQuery = `
 MATCH (user:User {uid: $uid})
 
@@ -252,6 +260,14 @@ LIMIT $limit_peopleInContacts
     Recommendations: Recommendations.value,
   };
 }
+catch(err){
+  console.log(err);
+  session.close();
+}
+finally{
+  session.close();
+}
+}
 
 // Get Recommendations for friends while in the explore section (after onboarding)
 async function GetRecommendationsExploreSection(
@@ -265,6 +281,7 @@ async function GetRecommendationsExploreSection(
   highschool,
   grade
 ) {
+  const session = driver.session();
   try {
     // Calculate the offset
     const offset_FriendsOfFriends =
@@ -382,11 +399,17 @@ RETURN {
       InvitesSent: AllInvitesSent.value ? AllInvitesSent.value.rows : [],
     };
   } catch (err) {
+    session.close();
     console.log(err);
+  }
+  finally{
+    session.close();
   }
 }
 
 async function GetRecommendationsQuestions(uid, highschool, grade) {
+  const session = driver.session();
+  try{
   const cypherQuery = `
   MATCH (user:User {uid: $uid})
   
@@ -433,7 +456,14 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
   });
 
   console.log(result.records);
-  return result.recoeds;
+  return result.records;
+}
+catch(err){
+  console.log(err);
+}
+finally{
+  session.close();
+}
 }
 setTimeout(() => {
   //GetRecommendationsExploreSection("d81e8652-ba30-4f0c-8ee1-9e3abfe880ed",1,1,1,10,10,10,"CONALEP IZTAPALAPA 2","10");
