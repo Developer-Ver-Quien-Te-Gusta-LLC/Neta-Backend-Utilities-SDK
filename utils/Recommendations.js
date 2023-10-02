@@ -6,7 +6,6 @@ const uri = "neo4j+s://7b7d8839.databases.neo4j.io"; //replace w kv
 const user = "neo4j"; //replace w kv
 const password = "bRgk7vO5PiadruWGGvcAMkVK7SAdg9sFUSc3EC77Wts"; //replace w kv
 const driver = neo4j.driver(uri, neo4j.auth.basic(user, password));
-const session = driver.session();
 
 //Setup scylla Client
 var client;
@@ -201,49 +200,55 @@ async function GetRecommendationsOnboarding(
   highschool
 ) {
   // Calculate the offset
-  const offset_PeopleYouMayKnow =
+  const offset_PeopleYouMayKnow =Math.floor
     (page_peopleYouMayKnow - 1) * pagesize_PeopleYouMayKnow;
-  const offset_peopleInContacts =
+  const offset_peopleInContacts =Math.floor
     (page_peopleInContacts - 1) * pagesize_peopleInContacts;
   // Parameters
   const parameters = {
     uid: uid,
     highschool: highschool,
-    offset_PeopleYouMayKnow: offset_PeopleYouMayKnow,
-    limit_PeopleYouMayKnow: page_peopleYouMayKnow * pagesize_PeopleYouMayKnow,
+    offset_PeopleYouMayKnow: neo4j.int(offset_PeopleYouMayKnow),
+    limit_PeopleYouMayKnow:neo4j.int(Math.floor( page_peopleYouMayKnow * pagesize_PeopleYouMayKnow)),
     grade: grade,
     EmojiContactsWeightOnboarding: EmojiContactsWeightOnboarding,
     ContactsWeightOnboarding: ContactsWeightOnboarding,
     PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
-    offset_peopleInContacts: offset_peopleInContacts,
-    limit_peopleInContacts: page_peopleInContacts * pagesize_peopleInContacts,
+    offset_peopleInContacts:neo4j.int( offset_peopleInContacts),
+    limit_peopleInContacts: neo4j.int(Math.floor(page_peopleInContacts * pagesize_peopleInContacts)),
   };
+
+ 
   const session = driver.session();
 try{
   const cypherQuery = `
-MATCH (user:User {uid: $uid})
-
-OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
-WHERE school.name = $highschool
-WITH user, COLLECT(school)[..$limit_PeopleYouMayKnow] AS PeopleYouMayKnow
-
-OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(contact)
-WITH user, 
-     PeopleYouMayKnow,
-     CASE 
-         WHEN contact.fav = true THEN [contact IN contact.weight WHERE contact.weight = $EmojiContactsWeightOnboarding]
-         ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
-     END AS contactsEmoji,
-     CASE 
-         WHEN contact.photo = true THEN [contact IN contact.weight WHERE contact.weight = $PhotoContactsWeightOnboarding]
-         ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
-     END AS contactsPhoto
-RETURN {
-    PeopleYouMayKnow: PeopleYouMayKnow,
-    peopleInContacts: contactsEmoji + contactsPhoto
-} AS result
-SKIP $offset_peopleInContacts
-LIMIT $limit_peopleInContacts
+  MATCH (user:User {uid: $uid})
+  OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
+  WHERE school.name = $highschool
+  
+  // Find other users attending the same high school
+  OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
+  WHERE user <> otherUser
+  WITH user, COLLECT(otherUser)[..$limit_PeopleYouMayKnow] AS PeopleYouMayKnow
+  
+  OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(contact)
+  WITH user, 
+       PeopleYouMayKnow,
+       CASE 
+           WHEN contact.fav = true THEN [contact IN contact.weight WHERE contact.weight = $EmojiContactsWeightOnboarding]
+           ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
+       END AS contactsEmoji,
+       CASE 
+           WHEN contact.photo = true THEN [contact IN contact.weight WHERE contact.weight = $PhotoContactsWeightOnboarding]
+           ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
+       END AS contactsPhoto
+  RETURN {
+      PeopleYouMayKnow: PeopleYouMayKnow,
+      peopleInContacts: contactsEmoji + contactsPhoto
+  } AS result
+  SKIP $offset_peopleInContacts
+  LIMIT $limit_peopleInContacts
+  
 `;
 
   const OnboardingRecommendationsPromise = session.run(cypherQuery, parameters);
@@ -251,13 +256,12 @@ LIMIT $limit_peopleInContacts
   const [Recommendations] = await Promise.allSettled([
     OnboardingRecommendationsPromise,
   ]);
-  console.log(Recommendations.value);
 
   // Return both the result and the next page number for paging
   return {
     success: true,
     page_peopleInContacts: page_peopleInContacts,
-    Recommendations: Recommendations.value,
+    Recommendations: JSON.stringify(Recommendations.value.records[0]._fields),
   };
 }
 catch(err){
@@ -465,9 +469,10 @@ finally{
   session.close();
 }
 }
-setTimeout(() => {
-  //GetRecommendationsExploreSection("d81e8652-ba30-4f0c-8ee1-9e3abfe880ed",1,1,1,10,10,10,"CONALEP IZTAPALAPA 2","10");
-}, 10000);
+setTimeout(async() => {
+ // console.log(await GetRecommendationsExploreSection("e8f3ea03-70b7-487d-9b28-586fca9844b4",1,1,1,10,10,10,"ThugShakerHighSchool","10"));
+// console.log(await GetRecommendationsOnboarding("e8f3ea03-70b7-487d-9b28-586fca9844b4",1,10,1,10,"10","ThugShakerHighSchool"));
+}, 5000);
 //#endregion
 
 module.exports = {
