@@ -36,7 +36,6 @@ module.exports = {
   ExecuteCustomScyllaQuery: DataBaseQueriesHandler.ExecuteCustomScyllaQuery,
   AddFriendRelationInNeptune: DataBaseQueriesHandler.AddFriendRelationInNeptune,
   removeFriendsRelation: DataBaseQueriesHandler.removeFriendsRelation,
-  SetupGraphDB: require('./utils/SetupGraphDB.js').SetupGraphDB,
   SetKV: KV.SetKV,
   getKV: KV.getKV,
   formatPhoneNumber : require('./utils/PhoneNumberFormatter.js').formatPhoneNumber,

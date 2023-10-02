@@ -49,18 +49,15 @@ async function fetchAlby() {
   await ably.connection.once("connected");
 }
 fetchAlby();
-
+const neo4j = require('neo4j-driver');
+const uri = 'neo4j+s://7b7d8839.databases.neo4j.io'; //replace w kv
+const user = 'neo4j'; //replace w kv
+const password = 'bRgk7vO5PiadruWGGvcAMkVK7SAdg9sFUSc3EC77Wts'; //replace w kv
+const driver = neo4j.driver(uri, neo4j.auth.basic(user, password));
 let client;
 
 Cassandraclient.SetupCassandraClient(client).then((result) => {
   client = result;
-});
-
-var GraphDB = require("./SetupGraphDB.js");
-
-let g;
-GraphDB.SetupGraphDB().then((result) => {
-  g = result;
 });
 
 const {OnUserCreationFailed,handleTransactionCompletion,onTransactionStart} = require("./UserCreationTransactionHandling.js");
@@ -148,6 +145,7 @@ async function CreateScyllaUser(UserParams) {
 }
 
 async function createNeptuneUser(UserParams) {
+  const session = driver.session();
   for (let key in UserParams) {
     if (UserParams[key] === undefined) {
       UserParams[key] = null;
@@ -167,74 +165,79 @@ async function createNeptuneUser(UserParams) {
   } = UserParams;
   if (gender == undefined) gender = "non-binary";
   try {
-    //Add user vertex
-    await g.submit(
-      `g.addV('User').property('username', '${username}').property('phoneNumber', '${phoneNumber}').property('highschool', '${highschool}').property('grade', '${grade}').property('age', '${age}').property('gender', '${gender}').property('fname', '${firstName}').property('lname', '${lastName}').property('uid','${uid}')`
-    );
+    // Add user vertex
+    let addUserQuery = `
+      CREATE (u:User {
+        username: $username, 
+        phoneNumber: $phoneNumber, 
+        highschool: $highschool, 
+        grade: $grade, 
+        age: $age, 
+        gender: $gender, 
+        fname: $firstName, 
+        lname: $lastName, 
+        uid: $uid
+      })
+      RETURN u
+    `;
+    await session.run(addUserQuery, UserParams);
 
-    //Check if contact for user vertex exists anywhere
-    const ContactVertex = await g.submit(
-      `g.V().hasLabel('Contact').has('phoneNumber', '${phoneNumber}')`
-);
-
-    if (ContactVertex._items.length === 0) {
-      //if contact vertex for the user does not exist , create it
-      await g.submit(
-        `g.addV('Contact').property('phoneNumber', '${phoneNumber}').property('uid','${uid}')`
-      );
-      
-    } 
-    else {
-      //#region if contact vertex exists , create an edge from all the users connected as "HAS_CONTACT" to "HAS_CONTACT_IN_APP"
-      const UsersWithContactEdge = await g.submit(
-        `g.V().hasLabel('User').outE('HAS_CONTACT').inV().hasLabel('Contact').has('uid','${uid}').values('uid')`
-      );
-
-      // For each user, delete the old edge "HAS_CONTACT" and create a new edge "HAS_CONTACT_IN_APP"
-      for (let user of UsersWithContactEdge) {
-        await g.submit(
-          `g.V('${user.id}').outE('HAS_CONTACT').drop()`
-        );
-        await g.submit(
-          `g.V('${user.id}').addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('uid', '${uid}'))`
-        );
-      }
-
-      console.log(`user ${username} already existed in the db , replaced all Contact Edge Connections while creating`);
-      //#endregion
-    }
-
-    await g.submit(
-      `g.V().hasLabel('User').has('uid',uid).addE("SELF_CONTACT").to(g.V().hasLabel('Contact').has('phoneNumber',phoneNumber))`,
-      { uid: uid, phoneNumber: phoneNumber }
-    );
-
-    const highschoolVertex = await g.submit(
-      `g.V().hasLabel('Highschool').has('name', '${highschool}')`
-);
+    // Check if contact for user vertex exists anywhere
+    let checkContactQuery = `
+      MATCH (c:Contact {phoneNumber: $phoneNumber}) 
+      RETURN c
+    `;
+    const ContactVertex = await session.run(checkContactQuery, { phoneNumber });
 
 
-    if (highschoolVertex._items.length > 0) {
-      await g.submit(
-        `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', '${highschool}'))`
-      );
+    if (!ContactVertex.records.length) {
+      // If contact vertex for the user does not exist, create it
+      let addContactQuery = `
+        CREATE (c:Contact {phoneNumber: $phoneNumber, uid: $uid})
+      `;
+      await session.run(addContactQuery, UserParams);
     } else {
-      const HighschoolUID = uuid.v4();
-      await g.submit(
-        `g.addV('Highschool').property('name', '${highschool}').property('uid', '${HighschoolUID}')`
+      // If contact vertex exists, create an edge from all the users connected as "HAS_CONTACT" to "HAS_CONTACT_IN_APP"
+      let replaceEdgeQuery = `
+        MATCH (u:User)-[oldEdge:HAS_CONTACT]->(c:Contact {uid: $uid})
+        DELETE oldEdge
+        CREATE (u)-[:HAS_CONTACT_IN_APP]->(c)
+      `;
+      await session.run(replaceEdgeQuery, UserParams);
+      console.log(
+        `user ${username} already existed in the db, replaced all Contact Edge Connections while creating`
       );
     }
-    await g.submit(
-      `g.V().has('User', 'uid', '${uid}').addE('ATTENDS_SCHOOL').to(g.V().hasLabel('Highschool').has('name', '${highschool}'))`
-    );
+
+    // Add/Update contact
+    let contactQuery = `
+   MERGE (c:Contact {phoneNumber: $phoneNumber})
+   ON CREATE SET c.uid = $uid
+   WITH c
+   MATCH (u:User {uid: $uid})
+   MERGE (u)-[:SELF_CONTACT]->(c)
+ `;
+    await session.run(contactQuery, UserParams);
+
+    // For school
+    let schoolQuery = `
+      MERGE (s:Highschool {name: $highschool})
+      WITH s
+      MATCH (u:User {uid: $uid})
+      MERGE (u)-[:ATTENDS_SCHOOL]->(s)
+    `;
+    await session.run(schoolQuery, UserParams);
 
     await handleTransactionCompletion(uid, phoneNumber);
     return true; // Return the success response
   } catch (error) {
+    session.close();
     console.error(error);
     await handleTransactionError("neptune", UserParams, phoneNumber);
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
+  }finally{
+    session.close();
   }
 }
 
@@ -391,6 +394,7 @@ async function InitializeS3() {
 InitializeS3();
 
 async function uploadUserContacts(req, res) {
+  const session = driver.session();
   const { phoneNumber, contactsList } = req.body;
 
   const regex = emojiRegex();
@@ -428,42 +432,35 @@ async function uploadUserContacts(req, res) {
         weight = isFavorite ? EmojiContactsWeight : weight;
       }
 
-    
-      const ContactVertex = await g.submit(
-        `g.V().hasLabel('Contact').has('phoneNumber', '${contact.phoneNumber}')`
-      );
-     
-      const UserVertex = await g.submit(
-        `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}')`
-      );
-
-      if (ContactVertex.length == 0) {
-        const uid = uuid.v4();
-       
-
-        await g.submit(
-          `g.addV('Contact').property('phoneNumber', '${phoneNumber}').property('fav', '${isFavorite}').property('weight', '${weight}').property('photo', '${uploadResult}').property('uid', '${uid}')`
-        );
-
-        await g.submit(
-          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('uid', '${uid}'))`
-        );
-
-        console.log("contact edge added");
+      let contactQuery = `
+      // Merge the contact
+      MERGE (c:Contact {phoneNumber: $contactPhone})
+      ON CREATE SET c.fav = $isFavorite, c.weight = $weight, c.photo = $uploadResult, c.uid = $uid
       
-      } else {
-       
-        if(UserVertex.length>0){
-        await g.submit(
-          `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT_IN_APP').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.phoneNumber}'))`
-        );
-        }
-        else{
-          await g.submit(
-            `g.V().hasLabel('User').has('phoneNumber', '${phoneNumber}').addE('HAS_CONTACT').to(g.V().hasLabel('Contact').has('phoneNumber', '${contact.phoneNumber}'))`
-          );
-        }
-      }
+      // Match the user
+      WITH c
+      MATCH (u:User {phoneNumber: $userPhone})
+      
+      // Optionally match an existing HAS_CONTACT relationship
+      OPTIONAL MATCH (u)-[existingRel:HAS_CONTACT]->(c:Contact {phoneNumber: $contactPhone})
+      
+      // Conditionally merge the HAS_CONTACT relationship
+      WITH u, c, existingRel
+      MERGE (u)-[r:HAS_CONTACT]->(c)
+      ON CREATE SET r.type = COALESCE(CASE WHEN existingRel IS NULL THEN 'HAS_CONTACT' ELSE 'HAS_CONTACT_IN_APP' END, 'UNKNOWN')
+  `;
+  
+  await session.run(contactQuery, {
+      contactPhone: contact.phoneNumber,
+      userPhone: phoneNumber,
+      isFavorite: isFavorite,
+      weight: weight,
+      uploadResult: uploadResult ? uploadResult.Location : null,  // Assuming Location stores the URL of the uploaded file
+      uid: uuid.v4()
+  });
+  
+
+      console.log("contact edge added");
     }
 
     await SendEvent("upload_user_contacts", phoneNumber, {
@@ -473,7 +470,11 @@ async function uploadUserContacts(req, res) {
     res.status(200).json({ Success: true });
   } catch (err) {
     console.log(err);
+    session.close();
     res.status(500).json({ Success: false, Error: err });
+  }
+  finally{
+    session.close();
   }
 }
 

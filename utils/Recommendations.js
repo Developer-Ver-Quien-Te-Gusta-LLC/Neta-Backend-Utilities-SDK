@@ -1,13 +1,12 @@
-const { SetupGraphDB } = require("./SetupGraphDB.js");
-var g;
-SetupGraphDB().then(async (result) => {
-  g = result;
-
- 
-});
-
 const { getKV } = require("./KV.js");
 const cassandra = require("./SetupCassandra.js");
+
+const neo4j = require("neo4j-driver");
+const uri = "neo4j+s://7b7d8839.databases.neo4j.io"; //replace w kv
+const user = "neo4j"; //replace w kv
+const password = "bRgk7vO5PiadruWGGvcAMkVK7SAdg9sFUSc3EC77Wts"; //replace w kv
+const driver = neo4j.driver(uri, neo4j.auth.basic(user, password));
+
 
 //Setup scylla Client
 var client;
@@ -87,16 +86,37 @@ async function fetchWeights() {
 fetchWeights(); // fetch the weights as soon as the module is imported
 //#endregion
 //#region Helper Functions
-
+function extractProperties(arr) {
+  // Check if the input is non-null and an array
+  if(arr && Array.isArray(arr)) {
+      return arr.map(user => user.properties);
+  }
+  return [];
+}
 // CheckPlayerValidity function
 async function CheckPlayerValidity(username) {
-  const userResult = await g.submit("g.V().has('User', 'username', username)", {
-    username: username,
-  });
-  if (userResult.value == null) {
+  const session = driver.session();
+  try {
+    const query = `
+      MATCH (user:User {username: $username})
+      RETURN user
+      LIMIT 1
+    `;
+    const result = await session.run(query, { username: username });
+    const userRecord = result.records[0];
+
+    if (userRecord) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    session.close();
+    console.error('Error checking player validity:', error);
     return false;
-  } else {
-    return true;
+  }
+  finally{
+    session.close();
   }
 }
 
@@ -145,24 +165,29 @@ async function FetchFriendsWithSubsActive(uid) {
 }
 
 async function getMutualFriends(uid, otheruid) {
-  // Find friends of the main user
-  const userFriends = await g.submit(
-    " g.V().has('uid', uid).out('FRIENDS_WITH').values('username')",
-    { uid: uid }
-  );
+  const session = driver.session();
 
-  // Find friends of the other user
-  const otherUserFriends = await g.submit(
-    "g.V().has('uid', otheruid).out('FRIENDS_WITH').values('username')",
-    { otheruid: otheruid }
-  );
+  try {
+    // Cypher query to find mutual friends based on username
+    const query = `
+      MATCH (user:User {uid: $uid})-[:FRIENDS_WITH]->(friend:User)<-[:FRIENDS_WITH]-(otherUser:User {uid: $otheruid})
+      RETURN friend.username as mutualFriend
+    `;
 
-  // Calculate mutual friends
-  const mutualFriends = userFriends.filter((friend) =>
-    otherUserFriends.includes(friend)
-  );
+    // Running the Cypher query
+    const result = await session.run(query, { uid: uid, otheruid: otheruid });
 
-  return mutualFriends.length;
+    // Extracting the mutual friends from the result
+    const mutualFriends = result.records.map(record => record.get('mutualFriend'));
+
+    return mutualFriends.length;
+  } catch (error) {
+    console.error('Error in getting mutual friends:', error);
+    return 0; // return 0 mutual friends in case of an error
+  } 
+  finally{
+    session.close();
+  }
 }
 
 async function InsertMutualCount(uid, filteredList) {
@@ -185,48 +210,80 @@ async function GetRecommendationsOnboarding(
   highschool
 ) {
   // Calculate the offset
-  const offset_PeopleYouMayKnow = (page_peopleYouMayKnow - 1) * pagesize_PeopleYouMayKnow;
-  const offset_peopleInContacts = (page_peopleInContacts -1 ) * pagesize_peopleInContacts;
+  const offset_PeopleYouMayKnow =Math.floor
+    (page_peopleYouMayKnow - 1) * pagesize_PeopleYouMayKnow;
+  const offset_peopleInContacts =Math.floor
+    (page_peopleInContacts - 1) * pagesize_peopleInContacts;
+  // Parameters
+  const parameters = {
+    uid: uid,
+    highschool: highschool,
+    offset_PeopleYouMayKnow: neo4j.int(offset_PeopleYouMayKnow),
+    limit_PeopleYouMayKnow:neo4j.int(Math.floor( page_peopleYouMayKnow * pagesize_PeopleYouMayKnow)),
+    grade: grade,
+    EmojiContactsWeightOnboarding: EmojiContactsWeightOnboarding,
+    ContactsWeightOnboarding: ContactsWeightOnboarding,
+    PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
+    offset_peopleInContacts:neo4j.int( offset_peopleInContacts),
+    limit_peopleInContacts: neo4j.int(Math.floor(page_peopleInContacts * pagesize_peopleInContacts)),
+  };
 
-  const OnboardingRecommendationsPromise = await g.submit(
-    `g.v().hasLabel('User').has('uid', uid).project(
-      'PeopleYouMayKnow',
-      'peopleInContacts'
-    ).
-    by( g.V().hasLabel('User').outE('ATTENDS_SCHOOL').outV().range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow).dedup().fold()).
-    by(outE('HAS_CONTACT_IN_APP').union(
-    choose(has('fav', true),  outV().has('weight', EmojiContactsWeightOnboarding),  outV().has('weight', ContactsWeightOnboarding)),
-    choose(has('photo', true),  outV().has('weight', PhotoContactsWeightOnboarding),  outV().has('weight', ContactsWeightOnboarding)).
-     values('uid','fname','username').
-     range(offset_peopleInContacts, page_peopleInContacts * pagesize_peopleInContacts).
-     fold()))`,
-    {
-      highschool: highschool,
-      offset_PeopleYouMayKnow: offset_PeopleYouMayKnow,
-      page_peopleYouMayKnow: page_peopleYouMayKnow,
-      pagesize_PeopleYouMayKnow: pagesize_PeopleYouMayKnow,
-      grade: grade,
-      uid: uid,
-      EmojiContactsWeightOnboarding: EmojiContactsWeightOnboarding,
-      ContactsWeightOnboarding: ContactsWeightOnboarding,
-      PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
-      offset_peopleInContacts:offset_peopleInContacts,
-      pagesize_peopleInContacts : pagesize_peopleInContacts,
-      page_peopleInContacts:page_peopleInContacts
-    }
-  );
+  const session = driver.session();
+try{
+  const cypherQuery = `
+  MATCH (user:User {uid: $uid})
+  OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
+  WHERE school.name = $highschool
+  
+  // Find other users attending the same high school
+  OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
+  WHERE user <> otherUser
+  WITH user, COLLECT(otherUser)[..$limit_PeopleYouMayKnow] AS PeopleYouMayKnow
+  
+  OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(contact)
+  WITH user, 
+       PeopleYouMayKnow,
+       CASE 
+           WHEN contact.fav = true THEN [contact IN contact.weight WHERE contact.weight = $EmojiContactsWeightOnboarding]
+           ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
+       END AS contactsEmoji,
+       CASE 
+           WHEN contact.photo = true THEN [contact IN contact.weight WHERE contact.weight = $PhotoContactsWeightOnboarding]
+           ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
+       END AS contactsPhoto
+  RETURN {
+      PeopleYouMayKnow: PeopleYouMayKnow,
+      peopleInContacts: contactsEmoji + contactsPhoto
+  } AS result
+  SKIP $offset_peopleInContacts
+  LIMIT $limit_peopleInContacts
+  
+`;
+
+  const OnboardingRecommendationsPromise = session.run(cypherQuery, parameters);
 
   const [Recommendations] = await Promise.allSettled([
-    OnboardingRecommendationsPromise
+    OnboardingRecommendationsPromise,
   ]);
-  console.log(Recommendations.value);
-  
+
+  const data = Recommendations.value.records[0]._fields;
+ 
+  const peopleYouMayKnowProperties = extractProperties(data[0].PeopleYouMayKnow);
+  const peopleInContactsProperties = extractProperties(data[0].peopleInContacts);
   // Return both the result and the next page number for paging
   return {
     success: true,
     page_peopleInContacts: page_peopleInContacts,
-    Recommendations:Recommendations.value
+    Recommendations: {peopleYouMayKnow : peopleYouMayKnowProperties,peopleInContacts:peopleInContactsProperties },
   };
+}
+catch(err){
+  console.log(err);
+  session.close();
+}
+finally{
+  session.close();
+}
 }
 
 // Get Recommendations for friends while in the explore section (after onboarding)
@@ -241,194 +298,189 @@ async function GetRecommendationsExploreSection(
   highschool,
   grade
 ) {
-  try{
-  // Calculate the offset
-  const offset_FriendsOfFriends =
-    (page_FriendsOfFriends - 1) * pagesize_FriendsOfFriends;
+  const session = driver.session();
+  try {
+    // Calculate the offset
+    const offset_FriendsOfFriends =
+      (page_FriendsOfFriends - 1) * pagesize_FriendsOfFriends;
 
-  const offset_SchoolUsers = (page_SchoolUsers - 1) * pagesize_SchoolUsers;
+    const offset_SchoolUsers = (page_SchoolUsers - 1) * pagesize_SchoolUsers;
 
-  const offset_Contacts = (page_Contacts - 1) * pagesize_Contacts;
+    const offset_Contacts = (page_Contacts - 1) * pagesize_Contacts;
 
-  //#region GraphDB calls
+    //#region GraphDB calls
 
-  // Fetch friends of the given user
-  const RecommendationsPromise = g.submit(
-    `
-    g.V().hasLabel('User').has('uid', uid).project(
-    'InvitationRecommendation',
-    'AllUsersInSchool',
-    'AllUsersInContacts',
-    'FriendsOfFriends',
-    'FriendCount'
-  ).
-  by(out('HAS_CONTACT').values('phoneNumber').fold()).
-  by(union(
-       g.V().has('name',highschool).in('ATTENDS_SCHOOL').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
-       g.V().outE('ATTENDS_SCHOOL').inV().has('name',highschool).has('grade', grade).not(inE('FRIENDS_WITH').has('uid', uid)).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends)
-     ).fold()).
-  by(outE('HAS_CONTACT_IN_APP').
-  union(
-    choose(has('fav', true),  outV().has('weight', EmojiContactsWeightQuestions),  outV().has('weight', ContactsWeightQuestions)),
-    choose(has('photo', true),  outV().has('weight', PhotoContactsWeightQuestions),  outV().has('weight', ContactsWeightQuestions))
-  ).
-     not(inE('FRIENDS_WITH').has('uid', uid)).
-     range(offset_Contacts, page_Contacts * pagesize_Contacts).
-     fold()).
-  by(out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().fold()).
-  by(outE('FRIENDS_WITH').count())
-`,
-    {
+    // Fetch friends of the given user
+    const parameters = {
       uid: uid,
       highschool: highschool,
-      offset_FriendsOfFriends: offset_FriendsOfFriends,
-      page_FriendsOfFriends: page_FriendsOfFriends,
-      pagesize_FriendsOfFriends: pagesize_FriendsOfFriends,
+      offset_FriendsOfFriends: neo4j.int(offset_FriendsOfFriends),
+      limit_FriendsOfFriends: neo4j.int((page_FriendsOfFriends * pagesize_FriendsOfFriends)),
       grade: grade,
       EmojiContactsWeightQuestions: EmojiContactsWeightQuestions,
       ContactsWeightQuestions: ContactsWeightQuestions,
       PhotoContactsWeightQuestions: PhotoContactsWeightQuestions,
-      offset_Contacts: offset_Contacts,
-      page_Contacts: page_Contacts,
-      pagesize_Contacts: pagesize_Contacts,
-      offset_SchoolUsers: offset_SchoolUsers,
-      page_SchoolUsers: page_SchoolUsers,
-      pagesize_SchoolUsers: pagesize_SchoolUsers,
-    }
-  );
-  //#endregion
+      offset_Contacts: neo4j.int(offset_Contacts),
+      limit_Contacts:neo4j.int( (page_Contacts * pagesize_Contacts)),
+    };
 
-  const FriendRequestQuery = "SELECT friendRequests FROM friends WHERE ownerPhoneNumber =?";
-  const friendRequestsPromise = client.execute(FriendRequestQuery, [uid], {
-    prepare: true,
+    // Cypher Query
+    const cypherQuery = `
+    MATCH (user:User {uid: $uid})
+
+    // 1. People in the same high school
+    OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
+    WHERE school.name = $highschool
+
+    OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
+    WHERE user <> otherUser
+    WITH user, COLLECT(otherUser)[..$limit_FriendsOfFriends] AS PeopleInSameSchool
+     
+    // 2. People in contacts
+    OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contact)
+    WITH user, PeopleInSameSchool, COLLECT(contact) AS contacts
+
+    
+    // 3. Friends of user's friends
+    OPTIONAL MATCH (user)-[:FRIENDS_WITH]->(:User)-[:FRIENDS_WITH]->(friendsOfFriends:User)
+    WHERE NOT (user)-[:FRIENDS_WITH]->(friendsOfFriends) AND user <> friendsOfFriends
+    WITH user, PeopleInSameSchool, contacts, COLLECT(DISTINCT friendsOfFriends) AS FriendsOfFriends
+    
+    // 4. People connected to user with HAS_CONTACT_IN_APP
+    OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(hasContactInAppUser:User)
+    WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser) AS ContactsInApp
+    
+    RETURN {
+      PeopleInSameSchool: PeopleInSameSchool,
+      peopleInContacts: contacts,
+      FriendsOfFriends: FriendsOfFriends,
+      ContactsInApp: ContactsInApp
+    } AS result
+    SKIP $offset_Contacts
+    LIMIT $limit_Contacts
+`;
+
+    // Execute the query
+    const result = session.run(cypherQuery, parameters);
+    //#endregion
+
+    const FriendRequestQuery =
+      "SELECT friendRequests FROM friends WHERE ownerPhoneNumber =?";
+    const friendRequestsPromise = client.execute(FriendRequestQuery, [uid], {
+      prepare: true,
+    });
+
+    const InviteSentQuery =
+      "SELECT * FROM active_links WHERE inviter =? ALLOW FILTERING";
+    const AllInvitesSentPromise = client.execute(InviteSentQuery, [uid]);
+
+    const [Recommendations, friendRequests, AllInvitesSent] =
+      await Promise.allSettled([
+        result,
+        friendRequestsPromise,
+        AllInvitesSentPromise,
+      ]);
+
+     
+
+    if (friendRequests.value && friendRequests.value.rows.length > 0) {
+      const retrieveUserData = async (friendListName) => {
+        const udataQuery =
+          "SELECT firstname, lastname, username, pfpsmall, pfpsmallhash FROM users WHERE uid = ?";
+        const list = [];
+
+        const currentList = friendRequests.value.rows[0][friendListName];
+
+        // Check if the current list is iterable and is not empty
+        if (Array.isArray(currentList) && currentList.length) {
+          for (const friend of currentList) {
+            const udata = await client.execute(udataQuery, [friend], {
+              prepare: true,
+            });
+            list.push(udata.rows[0]);
+          }
+
+          friendRequests.value.rows[0][friendListName] = list;
+        }
+      };
+      await retrieveUserData("friendrequests");
+    }
+
+    const data = Recommendations.value.records[0]._fields;
+
+    const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool);
+    const peopleInContacts = extractProperties(data[0].peopleInContacts);
+    const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends);
+    const ContactsInApp = extractProperties(data[0].ContactsInApp)
+
+    return {
+      page_FriendsOfFriends: page_FriendsOfFriends,
+      page_SchoolUsers: page_SchoolUsers,
+      Recommendations: Recommendations.value
+        ? {PeopleInSameSchool,peopleInContacts,FriendsOfFriends,ContactsInApp}
+        : [],
+      FriendRequests: friendRequests.value
+        ? friendRequests.value.rows[0] || []
+        : [],
+      InvitesSent: AllInvitesSent.value ? AllInvitesSent.value.rows : [],
+    };
+  } catch (err) {
+    session.close();
+    console.log(err);
+  }
+  finally{
+    session.close();
+  }
+}
+
+async function GetRecommendationsQuestions(uid, highschool, grade) {
+  const session = driver.session();
+  try{
+  const cypherQuery = `
+  MATCH (user:User {uid: $uid})
+
+// 1. People in the same high school
+OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
+WHERE school.name = $highschool
+OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
+WHERE user <> otherUser
+WITH user, COLLECT(otherUser) AS PeopleInSameSchool
+    
+// 3. Friends of user's friends
+OPTIONAL MATCH (user)-[:FRIENDS_WITH]->(:User)-[:FRIENDS_WITH]->(friendsOfFriends:User)
+WHERE NOT (user)-[:FRIENDS_WITH]->(friendsOfFriends) AND user <> friendsOfFriends
+WITH user, PeopleInSameSchool, COLLECT(DISTINCT friendsOfFriends) AS FriendsOfFriends
+    
+// 4. People connected to user with HAS_CONTACT_IN_APP
+OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(hasContactInAppUser:User)
+WITH user, PeopleInSameSchool, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser) AS ContactsInApp
+    
+// Combine all the lists and pick 4 users randomly
+WITH user, 
+     PeopleInSameSchool + FriendsOfFriends + ContactsInApp AS allPossibleConnections
+RETURN {
+  Users: apoc.coll.randomItems(allPossibleConnections, 4)
+} AS result
+  `;
+
+  const result = await session.run(cypherQuery, {
+    uid: uid,
+    highschool: highschool,
+    grade: grade,
   });
 
-  const InviteSentQuery = "SELECT * FROM active_links WHERE inviter =? ALLOW FILTERING";
-  const AllInvitesSentPromise = client.execute(InviteSentQuery, [uid]);
 
-
-  const [Recommendations, friendRequests, AllInvitesSent] =
-    await Promise.allSettled([
-      RecommendationsPromise,
-      friendRequestsPromise,
-      AllInvitesSentPromise,
-    ]);
-
-    if (friendRequests.value && friendRequests.value.rows.length>0) {
-      const retrieveUserData = async (friendListName) => {
-          const udataQuery = "SELECT firstname, lastname, username, pfpsmall, pfpsmallhash FROM users WHERE uid = ?";
-          const list = [];
-          
-          const currentList = friendRequests.value.rows[0][friendListName];
-  
-          // Check if the current list is iterable and is not empty
-          if (Array.isArray(currentList) && currentList.length) {
-              for (const friend of currentList) {
-                  const udata = await client.execute(udataQuery, [friend], { prepare: true });
-                  list.push(udata.rows[0]);
-              }
-  
-              friendRequests.value.rows[0][friendListName] = list;
-          }
-      }
-      friendRequests.value.rows[0].friendRequestsUID = friendRequests.value.rows[0].friendrequests;
-      await retrieveUserData('friendrequests');
-    }
-
-    //console.log(Recommendations);
-    //console.log(friendRequests);
-
-
-  return {
-    page_FriendsOfFriends: page_FriendsOfFriends,
-    page_SchoolUsers: page_SchoolUsers,
-    Recommendations : Recommendations.value ? Recommendations.value._items:[],
-    FriendRequests: friendRequests.value?friendRequests.value.rows[0]||[]:[],
-    InvitesSent: AllInvitesSent.value?AllInvitesSent.value.rows:[],
-  };
+  const data = result.records[0]._fields;
+  const propertiesList = data[0].Users.map(user => user.properties);
+  return propertiesList;
 }
 catch(err){
   console.log(err);
 }
+finally{
+  session.close();
 }
-
-
-
-async function GetRecommendationsQuestions(uid, highschool, grade) {
-  const maxUsers = 10;  // Assume you have 100 users
-  const limit = 4;
-  
-  // Generate a random starting point
-  const randomOffset = Math.floor(Math.random() * (maxUsers - limit + 1));
-  
-  const query = `
-      g.V().hasLabel('User').range(${randomOffset}, ${randomOffset + limit})
-  `;
-  
-  const result = await g.submit(query);
-  
-   /* await g
-    .submit(
-      `
-      g.V().hasLabel('User').has('uid', "${uid}")
-      .coalesce(
-        // Repeating traversal for contacts with 'fav' true
-        __.repeat(__.outE('HAS_CONTACT').has('fav', true).inV()).times(${EmojiContactsWeightQuestions}),
-        
-        // Repeating traversal for contacts with photo
-        __.repeat(__.outE('HAS_CONTACT').has('photo', true).inV()).times(${PhotoContactsWeightQuestions}),
-        
-        // Repeating traversal for contacts without 'fav' and without photo
-        __.repeat(__.outE('HAS_CONTACT').inV()).times(${ContactsWeightQuestions}),
-        
-        // Repeating traversal for same high school
-        __.repeat(__.has('highschool', "${highschool}")).times(${SameHighSchoolWeightQuestions}),
-        
-        // Repeating traversal for friends
-        __.repeat(__.out('HAS_FRIEND')).times(${FriendsWeightQuestions}),
-        
-        // Repeating traversal for friends of friends
-        __.repeat(__.out('HAS_FRIEND').out('HAS_FRIEND').dedup().where(P.neq('self'))).times(${FriendsOfFriendsWeightQuestions}),
-        
-        // Repeating traversal for same grade in same high school
-        __.repeat(__.has('highschool', "${highschool}").has('grade', "${grade}")).times(${SameGradeWeightQuestions}),
-        
-        // Repeating traversal for top friends
-        __.unfold().repeat(
-          __.out('FRIENDS_WITH').order().by('PollsCount', decr)
-        ).times(${TopFriendsWeightsQuestions})
-      )
-      .order().by(__.id().hashcode()) // Ordering pseudorandomly based on hashed ID
-      .range(${randomOffset}, ${
-          randomOffset + 10
-        }) // Paginate using the random offset
-      .fold()
-      .coalesce(
-        __.unfold(), 
-        __.V().hasLabel('User').has('uid', "${uid}").out('HAS_CONTACT').limit(4)
-      )
-  `
-    )
-    .then((result) => {
-      console.log(allUsers);
-      return result;
-    })
-    .catch((error) => {
-      console.error(error);
-    });*/
-    
-    
-    // Parse the result to only return an array of uids and phoneNumbers
-    const parsedResult = result._items.map(user => ({
-      uid: user.properties.uid[0].value,
-      phoneNumber: user.properties.phoneNumber[0].value,
-      fname: user.properties.fname[0].value,
-      lname:user.properties.lname[0].value,
-      username:user.properties.username[0].value,
-    }));
-
-    return parsedResult;
-  }
+}
 
 
   async function ExecuteCustomQuery(){
