@@ -1,9 +1,3 @@
-const { SetupGraphDB } = require("./SetupGraphDB.js");
-var g;
-SetupGraphDB().then(async (result) => {
-  g = result;
-});
-
 const { getKV } = require("./KV.js");
 const cassandra = require("./SetupCassandra.js");
 
