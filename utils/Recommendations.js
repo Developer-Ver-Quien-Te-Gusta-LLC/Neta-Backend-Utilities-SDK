@@ -2,23 +2,26 @@ const { SetupGraphDB } = require("./SetupGraphDB.js");
 var g;
 SetupGraphDB().then(async (result) => {
   g = result;
-
- 
 });
 
 const { getKV } = require("./KV.js");
 const cassandra = require("./SetupCassandra.js");
 
+const neo4j = require("neo4j-driver");
+const uri = "neo4j+s://7b7d8839.databases.neo4j.io"; //replace w kv
+const user = "neo4j"; //replace w kv
+const password = "bRgk7vO5PiadruWGGvcAMkVK7SAdg9sFUSc3EC77Wts"; //replace w kv
+const driver = neo4j.driver(uri, neo4j.auth.basic(user, password));
+const session = driver.session();
+
 //Setup scylla Client
 var client;
-cassandra
-  .GetClient()
-  .then(async (CassandraClient) => {
-    client = CassandraClient;
+cassandra.GetClient().then(async (CassandraClient) => {
+  client = CassandraClient;
 
-   // const value = (await GetRecommendationsExploreSection("13c39822-4a37-4096-9f77-6cb1d32eaaa7",1,1,1,10,10,10,"SERVICIOS EDUCATIVOS DE OCCIDENTE, S.C.",10));
-    //console.log(value.Recommendations)
-  });
+  // const value = (await GetRecommendationsExploreSection("13c39822-4a37-4096-9f77-6cb1d32eaaa7",1,1,1,10,10,10,"SERVICIOS EDUCATIVOS DE OCCIDENTE, S.C.",10));
+  //console.log(value.Recommendations)
+});
 
 var SameGradeWeightOnboarding,
   SameHighSchoolWeightOnboarding,
@@ -81,8 +84,7 @@ async function fetchWeights() {
   TopFriendsWeightsQuestions = TopFriendsWeightsQuestions_.value;
   FriendsOfFriendsWeightQuestions = FriendsOfFriendsWeightQuestions_.value;
 
- //const Recommendations = await GetRecommendationsOnboarding("999d360e-7a23-49f6-8349-cbcdf59ce84a",1,10,1,10,10,"neta");
- 
+  //const Recommendations = await GetRecommendationsOnboarding("999d360e-7a23-49f6-8349-cbcdf59ce84a",1,10,1,10,10,"neta");
 }
 fetchWeights(); // fetch the weights as soon as the module is imported
 //#endregion
@@ -90,13 +92,24 @@ fetchWeights(); // fetch the weights as soon as the module is imported
 
 // CheckPlayerValidity function
 async function CheckPlayerValidity(username) {
-  const userResult = await g.submit("g.V().has('User', 'username', username)", {
-    username: username,
-  });
-  if (userResult.value == null) {
+  const session = driver.session();
+  try {
+    const query = `
+      MATCH (user:User {username: $username})
+      RETURN user
+      LIMIT 1
+    `;
+    const result = await session.run(query, { username: username });
+    const userRecord = result.records[0];
+
+    if (userRecord) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error('Error checking player validity:', error);
     return false;
-  } else {
-    return true;
   }
 }
 
@@ -185,47 +198,62 @@ async function GetRecommendationsOnboarding(
   highschool
 ) {
   // Calculate the offset
-  const offset_PeopleYouMayKnow = (page_peopleYouMayKnow - 1) * pagesize_PeopleYouMayKnow;
-  const offset_peopleInContacts = (page_peopleInContacts -1 ) * pagesize_peopleInContacts;
+  const offset_PeopleYouMayKnow =
+    (page_peopleYouMayKnow - 1) * pagesize_PeopleYouMayKnow;
+  const offset_peopleInContacts =
+    (page_peopleInContacts - 1) * pagesize_peopleInContacts;
+  // Parameters
+  const parameters = {
+    uid: uid,
+    highschool: highschool,
+    offset_PeopleYouMayKnow: offset_PeopleYouMayKnow,
+    limit_PeopleYouMayKnow: page_peopleYouMayKnow * pagesize_PeopleYouMayKnow,
+    grade: grade,
+    EmojiContactsWeightOnboarding: EmojiContactsWeightOnboarding,
+    ContactsWeightOnboarding: ContactsWeightOnboarding,
+    PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
+    offset_peopleInContacts: offset_peopleInContacts,
+    limit_peopleInContacts: page_peopleInContacts * pagesize_peopleInContacts,
+  };
 
-  const OnboardingRecommendationsPromise = await g.submit(
-    `g.v().hasLabel('User').has('uid', uid).project(
-      'PeopleYouMayKnow',
-      'peopleInContacts'
-    ).
-    by( g.V().hasLabel('User').outE('ATTENDS_SCHOOL').outV().range(offset_PeopleYouMayKnow, page_peopleYouMayKnow * pagesize_PeopleYouMayKnow).dedup().fold()).
-    by(outE('HAS_CONTACT_IN_APP').union(
-    choose(has('fav', true),  outV().has('weight', EmojiContactsWeightOnboarding),  outV().has('weight', ContactsWeightOnboarding)),
-    choose(has('photo', true),  outV().has('weight', PhotoContactsWeightOnboarding),  outV().has('weight', ContactsWeightOnboarding)).
-     values('uid','fname','username').
-     range(offset_peopleInContacts, page_peopleInContacts * pagesize_peopleInContacts).
-     fold()))`,
-    {
-      highschool: highschool,
-      offset_PeopleYouMayKnow: offset_PeopleYouMayKnow,
-      page_peopleYouMayKnow: page_peopleYouMayKnow,
-      pagesize_PeopleYouMayKnow: pagesize_PeopleYouMayKnow,
-      grade: grade,
-      uid: uid,
-      EmojiContactsWeightOnboarding: EmojiContactsWeightOnboarding,
-      ContactsWeightOnboarding: ContactsWeightOnboarding,
-      PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
-      offset_peopleInContacts:offset_peopleInContacts,
-      pagesize_peopleInContacts : pagesize_peopleInContacts,
-      page_peopleInContacts:page_peopleInContacts
-    }
-  );
+  const cypherQuery = `
+MATCH (user:User {uid: $uid})
+
+OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
+WHERE school.name = $highschool
+WITH user, COLLECT(school)[..$limit_PeopleYouMayKnow] AS PeopleYouMayKnow
+
+OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(contact)
+WITH user, 
+     PeopleYouMayKnow,
+     CASE 
+         WHEN contact.fav = true THEN [contact IN contact.weight WHERE contact.weight = $EmojiContactsWeightOnboarding]
+         ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
+     END AS contactsEmoji,
+     CASE 
+         WHEN contact.photo = true THEN [contact IN contact.weight WHERE contact.weight = $PhotoContactsWeightOnboarding]
+         ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
+     END AS contactsPhoto
+RETURN {
+    PeopleYouMayKnow: PeopleYouMayKnow,
+    peopleInContacts: contactsEmoji + contactsPhoto
+} AS result
+SKIP $offset_peopleInContacts
+LIMIT $limit_peopleInContacts
+`;
+
+  const OnboardingRecommendationsPromise = session.run(cypherQuery, parameters);
 
   const [Recommendations] = await Promise.allSettled([
-    OnboardingRecommendationsPromise
+    OnboardingRecommendationsPromise,
   ]);
   console.log(Recommendations.value);
-  
+
   // Return both the result and the next page number for paging
   return {
     success: true,
     page_peopleInContacts: page_peopleInContacts,
-    Recommendations:Recommendations.value
+    Recommendations: Recommendations.value,
   };
 }
 
@@ -241,207 +269,179 @@ async function GetRecommendationsExploreSection(
   highschool,
   grade
 ) {
-  try{
-  // Calculate the offset
-  const offset_FriendsOfFriends =
-    (page_FriendsOfFriends - 1) * pagesize_FriendsOfFriends;
+  try {
+    // Calculate the offset
+    const offset_FriendsOfFriends =
+      (page_FriendsOfFriends - 1) * pagesize_FriendsOfFriends;
 
-  const offset_SchoolUsers = (page_SchoolUsers - 1) * pagesize_SchoolUsers;
+    const offset_SchoolUsers = (page_SchoolUsers - 1) * pagesize_SchoolUsers;
 
-  const offset_Contacts = (page_Contacts - 1) * pagesize_Contacts;
+    const offset_Contacts = (page_Contacts - 1) * pagesize_Contacts;
 
-  //#region GraphDB calls
+    //#region GraphDB calls
 
-  // Fetch friends of the given user
-  const RecommendationsPromise = g.submit(
-    `
-    g.V().hasLabel('User').has('uid', uid).project(
-    'InvitationRecommendation',
-    'AllUsersInSchool',
-    'AllUsersInContacts',
-    'FriendsOfFriends',
-    'FriendCount'
-  ).
-  by(out('HAS_CONTACT').values('phoneNumber').fold()).
-  by(union(
-       g.V().has('name',highschool).in('ATTENDS_SCHOOL').range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends),
-       g.V().outE('ATTENDS_SCHOOL').inV().has('name',highschool).has('grade', grade).not(inE('FRIENDS_WITH').has('uid', uid)).range(offset_FriendsOfFriends, page_FriendsOfFriends * pagesize_FriendsOfFriends)
-     ).fold()).
-  by(outE('HAS_CONTACT_IN_APP').
-  union(
-    choose(has('fav', true),  outV().has('weight', EmojiContactsWeightQuestions),  outV().has('weight', ContactsWeightQuestions)),
-    choose(has('photo', true),  outV().has('weight', PhotoContactsWeightQuestions),  outV().has('weight', ContactsWeightQuestions))
-  ).
-     not(inE('FRIENDS_WITH').has('uid', uid)).
-     range(offset_Contacts, page_Contacts * pagesize_Contacts).
-     fold()).
-  by(out('FRIENDS_WITH').out('FRIENDS_WITH').dedup().fold()).
-  by(outE('FRIENDS_WITH').count())
-`,
-    {
+    // Fetch friends of the given user
+    const parameters = {
       uid: uid,
       highschool: highschool,
       offset_FriendsOfFriends: offset_FriendsOfFriends,
-      page_FriendsOfFriends: page_FriendsOfFriends,
-      pagesize_FriendsOfFriends: pagesize_FriendsOfFriends,
+      limit_FriendsOfFriends: page_FriendsOfFriends * pagesize_FriendsOfFriends,
       grade: grade,
       EmojiContactsWeightQuestions: EmojiContactsWeightQuestions,
       ContactsWeightQuestions: ContactsWeightQuestions,
       PhotoContactsWeightQuestions: PhotoContactsWeightQuestions,
       offset_Contacts: offset_Contacts,
-      page_Contacts: page_Contacts,
-      pagesize_Contacts: pagesize_Contacts,
-      offset_SchoolUsers: offset_SchoolUsers,
-      page_SchoolUsers: page_SchoolUsers,
-      pagesize_SchoolUsers: pagesize_SchoolUsers,
-    }
-  );
-  //#endregion
+      limit_Contacts: page_Contacts * pagesize_Contacts,
+    };
 
-  const FriendRequestQuery = "SELECT friendRequests FROM friends WHERE ownerPhoneNumber =?";
-  const friendRequestsPromise = client.execute(FriendRequestQuery, [uid], {
-    prepare: true,
-  });
+    // Cypher Query
+    const cypherQuery = `
+MATCH (user:User {uid: $uid})
 
-  const InviteSentQuery = "SELECT * FROM active_links WHERE inviter =? ALLOW FILTERING";
-  const AllInvitesSentPromise = client.execute(InviteSentQuery, [uid]);
+OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contact)
+WITH user, COLLECT(contact.phoneNumber) AS InvitationRecommendation
 
+OPTIONAL MATCH (school:School {name: $highschool})<-[:ATTENDS_SCHOOL]-(student)
+WHERE NOT (student)<-[:FRIENDS_WITH]-(:User {uid: $uid}) 
+AND student.grade = $grade
+WITH user, InvitationRecommendation, COLLECT(student)[..$limit_FriendsOfFriends] AS AllUsersInSchool
 
-  const [Recommendations, friendRequests, AllInvitesSent] =
-    await Promise.allSettled([
-      RecommendationsPromise,
-      friendRequestsPromise,
-      AllInvitesSentPromise,
-    ]);
+OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(contact)
+WHERE 
+((contact.fav = true AND contact.weight = $EmojiContactsWeightQuestions) OR
+ (contact.photo = true AND contact.weight = $PhotoContactsWeightQuestions) OR 
+ contact.weight = $ContactsWeightQuestions)
+AND NOT (contact)<-[:FRIENDS_WITH]-(:User {uid: $uid})
+WITH user, InvitationRecommendation, AllUsersInSchool, COLLECT(contact)[..$limit_Contacts] AS AllUsersInContacts
 
-    if (friendRequests.value && friendRequests.value.rows.length>0) {
+OPTIONAL MATCH (user)-[:FRIENDS_WITH]->()-[:FRIENDS_WITH]->(fof)
+WITH user, InvitationRecommendation, AllUsersInSchool, AllUsersInContacts, COLLECT(DISTINCT fof) AS FriendsOfFriends
+
+MATCH (user)-[:FRIENDS_WITH]->(friend)
+RETURN {
+    InvitationRecommendation: InvitationRecommendation,
+    AllUsersInSchool: AllUsersInSchool,
+    AllUsersInContacts: AllUsersInContacts,
+    FriendsOfFriends: FriendsOfFriends,
+    FriendCount: COUNT(friend)
+} AS result
+`;
+
+    // Execute the query
+    const result = session.run(cypherQuery, parameters);
+    //#endregion
+
+    const FriendRequestQuery =
+      "SELECT friendRequests FROM friends WHERE ownerPhoneNumber =?";
+    const friendRequestsPromise = client.execute(FriendRequestQuery, [uid], {
+      prepare: true,
+    });
+
+    const InviteSentQuery =
+      "SELECT * FROM active_links WHERE inviter =? ALLOW FILTERING";
+    const AllInvitesSentPromise = client.execute(InviteSentQuery, [uid]);
+
+    const [Recommendations, friendRequests, AllInvitesSent] =
+      await Promise.allSettled([
+        result,
+        friendRequestsPromise,
+        AllInvitesSentPromise,
+      ]);
+
+    if (friendRequests.value && friendRequests.value.rows.length > 0) {
       const retrieveUserData = async (friendListName) => {
-          const udataQuery = "SELECT firstname, lastname, username, pfpsmall, pfpsmallhash FROM users WHERE uid = ?";
-          const list = [];
-          
-          const currentList = friendRequests.value.rows[0][friendListName];
-  
-          // Check if the current list is iterable and is not empty
-          if (Array.isArray(currentList) && currentList.length) {
-              for (const friend of currentList) {
-                  const udata = await client.execute(udataQuery, [friend], { prepare: true });
-                  list.push(udata.rows[0]);
-              }
-  
-              friendRequests.value.rows[0][friendListName] = list;
+        const udataQuery =
+          "SELECT firstname, lastname, username, pfpsmall, pfpsmallhash FROM users WHERE uid = ?";
+        const list = [];
+
+        const currentList = friendRequests.value.rows[0][friendListName];
+
+        // Check if the current list is iterable and is not empty
+        if (Array.isArray(currentList) && currentList.length) {
+          for (const friend of currentList) {
+            const udata = await client.execute(udataQuery, [friend], {
+              prepare: true,
+            });
+            list.push(udata.rows[0]);
           }
-      }
-      await retrieveUserData('friendrequests');
+
+          friendRequests.value.rows[0][friendListName] = list;
+        }
+      };
+      await retrieveUserData("friendrequests");
     }
 
     //console.log(Recommendations);
     //console.log(friendRequests);
 
-
-  return {
-    page_FriendsOfFriends: page_FriendsOfFriends,
-    page_SchoolUsers: page_SchoolUsers,
-    Recommendations : Recommendations.value ? Recommendations.value._items:[],
-    FriendRequests: friendRequests.value?friendRequests.value.rows[0]||[]:[],
-    InvitesSent: AllInvitesSent.value?AllInvitesSent.value.rows:[],
-  };
+    return {
+      page_FriendsOfFriends: page_FriendsOfFriends,
+      page_SchoolUsers: page_SchoolUsers,
+      Recommendations: Recommendations.value
+        ? Recommendations.value._items
+        : [],
+      FriendRequests: friendRequests.value
+        ? friendRequests.value.rows[0] || []
+        : [],
+      InvitesSent: AllInvitesSent.value ? AllInvitesSent.value.rows : [],
+    };
+  } catch (err) {
+    console.log(err);
+  }
 }
-catch(err){
-  console.log(err);
-}
-}
-
-
 
 async function GetRecommendationsQuestions(uid, highschool, grade) {
-  const maxUsers = 10;  // Assume you have 100 users
-  const limit = 4;
+  const cypherQuery = `
+  MATCH (user:User {uid: $uid})
   
-  // Generate a random starting point
-  const randomOffset = Math.floor(Math.random() * (maxUsers - limit + 1));
+  // Contacts with 'fav' true
+  OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contactWithFav) WHERE contactWithFav.fav = true
   
-  const query = `
-      g.V().hasLabel('User').range(${randomOffset}, ${randomOffset + limit})
+  // Contacts with photo
+  OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contactWithPhoto) WHERE contactWithPhoto.photo = true
+  
+  // Contacts without 'fav' and without photo
+  OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contactWithoutFavOrPhoto) WHERE NOT EXISTS(contactWithoutFavOrPhoto.fav) AND NOT EXISTS(contactWithoutFavOrPhoto.photo)
+  
+  // Friends
+  OPTIONAL MATCH (user)-[:HAS_FRIEND]->(friend)
+  
+  // Friends of Friends
+  OPTIONAL MATCH (user)-[:HAS_FRIEND]->()-[:HAS_FRIEND]->(fof) WHERE NOT (user)-[:HAS_FRIEND]->(fof)
+  
+  // Same high school
+  OPTIONAL MATCH (user)-[:ATTENDS]->(highSchool:School {name: $highschool}), (highSchool)<-[:ATTENDS]-(sameHighschoolUser) WHERE user <> sameHighschoolUser
+  
+  // Same high school and grade
+  OPTIONAL MATCH (user)-[:ATTENDS]->(highSchool:School {name: $highschool}), (highSchool)<-[:ATTENDS]-(sameHighschoolGradeUser) WHERE user <> sameHighschoolGradeUser AND sameHighschoolGradeUser.grade = $grade
+  
+  WITH 
+      COALESCE(contactWithFav, []) + 
+      COALESCE(contactWithPhoto, []) + 
+      COALESCE(contactWithoutFavOrPhoto, []) + 
+      COALESCE(friend, []) + 
+      COALESCE(fof, []) + 
+      COALESCE(sameHighschoolUser, []) + 
+      COALESCE(sameHighschoolGradeUser, []) AS combined
+  
+  UNWIND combined AS recommendation
+  WITH DISTINCT recommendation
+  RETURN recommendation
+  LIMIT 4
   `;
-  
-  const result = await g.submit(query);
-  
-   /* await g
-    .submit(
-      `
-      g.V().hasLabel('User').has('uid', "${uid}")
-      .coalesce(
-        // Repeating traversal for contacts with 'fav' true
-        __.repeat(__.outE('HAS_CONTACT').has('fav', true).inV()).times(${EmojiContactsWeightQuestions}),
-        
-        // Repeating traversal for contacts with photo
-        __.repeat(__.outE('HAS_CONTACT').has('photo', true).inV()).times(${PhotoContactsWeightQuestions}),
-        
-        // Repeating traversal for contacts without 'fav' and without photo
-        __.repeat(__.outE('HAS_CONTACT').inV()).times(${ContactsWeightQuestions}),
-        
-        // Repeating traversal for same high school
-        __.repeat(__.has('highschool', "${highschool}")).times(${SameHighSchoolWeightQuestions}),
-        
-        // Repeating traversal for friends
-        __.repeat(__.out('HAS_FRIEND')).times(${FriendsWeightQuestions}),
-        
-        // Repeating traversal for friends of friends
-        __.repeat(__.out('HAS_FRIEND').out('HAS_FRIEND').dedup().where(P.neq('self'))).times(${FriendsOfFriendsWeightQuestions}),
-        
-        // Repeating traversal for same grade in same high school
-        __.repeat(__.has('highschool', "${highschool}").has('grade', "${grade}")).times(${SameGradeWeightQuestions}),
-        
-        // Repeating traversal for top friends
-        __.unfold().repeat(
-          __.out('FRIENDS_WITH').order().by('PollsCount', decr)
-        ).times(${TopFriendsWeightsQuestions})
-      )
-      .order().by(__.id().hashcode()) // Ordering pseudorandomly based on hashed ID
-      .range(${randomOffset}, ${
-          randomOffset + 10
-        }) // Paginate using the random offset
-      .fold()
-      .coalesce(
-        __.unfold(), 
-        __.V().hasLabel('User').has('uid', "${uid}").out('HAS_CONTACT').limit(4)
-      )
-  `
-    )
-    .then((result) => {
-      console.log(allUsers);
-      return result;
-    })
-    .catch((error) => {
-      console.error(error);
-    });*/
-    
-    
-    // Parse the result to only return an array of uids and phoneNumbers
-    const parsedResult = result._items.map(user => ({
-      uid: user.properties.uid[0].value,
-      phoneNumber: user.properties.phoneNumber[0].value,
-      fname: user.properties.fname[0].value,
-      lname:user.properties.lname[0].value,
-      username:user.properties.username[0].value,
-    }));
 
-    return parsedResult;
-  }
+  const result = await session.run(cypherQuery, {
+    uid: uid,
+    highschool: highschool,
+    grade: grade,
+  });
 
-
-  async function ExecuteCustomQuery(){
-    const RecommendationsPromise =await g.submit(
-      `g.V().has('name', 'CONALEP IZTAPALAPA 2').in('ATTENDS_SCHOOL')
-      `);
-
-      console.log(RecommendationsPromise);
-  }
-
-
-  setTimeout(() => {
-    //GetRecommendationsExploreSection("d81e8652-ba30-4f0c-8ee1-9e3abfe880ed",1,1,1,10,10,10,"CONALEP IZTAPALAPA 2","10");
-  }, 10000);
+  console.log(result.records);
+  return result.recoeds;
+}
+setTimeout(() => {
+  //GetRecommendationsExploreSection("d81e8652-ba30-4f0c-8ee1-9e3abfe880ed",1,1,1,10,10,10,"CONALEP IZTAPALAPA 2","10");
+}, 10000);
 //#endregion
 
 module.exports = {
