@@ -1,3 +1,4 @@
+const { ExtractData } = require("./AuthHandler.js");
 const { getKV } = require("./KV.js");
 const cassandra = require("./SetupCassandra.js");
 
@@ -82,7 +83,13 @@ async function fetchWeights() {
 fetchWeights(); // fetch the weights as soon as the module is imported
 //#endregion
 //#region Helper Functions
-
+function extractProperties(arr) {
+  // Check if the input is non-null and an array
+  if(arr && Array.isArray(arr)) {
+      return arr.map(user => user.properties);
+  }
+  return [];
+}
 // CheckPlayerValidity function
 async function CheckPlayerValidity(username) {
   const session = driver.session();
@@ -218,7 +225,6 @@ async function GetRecommendationsOnboarding(
     limit_peopleInContacts: neo4j.int(Math.floor(page_peopleInContacts * pagesize_peopleInContacts)),
   };
 
- 
   const session = driver.session();
 try{
   const cypherQuery = `
@@ -257,11 +263,15 @@ try{
     OnboardingRecommendationsPromise,
   ]);
 
+  const data = Recommendations.value.records[0]._fields;
+ 
+  const peopleYouMayKnowProperties = extractProperties(data[0].PeopleYouMayKnow);
+  const peopleInContactsProperties = extractProperties(data[0].peopleInContacts);
   // Return both the result and the next page number for paging
   return {
     success: true,
     page_peopleInContacts: page_peopleInContacts,
-    Recommendations: JSON.stringify(Recommendations.value.records[0]._fields),
+    Recommendations: {peopleYouMayKnow : peopleYouMayKnowProperties,peopleInContacts:peopleInContactsProperties },
   };
 }
 catch(err){
@@ -301,47 +311,50 @@ async function GetRecommendationsExploreSection(
     const parameters = {
       uid: uid,
       highschool: highschool,
-      offset_FriendsOfFriends: offset_FriendsOfFriends,
-      limit_FriendsOfFriends: page_FriendsOfFriends * pagesize_FriendsOfFriends,
+      offset_FriendsOfFriends: neo4j.int(offset_FriendsOfFriends),
+      limit_FriendsOfFriends: neo4j.int((page_FriendsOfFriends * pagesize_FriendsOfFriends)),
       grade: grade,
       EmojiContactsWeightQuestions: EmojiContactsWeightQuestions,
       ContactsWeightQuestions: ContactsWeightQuestions,
       PhotoContactsWeightQuestions: PhotoContactsWeightQuestions,
-      offset_Contacts: offset_Contacts,
-      limit_Contacts: page_Contacts * pagesize_Contacts,
+      offset_Contacts: neo4j.int(offset_Contacts),
+      limit_Contacts:neo4j.int( (page_Contacts * pagesize_Contacts)),
     };
 
     // Cypher Query
     const cypherQuery = `
-MATCH (user:User {uid: $uid})
+    MATCH (user:User {uid: $uid})
 
-OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contact)
-WITH user, COLLECT(contact.phoneNumber) AS InvitationRecommendation
+    // 1. People in the same high school
+    OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
+    WHERE school.name = $highschool
 
-OPTIONAL MATCH (school:School {name: $highschool})<-[:ATTENDS_SCHOOL]-(student)
-WHERE NOT (student)<-[:FRIENDS_WITH]-(:User {uid: $uid}) 
-AND student.grade = $grade
-WITH user, InvitationRecommendation, COLLECT(student)[..$limit_FriendsOfFriends] AS AllUsersInSchool
+    OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
+    WHERE user <> otherUser
+    WITH user, COLLECT(otherUser)[..$limit_FriendsOfFriends] AS PeopleInSameSchool
+     
+    // 2. People in contacts
+    OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contact)
+    WITH user, PeopleInSameSchool, COLLECT(contact) AS contacts
 
-OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(contact)
-WHERE 
-((contact.fav = true AND contact.weight = $EmojiContactsWeightQuestions) OR
- (contact.photo = true AND contact.weight = $PhotoContactsWeightQuestions) OR 
- contact.weight = $ContactsWeightQuestions)
-AND NOT (contact)<-[:FRIENDS_WITH]-(:User {uid: $uid})
-WITH user, InvitationRecommendation, AllUsersInSchool, COLLECT(contact)[..$limit_Contacts] AS AllUsersInContacts
-
-OPTIONAL MATCH (user)-[:FRIENDS_WITH]->()-[:FRIENDS_WITH]->(fof)
-WITH user, InvitationRecommendation, AllUsersInSchool, AllUsersInContacts, COLLECT(DISTINCT fof) AS FriendsOfFriends
-
-MATCH (user)-[:FRIENDS_WITH]->(friend)
-RETURN {
-    InvitationRecommendation: InvitationRecommendation,
-    AllUsersInSchool: AllUsersInSchool,
-    AllUsersInContacts: AllUsersInContacts,
-    FriendsOfFriends: FriendsOfFriends,
-    FriendCount: COUNT(friend)
-} AS result
+    
+    // 3. Friends of user's friends
+    OPTIONAL MATCH (user)-[:FRIENDS_WITH]->(:User)-[:FRIENDS_WITH]->(friendsOfFriends:User)
+    WHERE NOT (user)-[:FRIENDS_WITH]->(friendsOfFriends) AND user <> friendsOfFriends
+    WITH user, PeopleInSameSchool, contacts, COLLECT(DISTINCT friendsOfFriends) AS FriendsOfFriends
+    
+    // 4. People connected to user with HAS_CONTACT_IN_APP
+    OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(hasContactInAppUser:User)
+    WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser) AS ContactsInApp
+    
+    RETURN {
+      PeopleInSameSchool: PeopleInSameSchool,
+      peopleInContacts: contacts,
+      FriendsOfFriends: FriendsOfFriends,
+      ContactsInApp: ContactsInApp
+    } AS result
+    SKIP $offset_Contacts
+    LIMIT $limit_Contacts
 `;
 
     // Execute the query
@@ -364,6 +377,8 @@ RETURN {
         friendRequestsPromise,
         AllInvitesSentPromise,
       ]);
+
+     
 
     if (friendRequests.value && friendRequests.value.rows.length > 0) {
       const retrieveUserData = async (friendListName) => {
@@ -388,14 +403,18 @@ RETURN {
       await retrieveUserData("friendrequests");
     }
 
-    //console.log(Recommendations);
-    //console.log(friendRequests);
+    const data = Recommendations.value.records[0]._fields;
+
+    const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool);
+    const peopleInContacts = extractProperties(data[0].peopleInContacts);
+    const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends);
+    const ContactsInApp = extractProperties(data[0].ContactsInApp)
 
     return {
       page_FriendsOfFriends: page_FriendsOfFriends,
       page_SchoolUsers: page_SchoolUsers,
       Recommendations: Recommendations.value
-        ? Recommendations.value._items
+        ? {PeopleInSameSchool,peopleInContacts,FriendsOfFriends,ContactsInApp}
         : [],
       FriendRequests: friendRequests.value
         ? friendRequests.value.rows[0] || []
@@ -416,41 +435,29 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
   try{
   const cypherQuery = `
   MATCH (user:User {uid: $uid})
-  
-  // Contacts with 'fav' true
-  OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contactWithFav) WHERE contactWithFav.fav = true
-  
-  // Contacts with photo
-  OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contactWithPhoto) WHERE contactWithPhoto.photo = true
-  
-  // Contacts without 'fav' and without photo
-  OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contactWithoutFavOrPhoto) WHERE NOT EXISTS(contactWithoutFavOrPhoto.fav) AND NOT EXISTS(contactWithoutFavOrPhoto.photo)
-  
-  // Friends
-  OPTIONAL MATCH (user)-[:HAS_FRIEND]->(friend)
-  
-  // Friends of Friends
-  OPTIONAL MATCH (user)-[:HAS_FRIEND]->()-[:HAS_FRIEND]->(fof) WHERE NOT (user)-[:HAS_FRIEND]->(fof)
-  
-  // Same high school
-  OPTIONAL MATCH (user)-[:ATTENDS]->(highSchool:School {name: $highschool}), (highSchool)<-[:ATTENDS]-(sameHighschoolUser) WHERE user <> sameHighschoolUser
-  
-  // Same high school and grade
-  OPTIONAL MATCH (user)-[:ATTENDS]->(highSchool:School {name: $highschool}), (highSchool)<-[:ATTENDS]-(sameHighschoolGradeUser) WHERE user <> sameHighschoolGradeUser AND sameHighschoolGradeUser.grade = $grade
-  
-  WITH 
-      COALESCE(contactWithFav, []) + 
-      COALESCE(contactWithPhoto, []) + 
-      COALESCE(contactWithoutFavOrPhoto, []) + 
-      COALESCE(friend, []) + 
-      COALESCE(fof, []) + 
-      COALESCE(sameHighschoolUser, []) + 
-      COALESCE(sameHighschoolGradeUser, []) AS combined
-  
-  UNWIND combined AS recommendation
-  WITH DISTINCT recommendation
-  RETURN recommendation
-  LIMIT 4
+
+// 1. People in the same high school
+OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
+WHERE school.name = $highschool
+OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
+WHERE user <> otherUser
+WITH user, COLLECT(otherUser) AS PeopleInSameSchool
+    
+// 3. Friends of user's friends
+OPTIONAL MATCH (user)-[:FRIENDS_WITH]->(:User)-[:FRIENDS_WITH]->(friendsOfFriends:User)
+WHERE NOT (user)-[:FRIENDS_WITH]->(friendsOfFriends) AND user <> friendsOfFriends
+WITH user, PeopleInSameSchool, COLLECT(DISTINCT friendsOfFriends) AS FriendsOfFriends
+    
+// 4. People connected to user with HAS_CONTACT_IN_APP
+OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(hasContactInAppUser:User)
+WITH user, PeopleInSameSchool, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser) AS ContactsInApp
+    
+// Combine all the lists and pick 4 users randomly
+WITH user, 
+     PeopleInSameSchool + FriendsOfFriends + ContactsInApp AS allPossibleConnections
+RETURN {
+  Users: apoc.coll.randomItems(allPossibleConnections, 4)
+} AS result
   `;
 
   const result = await session.run(cypherQuery, {
@@ -459,8 +466,10 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
     grade: grade,
   });
 
-  console.log(result.records);
-  return result.records;
+
+  const data = result.records[0]._fields;
+  const propertiesList = data[0].Users.map(user => user.properties);
+  return propertiesList;
 }
 catch(err){
   console.log(err);
@@ -469,10 +478,12 @@ finally{
   session.close();
 }
 }
+
 setTimeout(async() => {
- // console.log(await GetRecommendationsExploreSection("e8f3ea03-70b7-487d-9b28-586fca9844b4",1,1,1,10,10,10,"ThugShakerHighSchool","10"));
-// console.log(await GetRecommendationsOnboarding("e8f3ea03-70b7-487d-9b28-586fca9844b4",1,10,1,10,"10","ThugShakerHighSchool"));
-}, 5000);
+  console.log(await GetRecommendationsExploreSection("e8f3ea03-70b7-487d-9b28-586fca9844b4",1,1,1,10,10,10,"ThugShakerHighSchool","10"));
+ //console.log(await GetRecommendationsOnboarding("e8f3ea03-70b7-487d-9b28-586fca9844b4",1,10,1,10,"10","ThugShakerHighSchool"));
+ //(await GetRecommendationsQuestions("e8f3ea03-70b7-487d-9b28-586fca9844b4","ThugShakerHighSchool","10"));
+}, 10000);
 //#endregion
 
 module.exports = {
