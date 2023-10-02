@@ -54,9 +54,6 @@ Cassandraclient.SetupCassandraClient(client).then((result) => {
   client = result;
 });
 
-var GraphDB = require("./SetupGraphDB.js");
-
-
 
 const {OnUserCreationFailed,handleTransactionCompletion,onTransactionStart} = require("./UserCreationTransactionHandling.js");
 
