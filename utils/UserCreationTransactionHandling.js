@@ -73,7 +73,7 @@ async function isTransactionInProgress(phoneNumber) {
 
 async function OnUserCreationComplete(transactionId, phoneNumber) {
   console.log("transactions complete");
-  const token = await client.execute('SELECT UserToken FROM tokens WHERE phoneNumber = ? ALLOW FILTERING', [phoneNumber], { prepare: true });
+  const token = await client.execute('SELECT jwt FROM tokens WHERE phoneNumber = ? ALLOW FILTERING', [phoneNumber], { prepare: true });
   
   const albySuccessObj = {
     status: "success",
