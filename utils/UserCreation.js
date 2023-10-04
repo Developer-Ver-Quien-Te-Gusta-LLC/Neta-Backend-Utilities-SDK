@@ -84,6 +84,7 @@ async function CreateScyllaUser(UserParams) {
     firstName,
     lastName,
     school,
+    age
   } = UserParams;
 
   const invitesLeft = UserParams.invitesLeft || 0;
@@ -91,14 +92,15 @@ async function CreateScyllaUser(UserParams) {
   try {
     const UserCreationQuery = `
       INSERT INTO users (
-        username, phoneNumber, topPolls, topFriends, coins, invitesLeft, 
+        age,username, phoneNumber, topPolls, topFriends, coins, invitesLeft, 
         pollIndex, numberOfStars, platform, gender, highschool, grade, uid,
         albyTopicName, anonymousMode, blocklist, firstName, lastName, friendList, 
         friendRequests, hideList, lastPollTime, numberOfPolls, online, pfp, 
         pfpHash, pfpMedium, pfpMediumHash, pfpSmall, pfpSmallHash
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      ) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const params = [
+      age,
       username,
       phoneNumber,
       [], // topPolls
