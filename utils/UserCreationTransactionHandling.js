@@ -46,16 +46,14 @@ async function handleTransactionCompletion(uid, phoneNumber) {
   const params = [uuidv4(), transactionId, "completed", uid, phoneNumber];
   
   await client.execute(insertQuery, params, { prepare: true });
-  checkAllTransactionsCompleted(transactionId, phoneNumber);
+  checkAllTransactionsCompleted(transactionId, phoneNumber,uid);
 }
-async function checkAllTransactionsCompleted(transactionId,phoneNumber) {
- 
-
+async function checkAllTransactionsCompleted(transactionId,phoneNumber,uid) {
     const selectQuery = "SELECT COUNT(*) as count FROM transactions WHERE phoneNumber = ? AND status = ? ALLOW FILTERING";
     const params = [phoneNumber, "completed"];
     const result = await client.execute(selectQuery, params, { prepare: true });
     if (result.rows[0].count >= 3) {
-      OnUserCreationComplete(transactionId, phoneNumber);
+      OnUserCreationComplete(transactionId, phoneNumber,uid);
       return true
     }
     else{
@@ -71,7 +69,7 @@ async function isTransactionInProgress(phoneNumber) {
   return (result.rows[0].count > 0);
 }
 
-async function OnUserCreationComplete(transactionId, phoneNumber) {
+async function OnUserCreationComplete(transactionId, phoneNumber,uid) {
   console.log("transactions complete");
   const token = await client.execute('SELECT jwt FROM tokens WHERE phoneNumber = ? ALLOW FILTERING', [phoneNumber], { prepare: true });
   
@@ -81,6 +79,10 @@ async function OnUserCreationComplete(transactionId, phoneNumber) {
   };
 
   console.log(transactionId);
+
+  const insertInboxQuery = "INSERT INTO neta.inbox (messageuid, pushedtime, read, inboxindex,uid) VALUES (?, ?, ?, ?,?)";
+  const inboxParams = [uuidv4(), new Date(), false, 0,uid];
+  await client.execute(insertInboxQuery, inboxParams, { prepare: true });
 
   ably.channels.get(String(transactionId)).publish("event", JSON.stringify(albySuccessObj), (err) => {
     if (err) {
