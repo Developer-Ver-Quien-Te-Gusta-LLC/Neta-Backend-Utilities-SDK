@@ -80,7 +80,7 @@ async function OnUserCreationComplete(transactionId, phoneNumber,uid) {
 
   console.log(transactionId);
 
-  const insertInboxQuery = "INSERT INTO neta.inbox (messageuid, pushedtime, read, inboxindex,uid) VALUES (?, ?, ?, ?,?)";
+  const insertInboxQuery = "INSERT INTO inbox (messageuid, pushedtime, read, inboxindex,uid) VALUES (?, ?, ?, ?,?)";
   const inboxParams = [uuidv4(), new Date(), false, 0,uid];
   await client.execute(insertInboxQuery, inboxParams, { prepare: true });
 
