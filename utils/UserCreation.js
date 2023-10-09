@@ -94,10 +94,9 @@ async function CreateScyllaUser(UserParams) {
       INSERT INTO users (
         age,username, phoneNumber, topPolls, topFriends, coins, invitesLeft, 
         pollIndex, numberOfStars, platform, gender, highschool, grade, uid,
-        albyTopicName, anonymousMode, blocklist, firstName, lastName, friendList, 
-        friendRequests, hideList, lastPollTime, numberOfPolls, online, pfp, 
+        albyTopicName, anonymousMode, firstName, lastName,  lastPollTime, numberOfPolls, online, pfp, 
         pfpHash, pfpMedium, pfpMediumHash, pfpSmall, pfpSmallHash
-      ) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      ) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const params = [
       age,
@@ -116,12 +115,8 @@ async function CreateScyllaUser(UserParams) {
       uid,
       null, // albyTopicName
       false, // anonymousMode
-      [], // blocklist
       firstName,
       lastName,
-      [], // friendsList
-      [], // friendRequests
-      [], // hideList
       null, // lastPollTime
       0, // numberOfPolls
       false, // online
