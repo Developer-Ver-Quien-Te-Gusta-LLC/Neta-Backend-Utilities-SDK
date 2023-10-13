@@ -96,7 +96,7 @@ async function CreateScyllaUser(UserParams) {
         pollIndex, numberOfStars, platform, gender, highschool, grade, uid,
         albyTopicName, anonymousMode, firstName, lastName,  lastPollTime, numberOfPolls, pfp, 
         pfpHash, pfpMedium, pfpMediumHash, pfpSmall, pfpSmallHash
-      ) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      ) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const params = [
       age,
