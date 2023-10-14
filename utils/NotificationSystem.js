@@ -50,7 +50,7 @@ async function publishAlbyMessage(ChannelID, message) {
   const channel = ably.channels.get(ChannelID);
   await channel.publish("event",message);
 
-  return { message: `Published a message to the topic: ${topicName}` };
+  return { message: `Published a message to the topic: ${ChannelID}` };
 }
 
 async function publishFCMMessage(userToken, message) {
