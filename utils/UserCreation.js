@@ -400,6 +400,7 @@ async function uploadUserContacts(req, res) {
 
   try {
     let uploadAndPushPromises = [];
+    let contactQueries = [];
     for (let i = 0; i < contactsList.length; i++) {
       let contact = contactsList[i];
       let uploadResult = null;
@@ -444,17 +445,34 @@ async function uploadUserContacts(req, res) {
       ON CREATE SET r.type = COALESCE(CASE WHEN existingRel IS NULL THEN 'HAS_CONTACT' ELSE 'HAS_CONTACT_IN_APP' END, 'UNKNOWN')
   `;
   
-  await session.run(contactQuery, {
-      contactPhone: contact.phoneNumber,
-      userPhone: phoneNumber,
-      isFavorite: isFavorite,
-      weight: weight,
-      uploadResult: uploadResult ? uploadResult.Location : null,  // Assuming Location stores the URL of the uploaded file
-      uid: uuid.v4()
+  contactQueries.push({
+      query: contactQuery,
+      parameters: {
+          contactPhone: contact.phoneNumber,
+          userPhone: phoneNumber,
+          isFavorite: isFavorite,
+          weight: weight,
+          uploadResult: uploadResult ? uploadResult.Location : null,  // Assuming Location stores the URL of the uploaded file
+          uid: uuid.v4()
+      }
   });
-  
 
       console.log("contact edge added");
+    }
+
+    // Run all queries in a single transaction
+    const session = driver.session();
+    const transaction = session.beginTransaction();
+    try {
+      for (let i = 0; i < contactQueries.length; i++) {
+        await transaction.run(contactQueries[i].query, contactQueries[i].parameters);
+      }
+      await transaction.commit();
+    } catch (error) {
+      console.log(error);
+      await transaction.rollback();
+    } finally {
+      session.close();
     }
 
     await SendEvent("upload_user_contacts", phoneNumber, {
