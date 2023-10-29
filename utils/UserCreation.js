@@ -4,16 +4,6 @@ const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 const AuthHandler = require("./AuthHandler.js");
 var ably;
 const AWS = require("aws-sdk");
-const admin = require("firebase-admin");
-const { initializeApp } = require("firebase/app");
-const { getAuth, signInWithCustomToken, getIdToken, signOut } = require("firebase/auth");
-
-const firebaseConfig = {
-  apiKey: " AIzaSyCJ-pIfMEyavmWK9DcK1c2es78NCqSunhU ",
-  authDomain: "project-755055790640.firebaseapp.com",
-} // switch to kv later
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 
 const emojiRegex = require("emoji-regex");
 const { getKV } = require("./KV");
@@ -21,41 +11,20 @@ const { SendEvent } = require("./Analytics");
 const uuid = require("uuid");
 const fs = require("fs");
 const sharp = require("sharp");
-async function initializeFirebase() {
-  try {
-    var credentials = await FetchFromSecrets("FCMAccountCredentials");
-
-    credentials = JSON.parse(credentials);
-    if (!credentials) {
-      console.error("Unable to fetch FCM Account Credentials.");
-      return;
-    }
-
-    if (admin.apps.length === 0) {
-      admin.initializeApp({
-        credential: admin.credential.cert(credentials),
-      });
-
-      console.log("Firebase Admin SDK Initialized.");
-    }
-  } catch (error) {
-    console.error("Error during Firebase Admin SDK initialization:", error);
-  }
-}
-initializeFirebase();
+const jwt = require('jsonwebtoken');
+const secretKey = '930EE82F5F09EC2951BF6FA7B42C72F2AA6645AE1241492D15E9486BE17A2F75'; // replace with your secret key
 
 async function fetchAlby() {
   ably = new Ably.Realtime.Promise(await FetchFromSecrets("AblyAPIKey"));
   await ably.connection.once("connected");
 }
 fetchAlby();
-const neo4j = require('neo4j-driver');
-const uri = 'neo4j+s://7b7d8839.databases.neo4j.io'; //replace w kv
-const user = 'neo4j'; //replace w kv
-const password = 'bRgk7vO5PiadruWGGvcAMkVK7SAdg9sFUSc3EC77Wts'; //replace w kv
-const driver = neo4j.driver(uri, neo4j.auth.basic(user, password));
-let client;
+const Setupneo4j = require("./Setupneo4j.js");
 
+var driver;
+Setupneo4j.FetchClient().then(result =>{driver = result});
+
+let client;
 Cassandraclient.SetupCassandraClient(client).then((result) => {
   client = result;
 });
@@ -237,24 +206,11 @@ async function createNeptuneUser(UserParams) {
 
 async function CreateFirebaseUser(UserParams) {
   var { username, uid, transactionId, encryptionKey, phoneNumber } = UserParams;
-  const password = String(UserParams.otp + UserParams.otp);
-
+ 
   try {
-    await admin.auth().createUser({
-      password: password,
-      displayName: username,
-      uid: uid,
-      disabled: false,
-    });
-
-    const customToken = await admin.auth().createCustomToken(uid);
-    const userCredential = await signInWithCustomToken(auth,customToken);
-    const user = userCredential.user;
-    const idToken = await getIdToken(user,true);
-    await signOut(auth);
-    //console.log(`Token For user ${username} is ${customToken}`);
-    const query = 'INSERT INTO tokens (UserToken,phoneNumber,jwt) VALUES (?,?,?)';
-    await client.execute(query,[customToken,phoneNumber,idToken]);
+    const customToken = jwt.sign({ uid: uid }, secretKey);
+    const query = 'INSERT INTO tokens (phoneNumber,jwt) VALUES (?,?)';
+    await client.execute(query,[phoneNumber,customToken]);
     await handleTransactionCompletion(uid, phoneNumber);
     return true;
   } catch (err) {
@@ -342,9 +298,6 @@ async function DeleteUser(req, deleteVerification = false) {
   const DeleteUserScyllaPromise = client.batch(queries, { prepare: true });
 
   promises.push(DeleteUserScyllaPromise);
-
-  const DeleteFirebaseUserPromise = admin.auth().deleteUser(phoneNumber);
-  promises.push(DeleteFirebaseUserPromise);
 
   // Gremlin query to delete the vertex 'User' using the phoneNumber given
   const gremlinQuery = `g.hasV().has('User', 'uid', ${phoneNumber}).drop()`;

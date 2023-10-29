@@ -28,7 +28,7 @@
     "firebase": "^10.4.0",
     "firebase-admin": "^11.10.1",
     "gremlin": "^3.7.0",
-    "jsonwebtoken": "^9.0.1",
+    "jsonwebtoken": "^9.0.2",
     "mixpanel": "^0.17.0",
     "mongodb": "^6.0.0",
     "multer": "^1.4.5-lts.1",

@@ -14,6 +14,7 @@ var UserCreationTransactionHandling = require("./utils/UserCreationTransactionHa
 var SetupCassandra = require("./utils/SetupCassandra.js");
 var Datadog = require("./utils/Datadog.js")
 var GeospatialDB = require("./utils/GeospatialDB.js");
+var Neo4j = require("./utils/Setupneo4j.js")
 console.log("Backend SDK initialized");
 
 module.exports = {
@@ -65,5 +66,6 @@ module.exports = {
   OnUserCreationFailed: UserCreationTransactionHandling.OnUserCreationFailed,
   publishAlbyMessage: NotificationSystem.publishAlbyMessage,
   publishAlbyMessageNaive: NotificationSystem.publishAlbyMessageNaive,
-  SetupCassandraClient: SetupCassandra.SetupCassandraClient
+  SetupCassandraClient: SetupCassandra.SetupCassandraClient,
+  SetupNeo4jClient: Neo4j.FetchClient,
 };
