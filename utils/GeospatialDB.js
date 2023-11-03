@@ -16,8 +16,6 @@ async function SetupGeospatialDB() {
     MaxDistance = parseInt(await getKV("MaxDistance"));
     try {
         const client = await MongoClient.connect(connectionString, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             socketTimeoutMS: 60000 // 1 minute
         });
         console.log("Successfully connected to the `d`atabase!");
