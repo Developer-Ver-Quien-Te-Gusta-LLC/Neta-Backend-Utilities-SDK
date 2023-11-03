@@ -12,7 +12,7 @@ var ServiceBus = require("./utils/ServiceBus.js");
 var UserCreation = require("./utils/UserCreation.js");
 var UserCreationTransactionHandling = require("./utils/UserCreationTransactionHandling.js");
 var SetupCassandra = require("./utils/SetupCassandra.js");
-var Datadog = require("./utils/Datadog.js")
+//var Datadog = require("./utils/Datadog.js")
 var GeospatialDB = require("./utils/GeospatialDB.js");
 var Neo4j = require("./utils/Setupneo4j.js")
 console.log("Backend SDK initialized");
@@ -40,8 +40,8 @@ module.exports = {
   SetKV: KV.SetKV,
   getKV: KV.getKV,
   formatPhoneNumber : require('./utils/PhoneNumberFormatter.js').formatPhoneNumber,
-  measureRouteComputeLength : Datadog.measureRouteComputeLength,
-  logSanitizedRequest : Datadog.logSanitizedRequest,
+  //measureRouteComputeLength : Datadog.measureRouteComputeLength,
+  //logSanitizedRequest : Datadog.logSanitizedRequest,
   SendNotification: NotificationSystem.SendNotification,
   publishFCMMessage : NotificationSystem.publishFCMMessage,
   SendNotificationInApp: NotificationSystem.SendNotificationInApp,

@@ -95,55 +95,8 @@ async function handleTransactionError(phoneNumber, a = undefined, b = undefined)
   await DeleteUser(phoneNumber)
 }
 
-//#region Fetching params stored in SQS , completely different from error handling
-async function fetchRequestsFromSQS(queueURL, numberOfMessages = 10) {
-  //TODO: fetch max requests from KV
-  const params = {
-    QueueUrl: queueURL,
-    MaxNumberOfMessages: numberOfMessages,
-    WaitTimeSeconds: 10, // Maximum wait time for messages (long polling)
-    VisibilityTimeout: 30, // for example, 30 seconds
-  };
-
-  return new Promise((resolve, reject) => {
-    sqs.receiveMessage(params, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        if (data.Messages!=undefined) {
-          const deleteParams = {
-            QueueUrl: queueURL,
-            ReceiptHandle: data.Messages[0].ReceiptHandle,
-          };
-
-          sqs.deleteMessage(deleteParams, function (err, data) {
-            if (err) {
-              console.warn("Delete Error", err);
-            }
-          });
-        }
-        resolve(data.Messages || []);
-      }
-    });
-  });
-}
-async function getNumberOfMessagesInSQS(queueURL) {
-  const params = {
-    QueueUrl: queueURL,
-    AttributeNames: ['ApproximateNumberOfMessages']
-  };
-
-  try {
-    const response = await sqs.getQueueAttributes(params).promise();
-    return parseInt(response.Attributes.ApproximateNumberOfMessages);
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-}
-
 //#endregion
 
 //fetchRequestsFromSQS("https://sqs.us-east-1.amazonaws.com/422862242595/UserCreationSQSQueue");
 
-module.exports = { fetchRequestsFromSQS ,getNumberOfMessagesInSQS};
+//module.exports = { fetchRequestsFromSQS ,getNumberOfMessagesInSQS};
