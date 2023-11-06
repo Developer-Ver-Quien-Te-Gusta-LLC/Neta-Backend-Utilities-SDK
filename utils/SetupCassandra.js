@@ -9,6 +9,9 @@ async function SetupCassandraClient(_client) {
   const contactPoints = String(await FetchFromSecrets("contactPoints"));
   const localDataCenter = String(await FetchFromSecrets("localDataCenter"));
   const keyspace = String(await FetchFromSecrets("keyspace"));
+
+  console.log(contactPoints,localDataCenter,keyspace);
+  
   _client = new cassandra.Client({
     contactPoints: [contactPoints],
     localDataCenter: localDataCenter,
