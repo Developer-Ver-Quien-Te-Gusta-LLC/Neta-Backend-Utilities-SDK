@@ -6,9 +6,9 @@ const { getKV } = require("./KV.js");
 let client;
 async function SetupCassandraClient(_client) {
   if (client != undefined) return client;
-  const contactPoints = await FetchFromSecrets("contactPoints");
-  const localDataCenter = await FetchFromSecrets("localDataCenter");
-  const keyspace = await FetchFromSecrets("keyspace");
+  const contactPoints = String(await FetchFromSecrets("contactPoints"));
+  const localDataCenter = String(await FetchFromSecrets("localDataCenter"));
+  const keyspace = String(await FetchFromSecrets("keyspace"));
   _client = new cassandra.Client({
     contactPoints: [contactPoints],
     localDataCenter: localDataCenter,
