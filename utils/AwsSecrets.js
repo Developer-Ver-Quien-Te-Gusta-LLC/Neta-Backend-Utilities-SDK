@@ -15,7 +15,7 @@ async function FetchFromSecrets(key) {
   return payload;
 }
 catch (error) {
-  console.error(`Failed to fetch secret ${secretName}:`, error);
+  console.error(`Failed to fetch secret ${key}:`, error);
  // throw error;
 }
 }
