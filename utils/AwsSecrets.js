@@ -8,7 +8,7 @@ async function FetchFromSecrets(key) {
   const client = new SecretManagerServiceClient();
   const [version] = await client.accessSecretVersion({
     name: `projects/${projectID}/secrets/${key}/versions/latest`,
-  });
+  }, {timeout: 120000}); // timeout in milliseconds
 
   const payload = version.payload.data.toString('utf8');
   //console.log(payload);
