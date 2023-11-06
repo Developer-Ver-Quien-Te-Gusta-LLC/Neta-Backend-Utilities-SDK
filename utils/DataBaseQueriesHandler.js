@@ -37,7 +37,7 @@ async function InsertDataInScylla(uid, data, value) {
   const query = `UPDATE users SET ${data} = ? WHERE uid = ?`; //ScyllaDB query to insert data
 
   try {
-    await client.execute(query, [value, phoneNumber], { prepare: true });
+    await client.execute(query, [value, uid], { prepare: true });
   } catch (err) {
     console.error("Error executing query", err);
   }
