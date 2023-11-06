@@ -1,6 +1,6 @@
-const  cassandra  = require("cassandra-driver");
-const  FetchFromSecrets  = require("./AwsSecrets.js").FetchFromSecrets;
-const {getKV} = require("./KV.js");
+const cassandra = require("cassandra-driver");
+const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
+const { getKV } = require("./KV.js");
 
 
 let client;
@@ -14,30 +14,37 @@ async function SetupCassandraClient(_client) {
     localDataCenter: localDataCenter,
     keyspace: keyspace,
   });
+  
+  try {
+    await _client.connect();
+    console.log("Cassandra Client Connected");
+  }
+  catch (err) {
+    console.log(err);
+  }
 
-  await _client.connect();
-  console.log("Cassandra Client Connected");
+
   client = _client
   return _client;
 }
 
 
-  async function GetClient(dummyinput=null){
-    if (client === undefined) {
-      return new Promise((resolve) => {
-        const checkClient = setInterval(() => {
-          if (client !== undefined) {
-            clearInterval(checkClient);
-            resolve(client);
-          }
-        }, 1000);
-      });
-    } else {
-      return client;
-    }
+async function GetClient(dummyinput = null) {
+  if (client === undefined) {
+    return new Promise((resolve) => {
+      const checkClient = setInterval(() => {
+        if (client !== undefined) {
+          clearInterval(checkClient);
+          resolve(client);
+        }
+      }, 1000);
+    });
+  } else {
+    return client;
   }
-  
+}
+
 
 
 SetupCassandraClient();
-module.exports={SetupCassandraClient:GetClient,GetClient};
+module.exports = { SetupCassandraClient: GetClient, GetClient };
