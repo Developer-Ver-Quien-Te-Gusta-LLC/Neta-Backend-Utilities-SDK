@@ -4,7 +4,7 @@ const Setupneo4j = require("./Setupneo4j.js");
 var driver;
 Setupneo4j.FetchClient().then(result =>{driver = result});
 
-
+const neo4j = require("neo4j-driver");
 //Setup scylla Client
 var client;
 cassandra
