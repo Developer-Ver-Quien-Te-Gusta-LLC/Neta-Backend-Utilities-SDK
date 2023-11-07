@@ -23,7 +23,7 @@ async function SetupCassandraClient(_client) {
     console.log("Cassandra Client Connected");
   }
   catch (err) {
-    console.log(err);
+    console.log("Cannot connect to cassandra client!");
   }
 
 
