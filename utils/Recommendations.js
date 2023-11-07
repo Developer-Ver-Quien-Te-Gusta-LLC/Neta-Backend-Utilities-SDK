@@ -264,9 +264,11 @@ try{
   ]);
 
   const data = Recommendations.value.records[0]._fields;
+
+  return data;
  
-  const peopleYouMayKnowProperties = extractProperties(data[0].PeopleYouMayKnow);
-  const peopleInContactsProperties = extractProperties(data[0].peopleInContacts);
+  const peopleYouMayKnowProperties = (data[0].PeopleYouMayKnow);
+  const peopleInContactsProperties = (data[0].peopleInContacts);
   // Return both the result and the next page number for paging
   return {
     success: true,
@@ -277,7 +279,6 @@ try{
 catch(err){
   console.log(err);
   session.close();
-  return err;
 }
 finally{
   session.close();
