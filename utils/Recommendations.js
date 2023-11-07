@@ -277,6 +277,7 @@ try{
 catch(err){
   console.log(err);
   session.close();
+  return err;
 }
 finally{
   session.close();
