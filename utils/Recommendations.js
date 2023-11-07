@@ -262,10 +262,9 @@ try{
   const [Recommendations] = await Promise.allSettled([
     OnboardingRecommendationsPromise,
   ]);
-
+return Recommendations
   const data = Recommendations.value.records[0]._fields;
 
-  return data;
  
   const peopleYouMayKnowProperties = (data[0].PeopleYouMayKnow);
   const peopleInContactsProperties = (data[0].peopleInContacts);
