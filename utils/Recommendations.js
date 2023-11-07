@@ -262,12 +262,11 @@ try{
   const [Recommendations] = await Promise.allSettled([
     OnboardingRecommendationsPromise,
   ]);
-return Recommendations
   const data = Recommendations.value.records[0]._fields;
 
  
-  const peopleYouMayKnowProperties = (data[0].PeopleYouMayKnow);
-  const peopleInContactsProperties = (data[0].peopleInContacts);
+  const peopleYouMayKnowProperties = extractProperties(data[0].PeopleYouMayKnow);
+  const peopleInContactsProperties = extractProperties(data[0].peopleInContacts);
   // Return both the result and the next page number for paging
   return {
     success: true,
