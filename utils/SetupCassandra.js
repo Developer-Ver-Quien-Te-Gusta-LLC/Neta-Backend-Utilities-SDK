@@ -41,16 +41,19 @@ async function SetupCassandraClient(_client) {
 }
 
 
+let clientPromise = null;
+
 async function GetClient(dummyinput = null) {
   if (client === undefined) {
-    try {
-      await SetupCassandraClient();
-    } catch (err) {
-      throw err;
+    if (clientPromise === null) {
+      clientPromise = SetupCassandraClient().catch(err => {
+        clientPromise = null;
+        throw err;
+      });
     }
-  } else {
-    return client;
+    client = await clientPromise;
   }
+  return client;
 }
 
 module.exports = { SetupCassandraClient: GetClient, GetClient };
