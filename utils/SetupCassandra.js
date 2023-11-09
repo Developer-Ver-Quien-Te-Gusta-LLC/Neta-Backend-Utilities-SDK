@@ -10,14 +10,14 @@ async function SetupCassandraClient(_client) {
   const localDataCenter = String(await FetchFromSecrets("localDataCenter"));
   const keyspace = String(await FetchFromSecrets("keyspace"));
 
-  console.log(contactPoints,localDataCenter,keyspace);
+  //console.log(contactPoints,localDataCenter,keyspace);
   
   _client = new cassandra.Client({
     contactPoints: [contactPoints],
     localDataCenter: localDataCenter,
     keyspace: keyspace,
   });
-  
+
   let attempts = 0;
   while (attempts < 3) {
     try {
@@ -28,8 +28,10 @@ async function SetupCassandraClient(_client) {
     catch (err) {
       attempts++;
       if (attempts >= 3) {
-        console.log("Cannot connect to cassandra client!");
-        throw err;
+        console.error("Cannot connect to cassandra client after 3 attempts!");
+        throw new Error("Cannot connect to cassandra client after 3 attempts!");
+      } else {
+        console.error(`Attempt ${attempts}: Failed to connect to cassandra client.`);
       }
     }
   }
