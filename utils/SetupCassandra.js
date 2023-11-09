@@ -31,7 +31,7 @@ async function SetupCassandraClient(_client) {
         console.error("Cannot connect to cassandra client after 3 attempts!");
         throw new Error("Cannot connect to cassandra client after 3 attempts!");
       } else {
-        console.error(`Attempt ${attempts}: Failed to connect to cassandra client.`);
+        console.error(`[${__filename}] Attempt ${attempts}: Failed to connect to cassandra client.`);
       }
     }
   }
