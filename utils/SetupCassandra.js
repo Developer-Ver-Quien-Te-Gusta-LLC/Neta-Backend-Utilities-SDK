@@ -18,14 +18,21 @@ async function SetupCassandraClient(_client) {
     keyspace: keyspace,
   });
   
-  try {
-    await _client.connect();
-    console.log("Cassandra Client Connected");
+  let attempts = 0;
+  while (attempts < 3) {
+    try {
+      await _client.connect();
+      console.log("Cassandra Client Connected");
+      break;
+    }
+    catch (err) {
+      attempts++;
+      if (attempts >= 3) {
+        console.log("Cannot connect to cassandra client!");
+        throw err;
+      }
+    }
   }
-  catch (err) {
-    console.log("Cannot connect to cassandra client!");
-  }
-
 
   client = _client
   return _client;
@@ -34,6 +41,11 @@ async function SetupCassandraClient(_client) {
 
 async function GetClient(dummyinput = null) {
   if (client === undefined) {
+    try {
+      await SetupCassandraClient();
+    } catch (err) {
+      throw err;
+    }
     return new Promise((resolve) => {
       const checkClient = setInterval(() => {
         if (client !== undefined) {
@@ -47,7 +59,4 @@ async function GetClient(dummyinput = null) {
   }
 }
 
-
-
-SetupCassandraClient();
 module.exports = { SetupCassandraClient: GetClient, GetClient };
