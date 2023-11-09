@@ -46,14 +46,6 @@ async function GetClient(dummyinput = null) {
     } catch (err) {
       throw err;
     }
-    return new Promise((resolve) => {
-      const checkClient = setInterval(() => {
-        if (client !== undefined) {
-          clearInterval(checkClient);
-          resolve(client);
-        }
-      }, 1000);
-    });
   } else {
     return client;
   }
