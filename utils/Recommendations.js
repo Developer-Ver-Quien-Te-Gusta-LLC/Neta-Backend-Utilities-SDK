@@ -478,18 +478,18 @@ finally{
   session.close();
 }
 }
-
-
-  async function ExecuteCustomQuery(){
-    const RecommendationsPromise =await GetRecommendationsQuestions(null,null,null);
-    console.log(RecommendationsPromise);
-  }
-
-
-  setTimeout(() => {
-    
-  }, 10000);
 //#endregion
+
+async function ExecuteCustomQuery(){
+  const RecommendationsPromise =await GetRecommendationsQuestions(null,null,null);
+  console.log(RecommendationsPromise);
+}
+
+
+setTimeout(async () => {
+  //await ExecuteCustomQuery();
+}, 10000);
+
 
 module.exports = {
   FetchFriendsWithSubsActive,

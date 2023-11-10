@@ -32,11 +32,11 @@ Cassandraclient.SetupCassandraClient(client).then((result) => {
 const {OnUserCreationFailed,handleTransactionCompletion,onTransactionStart} = require("./UserCreationTransactionHandling.js");
 
 async function handleTransactionError(
-  phoneNumber,
-  a = undefined,
-  b = undefined
+  reason,
+  params,
+  uid
 ) {
-  await DeleteUser(phoneNumber);
+  await DeleteUser(uid);
 }
 
 async function CreateScyllaUser(UserParams) {
@@ -101,7 +101,7 @@ async function CreateScyllaUser(UserParams) {
     return true;
   } catch (err) {
     console.log(err);
-    await handleTransactionError("scylla", UserParams, phoneNumber);
+    await handleTransactionError("scylla", UserParams, uid);
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
   }
@@ -196,7 +196,7 @@ async function createNeptuneUser(UserParams) {
   } catch (error) {
     session.close();
     console.error(error);
-    await handleTransactionError("neptune", UserParams, phoneNumber);
+    await handleTransactionError("neptune", UserParams, uid);
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
   }finally{
@@ -215,7 +215,7 @@ async function CreateFirebaseUser(UserParams) {
     return true;
   } catch (err) {
     console.log(err);
-    await handleTransactionError("cognito", UserParams, phoneNumber); //recursive 3 times , else return false
+    await handleTransactionError("jwt", UserParams, uid); //recursive 3 times , else return false
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
   }
@@ -233,10 +233,9 @@ async function CreateMixPanelUser(UserParams) {
     $last_name: UserParams.lastname
   });
 }
-async function DeleteUser(req, deleteVerification = false) {
+async function DeleteUser(uid, deleteVerification = false) {
   const promises = [];
   const queries = [];
-  const { uid } = req.query;
 
   // Fill the array with query objects
   const highschoolQuery =
