@@ -383,7 +383,7 @@ async function GetRecommendationsExploreSection(
     if (friendRequests.value && friendRequests.value.rows.length > 0) {
       const retrieveUserData = async (friendListName) => {
         const udataQuery =
-          "SELECT firstname, lastname, username, pfpsmall, pfpsmallhash FROM users WHERE uid = ?";
+          "SELECT uid,firstname, lastname, username, pfpsmall, pfpsmallhash FROM users WHERE uid = ?";
         const list = [];
 
         const currentList = friendRequests.value.rows[0][friendListName];
