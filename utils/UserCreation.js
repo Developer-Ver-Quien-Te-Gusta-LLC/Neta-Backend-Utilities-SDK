@@ -22,7 +22,7 @@ fetchAlby();
 const Setupneo4j = require("./Setupneo4j.js");
 
 var driver;
-Setupneo4j.FetchClient().then(result =>{driver = result});
+Setupneo4j.SetupNeo4jClient().then(result =>{driver = result});
 
 let client;
 Cassandraclient.SetupCassandraClient(client).then((result) => {

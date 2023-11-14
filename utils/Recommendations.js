@@ -2,7 +2,7 @@ const { getKV } = require("./KV.js");
 const cassandra = require("./SetupCassandra.js");
 const Setupneo4j = require("./Setupneo4j.js");
 var driver;
-Setupneo4j.FetchClient().then(result =>{driver = result});
+Setupneo4j.SetupNeo4jClient().then(result =>{driver = result});
 
 const neo4j = require("neo4j-driver");
 //Setup scylla Client
@@ -11,9 +11,6 @@ cassandra
   .GetClient()
   .then(async (CassandraClient) => {
     client = CassandraClient;
-
-   // const value = (await GetRecommendationsExploreSection("13c39822-4a37-4096-9f77-6cb1d32eaaa7",1,1,1,10,10,10,"SERVICIOS EDUCATIVOS DE OCCIDENTE, S.C.",10));
-    //console.log(value.Recommendations)
   });
 
 var SameGradeWeightOnboarding,
