@@ -67,5 +67,5 @@ module.exports = {
   publishAlbyMessage: NotificationSystem.publishAlbyMessage,
   publishAlbyMessageNaive: NotificationSystem.publishAlbyMessageNaive,
   SetupCassandraClient: SetupCassandra.SetupCassandraClient,
-  SetupNeo4jClient: Neo4j.FetchClient,
+  SetupNeo4jClient: Neo4j.SetupNeo4jClient,
 };
