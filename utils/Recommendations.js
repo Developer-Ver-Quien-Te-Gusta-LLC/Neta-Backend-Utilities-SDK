@@ -376,8 +376,8 @@ async function GetRecommendationsExploreSection(
       friendsInSchoolCount: Recommendations.value? PeopleInSameSchool.length: 0,
     }
 
-    console.log(Recommendations.value? PeopleInSameSchool.length: 0);
-    console.log("returndata--->",returndata);
+    //console.log(Recommendations.value? PeopleInSameSchool.length: 0);
+   // console.log("returndata--->",returndata);
     return returndata;
   } catch (err) {
     session.close();
