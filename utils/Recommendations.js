@@ -359,15 +359,9 @@ async function GetRecommendationsExploreSection(
     //#endregion
 
 
-    const InviteSentQuery =
-      "SELECT * FROM active_links WHERE inviter =? ALLOW FILTERING";
-    const AllInvitesSentPromise = client.execute(InviteSentQuery, [uid]);
+  
 
-    const [Recommendations, AllInvitesSent] =
-      await Promise.allSettled([
-        result,
-        AllInvitesSentPromise,
-      ]);
+    const [Recommendations] = await Promise.allSettled([result]);
 
     const data = Recommendations.value.records[0]._fields;
 
@@ -377,10 +371,13 @@ async function GetRecommendationsExploreSection(
     const ContactsInApp = extractProperties(data[0].ContactsInApp)
 
     return {
-      page_FriendsOfFriends: page_FriendsOfFriends,
-      page_SchoolUsers: page_SchoolUsers,
-      Recommendations: Recommendations.value? {PeopleInSameSchool,peopleInContacts,FriendsOfFriends,ContactsInApp}: [],
-      InvitesSent: AllInvitesSent.value ? AllInvitesSent.value.rows : [],
+      friendsOfFriendsPage: page_FriendsOfFriends,
+      friendsInSchoolPage: page_SchoolUsers,
+      friendsInSchool: Recommendations.value? {PeopleInSameSchool}: [],
+      friendsOfFriends : Recommendations.value? {FriendsOfFriends}: [],
+      invites:  Recommendations.value? {peopleInContacts}: [],
+      friendsOfFriendsCount:  Recommendations.value? FriendsOfFriends.length: 0,
+      friendsInSchoolCount: Recommendations.value? PeopleInSameSchool.length: 0,
     };
   } catch (err) {
     session.close();
