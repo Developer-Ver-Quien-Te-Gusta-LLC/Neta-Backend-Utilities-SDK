@@ -358,47 +358,16 @@ async function GetRecommendationsExploreSection(
     const result = session.run(cypherQuery, parameters);
     //#endregion
 
-    const FriendRequestQuery =
-      "SELECT friendRequests FROM friends WHERE ownerPhoneNumber =?";
-    const friendRequestsPromise = client.execute(FriendRequestQuery, [uid], {
-      prepare: true,
-    });
 
     const InviteSentQuery =
       "SELECT * FROM active_links WHERE inviter =? ALLOW FILTERING";
     const AllInvitesSentPromise = client.execute(InviteSentQuery, [uid]);
 
-    const [Recommendations, friendRequests, AllInvitesSent] =
+    const [Recommendations, AllInvitesSent] =
       await Promise.allSettled([
         result,
-        friendRequestsPromise,
         AllInvitesSentPromise,
       ]);
-
-     
-
-    if (friendRequests.value && friendRequests.value.rows.length > 0) {
-      const retrieveUserData = async (friendListName) => {
-        const udataQuery =
-          "SELECT uid,firstname, lastname, username, pfpsmall, pfpsmallhash FROM users WHERE uid = ?";
-        const list = [];
-
-        const currentList = friendRequests.value.rows[0][friendListName];
-
-        // Check if the current list is iterable and is not empty
-        if (Array.isArray(currentList) && currentList.length) {
-          for (const friend of currentList) {
-            const udata = await client.execute(udataQuery, [friend], {
-              prepare: true,
-            });
-            list.push(udata.rows[0]);
-          }
-
-          friendRequests.value.rows[0][friendListName] = list;
-        }
-      };
-      await retrieveUserData("friendrequests");
-    }
 
     const data = Recommendations.value.records[0]._fields;
 
@@ -410,12 +379,7 @@ async function GetRecommendationsExploreSection(
     return {
       page_FriendsOfFriends: page_FriendsOfFriends,
       page_SchoolUsers: page_SchoolUsers,
-      Recommendations: Recommendations.value
-        ? {PeopleInSameSchool,peopleInContacts,FriendsOfFriends,ContactsInApp}
-        : [],
-      FriendRequests: friendRequests.value
-        ? friendRequests.value.rows[0] || []
-        : [],
+      Recommendations: Recommendations.value? {PeopleInSameSchool,peopleInContacts,FriendsOfFriends,ContactsInApp}: [],
       InvitesSent: AllInvitesSent.value ? AllInvitesSent.value.rows : [],
     };
   } catch (err) {
