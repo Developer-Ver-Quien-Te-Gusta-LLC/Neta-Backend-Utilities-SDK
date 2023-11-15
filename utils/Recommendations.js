@@ -357,10 +357,6 @@ async function GetRecommendationsExploreSection(
     // Execute the query
     const result = session.run(cypherQuery, parameters);
     //#endregion
-
-
-  
-
     const [Recommendations] = await Promise.allSettled([result]);
 
     const data = Recommendations.value.records[0]._fields;
@@ -370,7 +366,7 @@ async function GetRecommendationsExploreSection(
     const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends);
     const ContactsInApp = extractProperties(data[0].ContactsInApp)
 
-    return {
+    const returndata = {
       friendsOfFriendsPage: page_FriendsOfFriends,
       friendsInSchoolPage: page_SchoolUsers,
       friendsInSchool: Recommendations.value? {PeopleInSameSchool}: [],
@@ -378,7 +374,11 @@ async function GetRecommendationsExploreSection(
       invites:  Recommendations.value? {peopleInContacts}: [],
       friendsOfFriendsCount:  Recommendations.value? FriendsOfFriends.length: 0,
       friendsInSchoolCount: Recommendations.value? PeopleInSameSchool.length: 0,
-    };
+    }
+
+    console.log(Recommendations.value? PeopleInSameSchool.length: 0);
+    console.log("returndata--->",returndata);
+    return returndata;
   } catch (err) {
     session.close();
     console.log(err);
