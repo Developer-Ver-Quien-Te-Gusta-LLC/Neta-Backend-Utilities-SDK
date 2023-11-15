@@ -369,9 +369,9 @@ async function GetRecommendationsExploreSection(
     const returndata = {
       friendsOfFriendsPage: page_FriendsOfFriends,
       friendsInSchoolPage: page_SchoolUsers,
-      friendsInSchool: Recommendations.value? {PeopleInSameSchool}: [],
-      friendsOfFriends : Recommendations.value? {FriendsOfFriends}: [],
-      invites:  Recommendations.value? {peopleInContacts}: [],
+      friendsInSchool: Recommendations.value? PeopleInSameSchool: [],
+      friendsOfFriends : Recommendations.value? FriendsOfFriends: [],
+      invites:  Recommendations.value? peopleInContacts: [],
       friendsOfFriendsCount:  Recommendations.value? FriendsOfFriends.length: 0,
       friendsInSchoolCount: Recommendations.value? PeopleInSameSchool.length: 0,
     }
