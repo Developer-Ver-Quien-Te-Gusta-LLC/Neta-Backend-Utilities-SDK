@@ -41,30 +41,38 @@ initializeFirebase();
 //#endregion
 
 async function fetchRemoteConfig(key) {
-    try {
-        // Ensure that Firebase Admin SDK is initialized
-        if (!isInitialized) {
-            while (!isInitialized) {
-                //console.warn("Waiting for Firebase Admin SDK to initialize...");
-                await new Promise(resolve => setTimeout(resolve, 1000));
+    let retries = 0;
+    while (retries < 3) {
+        try {
+            // Ensure that Firebase Admin SDK is initialized
+            if (!isInitialized) {
+                while (!isInitialized) {
+                    //console.warn("Waiting for Firebase Admin SDK to initialize...");
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
             }
-        }
 
-        // Fetch the remote config template
-        const template = await admin.remoteConfig().getTemplate();
-        const parameter = template.parameters[key];
+            // Fetch the remote config template
+            const template = await admin.remoteConfig().getTemplate();
+            const parameter = template.parameters[key];
 
-        if (parameter && parameter.defaultValue) {
-            //console.log(`Value for key '${key}' is: ${parameter.defaultValue.value}`);
-            return parameter.defaultValue.value;
-        } else {
-            console.warn(`Key '${key}' is not found in the remote config.`);
-            return null;
+            if (parameter && parameter.defaultValue) {
+                //console.log(`Value for key '${key}' is: ${parameter.defaultValue.value}`);
+                return parameter.defaultValue.value;
+            } else {
+                console.warn(`Key '${key}' is not found in the remote config.`);
+                return null;
+            }
+        } catch (err) {
+            console.error('Error fetching remote config:', err);
+            if (retries < 2) {
+                console.log('Retrying in 1 minute...');
+                await new Promise(resolve => setTimeout(resolve, 60000));
+            }
+            retries++;
         }
-    } catch (err) {
-        console.error('Error fetching remote config:', err);
-        return null;
     }
+    return null;
 }
 
 module.exports = { getKV: fetchRemoteConfig,isInitialized };
