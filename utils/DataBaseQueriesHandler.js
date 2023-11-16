@@ -3,11 +3,10 @@ const cassandra = require('cassandra-driver');
 const GetClient = require('./SetupCassandra').GetClient
 const  FetchFromSecrets  = require('./AwsSecrets.js').FetchFromSecrets;
 
-const neo4j = require('neo4j-driver');
-const uri = 'neo4j+s://7b7d8839.databases.neo4j.io'; //replace w kv
-const user = 'neo4j'; //replace w kv
-const password = 'bRgk7vO5PiadruWGGvcAMkVK7SAdg9sFUSc3EC77Wts'; //replace w kv
-const driver = neo4j.driver(uri, neo4j.auth.basic(user, password));
+const Setupneo4j = require("./Setupneo4j.js");
+
+var driver;
+Setupneo4j.SetupNeo4jClient().then(result =>{driver = result});
 
 let client;
 GetClient().then(result=>{client=result;})
