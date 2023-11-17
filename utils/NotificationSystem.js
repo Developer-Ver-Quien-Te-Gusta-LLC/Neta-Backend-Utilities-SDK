@@ -5,8 +5,9 @@ const getKV = require('./KV.js').getKV
 
 const Ably = require('ably');
 
+
 var ably;
-let sendRedundantly
+let PubSubTopic;
 async function fetchAlby() {
   const key = await getKV("AblyAPIKey");
   ably = new Ably.Realtime({key:key});
@@ -19,6 +20,7 @@ const admin = require("firebase-admin");
 
 let Credentials;
 async function SetupFCM() {
+  PubSubTopic = await FetchFromSecrets("PubSubTopicName");
   //import serviceAccount from './credentials/creds.json';
   Credentials = await FetchFromSecrets("FCMAccountCredentials");
   Credentials = JSON.parse(Credentials);
@@ -85,5 +87,25 @@ async function SendNotification(uid, payload) {
   const userToken = await getDataFromScyalla("users", uid, "FCMToken");
 
   if(userToken!=undefined)await publishFCMMessage(userToken, JSON.stringify(payload));
+}
+
+
+const {PubSub} = require('@google-cloud/pubsub');
+const pubSubClient = new PubSub();
+
+
+async function PublishPubSub(data,Timeout){ //make sure data is string and Timeout is minutes
+  try {
+    const dataBuffer = Buffer.from(data);
+    const messageId = await pubSubClient
+      .topic(PubSubTopic)
+      .publish(dataBuffer, {
+        publishTime: new Date(Date.now() + Timeout * 60 * 1000).toISOString(), // 60 minutes delay
+      });
+
+    console.log(`Message ${messageId} published.`);
+  } catch (error) {
+    console.error(`Error publishing message: ${error}`);
+  }
 }
 module.exports = { SendNotification,publishFCMMessage ,publishAlbyMessage, publishAlbyMessageNaive };
