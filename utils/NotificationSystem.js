@@ -94,7 +94,7 @@ const {PubSub} = require('@google-cloud/pubsub');
 const pubSubClient = new PubSub();
 
 
-async function PublishPubSub(data,Timeout){ //make sure data is string and Timeout is minutes
+async function PublishDelayedNotif(data,Timeout){ //make sure data is string and Timeout is minutes
   try {
     const dataBuffer = Buffer.from(data);
     const messageId = await pubSubClient
@@ -108,4 +108,4 @@ async function PublishPubSub(data,Timeout){ //make sure data is string and Timeo
     console.error(`Error publishing message: ${error}`);
   }
 }
-module.exports = { SendNotification,publishFCMMessage ,publishAlbyMessage, publishAlbyMessageNaive };
+module.exports = { SendNotification,publishFCMMessage ,publishAlbyMessage, publishAlbyMessageNaive,PublishDelayedNotif };
