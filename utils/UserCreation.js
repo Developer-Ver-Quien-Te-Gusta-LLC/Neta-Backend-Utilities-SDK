@@ -126,6 +126,7 @@ async function createNeptuneUser(UserParams) {
     lastName,
     uid,
   } = UserParams;
+
   if (gender == undefined) gender = "non-binary";
   try {
     // Add user vertex
@@ -139,7 +140,8 @@ async function createNeptuneUser(UserParams) {
         gender: $gender, 
         fname: $firstName, 
         lname: $lastName, 
-        uid: $uid
+        uid: $uid,
+        numberOfStars: 0,
       })
       RETURN u
     `;
