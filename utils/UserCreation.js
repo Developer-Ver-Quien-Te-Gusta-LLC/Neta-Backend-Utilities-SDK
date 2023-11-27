@@ -141,7 +141,6 @@ async function createNeptuneUser(UserParams) {
         fname: $firstName, 
         lname: $lastName, 
         uid: $uid,
-        numberOfStars: 0,
       })
       RETURN u
     `;
