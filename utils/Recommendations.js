@@ -344,9 +344,6 @@ async function GetRecommendationsExploreSection(
       FriendsOfFriends[i].mutualFriendsCount = mutualFriendsCount.high;
     }
 
-
-
-
     const returndata = {
     
       friendsInSchool: Recommendations.value ? PeopleInSameSchool : [],
