@@ -312,11 +312,6 @@ async function GetRecommendationsExploreSection(
     const result = session.run(cypherQuery, parameters);
     //#endregion
     const [Recommendations] = await Promise.allSettled([result]);
-
-    
-
-    console.log("Recommendations------->",Recommendations);
-
     const data = Recommendations.value.records[0]._fields;
 
     const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool);
@@ -331,7 +326,7 @@ async function GetRecommendationsExploreSection(
       `;
       const mutualFriendsResult = await session.run(mutualFriendsQuery, {uid: uid, otherUid: PeopleInSameSchool[i].uid});
       const mutualFriendsCount = mutualFriendsResult.records[0].get('mutualFriendsCount');
-      PeopleInSameSchool[i].mutualFriendsCount = mutualFriendsCount.high;
+      PeopleInSameSchool[i].mutualCount = mutualFriendsCount.high;
     }
 
     for(let i = 0; i < FriendsOfFriends.length; i++) {
@@ -341,7 +336,7 @@ async function GetRecommendationsExploreSection(
       `;
       const mutualFriendsResult = await session.run(mutualFriendsQuery, {uid: uid, otherUid: FriendsOfFriends[i].uid});
       const mutualFriendsCount = mutualFriendsResult.records[0].get('mutualFriendsCount');
-      FriendsOfFriends[i].mutualFriendsCount = mutualFriendsCount.high;
+      FriendsOfFriends[i].mutualCount = mutualFriendsCount.high;
     }
 
     const returndata = {
