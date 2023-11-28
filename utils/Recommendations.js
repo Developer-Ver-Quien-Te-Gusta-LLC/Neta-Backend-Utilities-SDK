@@ -347,6 +347,8 @@ async function GetRecommendationsExploreSection(
     //#endregion
     const [Recommendations] = await Promise.allSettled([result]);
 
+    console.log("Recommendations------->",Recommendations);
+
     const data = Recommendations.value.records[0]._fields;
 
     const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool);
