@@ -331,8 +331,22 @@ async function GetRecommendationsExploreSection(
       `;
       const mutualFriendsResult = await session.run(mutualFriendsQuery, {uid: uid, otherUid: PeopleInSameSchool[i].uid});
       const mutualFriendsCount = mutualFriendsResult.records[0].get('mutualFriendsCount');
-      PeopleInSameSchool[i].mutualFriendsCount = mutualFriendsCount;
+      PeopleInSameSchool[i].mutualFriendsCount = mutualFriendsCount.high;
     }
+
+    for(let i = 0; i < FriendsOfFriends.length; i++) {
+      const mutualFriendsQuery = `
+        MATCH (user:User {uid: $uid})-[:FRIENDS_WITH]->(mutualFriend:User)<-[:FRIENDS_WITH]-(otherUser:User {uid: $otherUid})
+        RETURN COUNT(mutualFriend) AS mutualFriendsCount
+      `;
+      const mutualFriendsResult = await session.run(mutualFriendsQuery, {uid: uid, otherUid: FriendsOfFriends[i].uid});
+      const mutualFriendsCount = mutualFriendsResult.records[0].get('mutualFriendsCount');
+      FriendsOfFriends[i].mutualFriendsCount = mutualFriendsCount.high;
+    }
+
+
+
+
     const returndata = {
     
       friendsInSchool: Recommendations.value ? PeopleInSameSchool : [],
