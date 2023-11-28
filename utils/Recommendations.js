@@ -283,9 +283,9 @@ async function GetRecommendationsOnboarding(
 // Get Recommendations for friends while in the explore section (after onboarding)
 async function GetRecommendationsExploreSection(
   uid,
-  pagesize_FriendsOfFriends,
-  pagesize_SchoolUsers,
-  pagesize_Contacts,
+  page_FriendsOfFriends,
+  page_SchoolUsers,
+  page_Contacts,
   highschool,
   grade,
   query
@@ -295,11 +295,14 @@ async function GetRecommendationsExploreSection(
     const parameters = {
       uid: uid,
       highschool: highschool,
-      limit_FriendsOfFriends: neo4j.int(pagesize_FriendsOfFriends),
-      limit_SchoolUsers: neo4j.int(pagesize_SchoolUsers),
+      limit_FriendsOfFriends: neo4j.int(10),
+      limit_SchoolUsers: neo4j.int(10),
       grade: grade,
-      limit_Contacts: neo4j.int(pagesize_Contacts),
+      limit_Contacts: neo4j.int(10),
       query: query || '', // add the query parameter
+      offset_FriendsOfFriends: neo4j.int(page_FriendsOfFriends * 10),
+      offset_SchoolUsers: neo4j.int(page_SchoolUsers * 10),
+      offset_Contacts: neo4j.int(page_Contacts * 10),
     };
     
     // Cypher Query
@@ -334,6 +337,9 @@ async function GetRecommendationsExploreSection(
       FriendsOfFriends: FriendsOfFriends,
       ContactsInApp: ContactsInApp
     } AS result
+    SKIP $offset_FriendsOfFriends
+    SKIP $offset_SchoolUsers
+    SKIP $offset_Contacts
     `;
     
     // Execute the query
