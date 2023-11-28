@@ -158,39 +158,7 @@ async function FetchFriendsWithSubsActive(uid) {
   }
 }
 
-async function getMutualFriends(uid, otheruid) {
-  const session = driver.session();
 
-  try {
-    // Cypher query to find mutual friends based on username
-    const query = `
-      MATCH (user:User {uid: $uid})-[:FRIENDS_WITH]->(friend:User)<-[:FRIENDS_WITH]-(otherUser:User {uid: $otheruid})
-      RETURN friend.username as mutualFriend
-    `;
-
-    // Running the Cypher query
-    const result = await session.run(query, { uid: uid, otheruid: otheruid });
-
-    // Extracting the mutual friends from the result
-    const mutualFriends = result.records.map(record => record.get('mutualFriend'));
-
-    return mutualFriends.length;
-  } catch (error) {
-    console.error('Error in getting mutual friends:', error);
-    return 0; // return 0 mutual friends in case of an error
-  }
-  finally {
-    session.close();
-  }
-}
-
-async function InsertMutualCount(uid, filteredList) {
-  index = 0;
-  for (let index = 0; index < filteredList.length; index++) {
-    const mutualCount = await getMutualFriends(uid, filteredList[index].uid);
-    filteredList[index].mutualCount = mutualCount;
-  }
-}
 //#endregion
 
 //#region Actual Fetching
@@ -339,10 +307,13 @@ async function GetRecommendationsExploreSection(
     } AS result
     `;
     
+
     // Execute the query
     const result = session.run(cypherQuery, parameters);
     //#endregion
     const [Recommendations] = await Promise.allSettled([result]);
+
+    
 
     console.log("Recommendations------->",Recommendations);
 
@@ -353,6 +324,15 @@ async function GetRecommendationsExploreSection(
     const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends);
     //const ContactsInApp = extractProperties(data[0].ContactsInApp)
 
+    for(let i = 0; i < PeopleInSameSchool.length; i++) {
+      const mutualFriendsQuery = `
+        MATCH (user:User {uid: $uid})-[:FRIENDS_WITH]->(mutualFriend:User)<-[:FRIENDS_WITH]-(otherUser:User {uid: $otherUid})
+        RETURN COUNT(mutualFriend) AS mutualFriendsCount
+      `;
+      const mutualFriendsResult = await session.run(mutualFriendsQuery, {uid: uid, otherUid: PeopleInSameSchool[i].uid});
+      const mutualFriendsCount = mutualFriendsResult.records[0].get('mutualFriendsCount');
+      PeopleInSameSchool[i].mutualFriendsCount = mutualFriendsCount;
+    }
     const returndata = {
     
       friendsInSchool: Recommendations.value ? PeopleInSameSchool : [],
