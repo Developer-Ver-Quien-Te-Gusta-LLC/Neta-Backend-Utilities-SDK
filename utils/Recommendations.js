@@ -397,8 +397,27 @@ RETURN {
     });
 
 
-    const data = result.records[0]._fields;
-    const propertiesList = data[0].Users.map(user => user.properties);
+    let data = result.records[0]._fields;
+    let propertiesList = data[0].Users.map(user => user.properties);
+
+    // If the number of users is less than 4, add more users with "HAS_CONTACT" relationship
+    if (propertiesList.length < 4) {
+      const additionalUsersQuery = `
+        MATCH (user:User {uid: $uid})-[:HAS_CONTACT]->(additionalUser:User)
+        WHERE NOT additionalUser IN $existingUsers
+        RETURN additionalUser
+        LIMIT ${4 - propertiesList.length}
+      `;
+
+      const additionalUsersResult = await session.run(additionalUsersQuery, {
+        uid: uid,
+        existingUsers: propertiesList,
+      });
+
+      const additionalUsers = additionalUsersResult.records.map(record => record.get('additionalUser').properties);
+      propertiesList = propertiesList.concat(additionalUsers);
+    }
+
     return propertiesList;
   }
   catch (err) {
