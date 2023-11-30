@@ -140,7 +140,7 @@ async function createNeptuneUser(UserParams) {
         gender: $gender, 
         fname: $firstName, 
         lname: $lastName, 
-        uid: $uid,
+        uid: $uid
       })
       RETURN u
     `;
@@ -247,46 +247,23 @@ async function DeleteUser(uid, deleteVerification = false) {
   const highschool = highschoolResult.rows[0].highschool;
   const phoneNumber = highschoolResult.rows[0].phoneNumber;
 
-  queries.push({
-    query:
-      "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
-    params: [highschool],
-  });
-  queries.push({
-    query:
-      "UPDATE schools SET numofstudents = numofstudents - 1 WHERE name = ?",
-    params: [highschool], // assume schoolName is a variable that holds the name of the school
-  });
 
   queries.push({
     query: "DELETE FROM users WHERE uid = ?",
-    params: [pn],
-  });
-
-  queries.push({
-    query: "DELETE FROM reports WHERE uid = ?",
-    params: [pn],
+    params: [uid],
   });
 
   queries.push({
     query: "DELETE FROM inbox WHERE uid = ?",
-    params: [pn],
-  });
-
-  queries.push({
-    query: "DELETE FROM topFriendsAndPolls WHERE uid = ?",
-    params: [pn],
+    params: [uid],
   });
 
   queries.push({
     query: "DELETE FROM userPolls WHERE uid = ?",
-    params: [pn],
+    params: [uid],
   });
 
-  queries.push({
-    query: "DELETE FROM notificationTable WHERE uid = ?",
-    params: [pn],
-  });
+
 
   if (deleteVerification) {
     queries.push({
