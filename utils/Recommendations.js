@@ -390,15 +390,8 @@ RETURN {
 } AS result
   `;
 
-    const result = await session.run(cypherQuery, {
-      uid: uid,
-      highschool: highschool,
-      grade: grade,
-    });
-
-
-    let data = result.records[0]._fields;
-    let propertiesList = data[0].Users.map(user => user.properties);
+    const result = await session.run(cypherQuery, { uid, highschool, grade });
+    let propertiesList = result.records[0]._fields[0].Users.map(user => user.properties);
 
     // If the number of users is less than 4, add more users with "HAS_CONTACT" relationship
     if (propertiesList.length < 4) {
@@ -409,36 +402,60 @@ RETURN {
         LIMIT ${4 - propertiesList.length}
       `;
 
-      const additionalUsersResult = await session.run(additionalUsersQuery, {
-        uid: uid,
-        existingUsers: propertiesList,
-      });
-
+      const additionalUsersResult = await session.run(additionalUsersQuery, { uid, existingUsers: propertiesList });
       const additionalUsers = additionalUsersResult.records.map(record => record.get('additionalUser').properties);
-      propertiesList = propertiesList.concat(additionalUsers);
+      propertiesList = [...propertiesList, ...additionalUsers];
+    }
+
+    let { rows: [{ crushcount: TempCrushSubCount }] } = await client.execute('SELECT crushCount FROM users WHERE uid = ?', [uid], { prepare: true });
+    TempCrushSubCount = parseInt(TempCrushSubCount);
+
+    if(TempCrushSubCount > 0){
+      const topFriends = await getAllTopFriends(uid);
+      if (topFriends.length > 0) {
+        propertiesList[3] = topFriends[0].Data;
+        await client.execute("UPDATE users SET crushCount = ? WHERE uid = ?", [TempCrushSubCount - 1, uid], { prepare: true });
+      }
     }
 
     return propertiesList;
-  }
-  catch (err) {
+  } catch (err) {
     console.log(err);
-  }
-  finally {
+  } finally {
     session.close();
   }
 }
-//#endregion
 
-async function ExecuteCustomQuery() {
-  const RecommendationsPromise = await GetRecommendationsQuestions(null, null, null);
-  console.log(RecommendationsPromise);
+async function getAllTopFriends(uid) {
+  const session = driver.session();
+  try {
+    const result = await session.run(
+      `MATCH (a:User {uid: $uid})-[r:TOP_FRIEND]->(b:User)
+         RETURN r, b`,
+      {
+        uid: uid,
+      }
+    );
+    const relationshipData = [];
+
+    result.records.forEach((record) => {
+      const r = record._fields[0]; // Assuming the relationship data is in the first field
+      const b = record._fields[1]; // Assuming the target node data is in the second field
+      const Data = r.properties;
+      Data.numberofanswered = Data.numberofanswered.low;
+
+      relationshipData.push({ Data });
+    });
+
+    //console.log(JSON.stringify(result));
+    return relationshipData;
+  } catch (error) {
+    console.error(error);
+  } finally {
+    await session.close();
+  }
 }
-
-
-setTimeout(async () => {
-  //await ExecuteCustomQuery();
-}, 10000);
-
+//#endregion
 
 module.exports = {
   FetchFriendsWithSubsActive,
