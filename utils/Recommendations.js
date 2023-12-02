@@ -326,6 +326,11 @@ async function GetRecommendationsExploreSection(
     const peopleInContacts = extractProperties(data[0].peopleInContacts).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
     const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
 
+   
+    peopleInContacts.forEach(person => {
+      person.mutualCount = 0;
+    });
+
     
     //const ContactsInApp = extractProperties(data[0].ContactsInApp)
 
