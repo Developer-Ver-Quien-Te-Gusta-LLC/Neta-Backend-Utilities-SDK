@@ -418,7 +418,8 @@ RETURN {
       }
     }
 
-    return propertiesList;
+    // Shuffle the list before returning
+    return propertiesList.sort(() => Math.random() - 0.5);
   } catch (err) {
     console.log(err);
   } finally {
