@@ -64,7 +64,7 @@ async function CreateScyllaUser(UserParams) {
         age,username, phoneNumber, coins, invitesLeft, 
         pollIndex, numberOfStars, platform, gender, highschool, grade, uid,
         albyTopicName, anonymousMode, firstName, lastName,  lastPollTime, numberOfPolls, pfp, 
-        pfpHash, pfpMedium, pfpMediumHash, pfpSmall, pfpSmallHash,numberofreveals,
+        pfpHash, pfpMedium, pfpMediumHash, pfpSmall, pfpSmallHash,numberofreveals
       ) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`;
 
     const params = [
@@ -92,7 +92,7 @@ async function CreateScyllaUser(UserParams) {
       null, // pfpMediumHash
       null, // pfpSmall
       null, // pfpSmallHash
-      0,   //num of reveals
+      0 //num of reveals
     ];
 
     await client.execute(UserCreationQuery, params, { prepare: true });
