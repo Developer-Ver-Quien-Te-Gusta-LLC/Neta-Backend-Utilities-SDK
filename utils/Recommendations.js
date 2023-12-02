@@ -322,9 +322,11 @@ async function GetRecommendationsExploreSection(
     const [Recommendations] = await Promise.allSettled([result]);
     const data = Recommendations.value.records[0]._fields;
 
-    const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool);
-    const peopleInContacts = extractProperties(data[0].peopleInContacts);
-    const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends);
+    const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
+    const peopleInContacts = extractProperties(data[0].peopleInContacts).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
+    const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
+
+    
     //const ContactsInApp = extractProperties(data[0].ContactsInApp)
 
     for(let i = 0; i < PeopleInSameSchool.length; i++) {
@@ -348,7 +350,6 @@ async function GetRecommendationsExploreSection(
     }
 
     const returndata = {
-    
       friendsInSchool: Recommendations.value ? PeopleInSameSchool : [],
       friendsOfFriends: Recommendations.value ? FriendsOfFriends : [],
       invites: Recommendations.value ? peopleInContacts : [],
