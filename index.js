@@ -25,6 +25,7 @@ module.exports = {
   fetchSchools: GeospatialDB.fetchSchools,
   pushSchools: GeospatialDB.pushSchools,
   clearSchools: GeospatialDB.clearSchools,
+  incrementNumberOfStudents: GeospatialDB.incrementNumberOfStudents,
   //encrypt: AwsEncryption.encrypt,
   //decrypt: AwsEncryption.decrypt,
   FetchFromSecrets: AwsSecrets.FetchFromSecrets,
