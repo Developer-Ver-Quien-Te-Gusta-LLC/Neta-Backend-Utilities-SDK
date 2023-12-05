@@ -330,7 +330,7 @@ InitializeS3();
 async function uploadUserContacts(req, res) {
   const useruid = await AuthHandler.GetUserDataFromJWT(req);
   if(useruid.Success==false){
-    res.send("No Jwt Token Included");
+    return res.send("No Jwt Token Included");
   }
 
   const session = driver.session();
