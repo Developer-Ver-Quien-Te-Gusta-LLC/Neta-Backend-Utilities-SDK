@@ -382,7 +382,7 @@ async function uploadUserContacts(req, res) {
       
       // Match the user
       WITH c
-      MATCH (u:User {phoneNumber: $userPhone})
+      MATCH (u:User {uid: $useruid})
       
       // Merge the HAS_CONTACT relationship
       WITH u, c
@@ -393,7 +393,7 @@ async function uploadUserContacts(req, res) {
         query: contactQuery,
         parameters: {
             contactPhone: contact.phoneNumber,
-            userPhone: phoneNumber,
+            useruid: useruid.uid,
             isFavorite: isFavorite,
             weight: weight,
             uploadResult: uploadResult ? uploadResult.Location : null,  // Assuming Location stores the URL of the uploaded file
