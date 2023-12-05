@@ -384,26 +384,22 @@ async function uploadUserContacts(req, res) {
       WITH c
       MATCH (u:User {phoneNumber: $userPhone})
       
-      // Optionally match an existing HAS_CONTACT relationship
-      OPTIONAL MATCH (u)-[existingRel:HAS_CONTACT]->(c:Contact {phoneNumber: $contactPhone})
-      
-      // Conditionally merge the HAS_CONTACT relationship
-      WITH u, c, existingRel
+      // Merge the HAS_CONTACT relationship
+      WITH u, c
       MERGE (u)-[r:HAS_CONTACT]->(c)
-      ON CREATE SET r.type = COALESCE(CASE WHEN existingRel IS NULL THEN 'HAS_CONTACT' ELSE 'HAS_CONTACT_IN_APP' END, 'UNKNOWN')
-  `;
-  
-  contactQueries.push({
-      query: contactQuery,
-      parameters: {
-          contactPhone: contact.phoneNumber,
-          userPhone: phoneNumber,
-          isFavorite: isFavorite,
-          weight: weight,
-          uploadResult: uploadResult ? uploadResult.Location : null,  // Assuming Location stores the URL of the uploaded file
-          uid: uuid.v4()
-      }
-  });
+    `;
+    
+    contactQueries.push({
+        query: contactQuery,
+        parameters: {
+            contactPhone: contact.phoneNumber,
+            userPhone: phoneNumber,
+            isFavorite: isFavorite,
+            weight: weight,
+            uploadResult: uploadResult ? uploadResult.Location : null,  // Assuming Location stores the URL of the uploaded file
+            uid: uuid.v4()
+        }
+    });
 
       console.log("contact edge added---->",contact.phoneNumber,"Self PhoneNumber--->",phoneNumber);
     }
