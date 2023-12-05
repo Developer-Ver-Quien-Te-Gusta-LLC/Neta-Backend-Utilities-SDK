@@ -397,7 +397,7 @@ async function uploadUserContacts(req, res) {
       }
   });
 
-      console.log("contact edge added");
+      console.log("contact edge added---->",contact.phoneNumber,"UID--->",uid);
     }
 
     // Run all queries in a single transaction

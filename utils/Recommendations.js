@@ -177,6 +177,13 @@ async function GetRecommendationsOnboarding(
   const offset_peopleInContacts = Math.floor
     (page_peopleInContacts - 1) * pagesize_peopleInContacts;
   // Parameters
+  
+
+  var Pn = await client.execute("SELECT phonenumber FROM users WHERE uid = ?",[uid],{prepare:true});
+  Pn = Pn.rows[0].phonenumber;
+
+  console.log("Pn------->",Pn);
+
   const parameters = {
     uid: uid,
     highschool: highschool,
@@ -188,6 +195,7 @@ async function GetRecommendationsOnboarding(
     PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
     offset_peopleInContacts: neo4j.int(offset_peopleInContacts),
     limit_peopleInContacts: neo4j.int(Math.floor(page_peopleInContacts * pagesize_peopleInContacts)),
+    phoneNumber:Pn,
   };
 
   const session = driver.session();
@@ -202,9 +210,9 @@ async function GetRecommendationsOnboarding(
     WHERE user <> otherUser
     WITH user, COLLECT(otherUser)[..$limit_PeopleYouMayKnow] AS PeopleYouMayKnow
     
-    // Fetch all contacts of the user
-    OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contact)
-    WITH user, PeopleYouMayKnow, COLLECT(contact) AS contacts
+    // Fetch all contacts of the contact with the provided phone number
+    OPTIONAL MATCH (contact:Contact {phoneNumber: $phoneNumber})-[:HAS_CONTACT]->(otherContact:Contact)
+    WITH user, PeopleYouMayKnow, COLLECT(otherContact) AS contacts
 
     RETURN {
         PeopleYouMayKnow: PeopleYouMayKnow,
@@ -212,7 +220,7 @@ async function GetRecommendationsOnboarding(
     } AS result
     SKIP $offset_peopleInContacts
     LIMIT $limit_peopleInContacts
-`;
+  `;
 
 
 const OnboardingRecommendationsPromise = session.run(cypherQuery, parameters);
