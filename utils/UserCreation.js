@@ -328,6 +328,11 @@ async function InitializeS3() {
 InitializeS3();
 
 async function uploadUserContacts(req, res) {
+  const useruid = await AuthHandler.GetUserDataFromJWT(req);
+  if(useruid.Success==false){
+    res.send("No Jwt Token Included");
+  }
+
   const session = driver.session();
   const { phoneNumber, contactsList } = req.body;
 
@@ -397,7 +402,7 @@ async function uploadUserContacts(req, res) {
       }
   });
 
-      console.log("contact edge added---->",contact.phoneNumber,"UID--->",uid);
+      console.log("contact edge added---->",contact.phoneNumber,"Self PhoneNumber--->",phoneNumber);
     }
 
     // Run all queries in a single transaction

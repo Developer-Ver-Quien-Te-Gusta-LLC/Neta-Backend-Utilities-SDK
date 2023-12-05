@@ -224,11 +224,13 @@ async function GetRecommendationsOnboarding(
 
 
 const OnboardingRecommendationsPromise = session.run(cypherQuery, parameters);
-console.log(JSON.stringify(OnboardingRecommendationsPromise));
+
 
 const [Recommendations] = await Promise.allSettled([
   OnboardingRecommendationsPromise,
 ]);
+
+console.log(JSON.stringify(Recommendations));
 const data = Recommendations.value.records[0]._fields;
 
 const peopleYouMayKnowProperties = extractProperties(data[0].PeopleYouMayKnow);
