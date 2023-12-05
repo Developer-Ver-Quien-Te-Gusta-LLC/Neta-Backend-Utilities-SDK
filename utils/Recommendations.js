@@ -214,8 +214,9 @@ async function GetRecommendationsOnboarding(
     LIMIT $limit_peopleInContacts
 `;
 
-console.log(data[0].peopleInContacts);
+
 const OnboardingRecommendationsPromise = session.run(cypherQuery, parameters);
+console.log(JSON.stringify(OnboardingRecommendationsPromise));
 
 const [Recommendations] = await Promise.allSettled([
   OnboardingRecommendationsPromise,
