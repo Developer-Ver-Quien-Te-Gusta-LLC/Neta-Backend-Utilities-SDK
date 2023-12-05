@@ -336,6 +336,7 @@ async function uploadUserContacts(req, res) {
   const session = driver.session();
   const { phoneNumber, contactsList } = req.body;
 
+  console.log("ContactsList---------->",JSON.stringify(contactsList));
   const regex = emojiRegex();
 
   // Helper function to check if a string has any emoji characters using the emoji-regex package
