@@ -333,7 +333,7 @@ async function uploadUserContacts(req, res) {
     return res.send("No Jwt Token Included");
   }
 
-  const session = driver.session();
+  
   const { phoneNumber, contactsList } = req.body;
 
   console.log("ContactsList---------->",JSON.stringify(contactsList));
@@ -343,6 +343,8 @@ async function uploadUserContacts(req, res) {
   function hasEmoji(text) {
     return regex.test(text);
   }
+
+  const session = driver.session();
 
   try {
     let uploadAndPushPromises = [];
