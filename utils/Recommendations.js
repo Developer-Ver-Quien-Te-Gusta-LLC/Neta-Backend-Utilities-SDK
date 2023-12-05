@@ -202,50 +202,34 @@ async function GetRecommendationsOnboarding(
     WHERE user <> otherUser
     WITH user, COLLECT(otherUser)[..$limit_PeopleYouMayKnow] AS PeopleYouMayKnow
     
-    // Change this line to use HAS_CONTACT instead of HAS_CONTACT_IN_APP
+    // Fetch all contacts of the user
     OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contact)
-    WITH user, 
-         PeopleYouMayKnow,
-         CASE 
-             WHEN contact.fav = true THEN [contact IN contact.weight WHERE contact.weight = $EmojiContactsWeightOnboarding]
-             ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
-         END AS contactsEmoji,
-         CASE 
-             WHEN contact.photo = true THEN [contact IN contact.weight WHERE contact.weight = $PhotoContactsWeightOnboarding]
-             ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
-         END AS contactsPhoto
+    WITH user, PeopleYouMayKnow, COLLECT(contact) AS contacts
+
     RETURN {
         PeopleYouMayKnow: PeopleYouMayKnow,
-        peopleInContacts: contactsEmoji + contactsPhoto
+        peopleInContacts: contacts
     } AS result
     SKIP $offset_peopleInContacts
     LIMIT $limit_peopleInContacts
-    `;
+`;
 
-    const OnboardingRecommendationsPromise = session.run(cypherQuery, parameters);
+const OnboardingRecommendationsPromise = session.run(cypherQuery, parameters);
 
-    const [Recommendations] = await Promise.allSettled([
-      OnboardingRecommendationsPromise,
-    ]);
-    const data = Recommendations.value.records[0]._fields;
+const [Recommendations] = await Promise.allSettled([
+  OnboardingRecommendationsPromise,
+]);
+const data = Recommendations.value.records[0]._fields;
 
+const peopleYouMayKnowProperties = extractProperties(data[0].PeopleYouMayKnow);
+const peopleInContactsProperties = extractProperties(data[0].peopleInContacts);
 
-    const peopleYouMayKnowProperties = extractProperties(data[0].PeopleYouMayKnow);
-    const peopleInContactsProperties = extractProperties(data[0].peopleInContacts);
-
-    peopleYouMayKnowProperties.forEach(person => {
-      person.mutualCount = 0;
-    });
-
-    peopleInContactsProperties.forEach(person => {
-      person.mutualCount = 0;
-    });
-    // Return both the result and the next page number for paging
-    return {
-      success: true,
-      page_peopleInContacts: page_peopleInContacts,
-      Recommendations: { peopleYouMayKnow: peopleYouMayKnowProperties, peopleInContacts: peopleInContactsProperties },
-    };
+// Return both the result and the next page number for paging
+return {
+  success: true,
+  page_peopleInContacts: page_peopleInContacts,
+  Recommendations: { peopleYouMayKnow: peopleYouMayKnowProperties, peopleInContacts: peopleInContactsProperties },
+};
   }
   catch (err) {
     console.log(err);
