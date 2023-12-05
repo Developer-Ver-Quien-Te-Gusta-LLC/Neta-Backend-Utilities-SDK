@@ -193,34 +193,34 @@ async function GetRecommendationsOnboarding(
   const session = driver.session();
   try {
     const cypherQuery = `
-  MATCH (user:User {uid: $uid})
-  OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
-  WHERE school.name = $highschool
-  
-  // Find other users attending the same high school
-  OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
-  WHERE user <> otherUser
-  WITH user, COLLECT(otherUser)[..$limit_PeopleYouMayKnow] AS PeopleYouMayKnow
-  
-  OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(contact)
-  WITH user, 
-       PeopleYouMayKnow,
-       CASE 
-           WHEN contact.fav = true THEN [contact IN contact.weight WHERE contact.weight = $EmojiContactsWeightOnboarding]
-           ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
-       END AS contactsEmoji,
-       CASE 
-           WHEN contact.photo = true THEN [contact IN contact.weight WHERE contact.weight = $PhotoContactsWeightOnboarding]
-           ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
-       END AS contactsPhoto
-  RETURN {
-      PeopleYouMayKnow: PeopleYouMayKnow,
-      peopleInContacts: contactsEmoji + contactsPhoto
-  } AS result
-  SKIP $offset_peopleInContacts
-  LIMIT $limit_peopleInContacts
-  
-`;
+    MATCH (user:User {uid: $uid})
+    OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
+    WHERE school.name = $highschool
+    
+    // Find other users attending the same high school
+    OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
+    WHERE user <> otherUser
+    WITH user, COLLECT(otherUser)[..$limit_PeopleYouMayKnow] AS PeopleYouMayKnow
+    
+    // Change this line to use HAS_CONTACT instead of HAS_CONTACT_IN_APP
+    OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contact)
+    WITH user, 
+         PeopleYouMayKnow,
+         CASE 
+             WHEN contact.fav = true THEN [contact IN contact.weight WHERE contact.weight = $EmojiContactsWeightOnboarding]
+             ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
+         END AS contactsEmoji,
+         CASE 
+             WHEN contact.photo = true THEN [contact IN contact.weight WHERE contact.weight = $PhotoContactsWeightOnboarding]
+             ELSE [contact IN contact.weight WHERE contact.weight = $ContactsWeightOnboarding]
+         END AS contactsPhoto
+    RETURN {
+        PeopleYouMayKnow: PeopleYouMayKnow,
+        peopleInContacts: contactsEmoji + contactsPhoto
+    } AS result
+    SKIP $offset_peopleInContacts
+    LIMIT $limit_peopleInContacts
+    `;
 
     const OnboardingRecommendationsPromise = session.run(cypherQuery, parameters);
 
