@@ -165,17 +165,15 @@ async function FetchFriendsWithSubsActive(uid) {
 async function GetRecommendationsOnboarding(
   uid,
   page_peopleYouMayKnow,
-  pagesize_PeopleYouMayKnow,
   page_peopleInContacts,
-  pagesize_peopleInContacts,
   grade,
   highschool
 ) {
   // Calculate the offset
   const offset_PeopleYouMayKnow = Math.floor
-    (page_peopleYouMayKnow - 1) * pagesize_PeopleYouMayKnow;
+    (page_peopleYouMayKnow - 1) * neo4j.int(10);
   const offset_peopleInContacts = Math.floor
-    (page_peopleInContacts - 1) * pagesize_peopleInContacts;
+    (page_peopleInContacts - 1) * neo4j.int(10);
   // Parameters
   
 
@@ -188,13 +186,13 @@ async function GetRecommendationsOnboarding(
     uid: uid,
     highschool: highschool,
     offset_PeopleYouMayKnow: neo4j.int(offset_PeopleYouMayKnow),
-    limit_PeopleYouMayKnow: neo4j.int(Math.floor(page_peopleYouMayKnow * pagesize_PeopleYouMayKnow)),
+    limit_PeopleYouMayKnow: neo4j.int(10),
     grade: grade,
     EmojiContactsWeightOnboarding: EmojiContactsWeightOnboarding,
     ContactsWeightOnboarding: ContactsWeightOnboarding,
     PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
     offset_peopleInContacts: neo4j.int(offset_peopleInContacts),
-    limit_peopleInContacts: neo4j.int(Math.floor(page_peopleInContacts * pagesize_peopleInContacts)),
+    limit_peopleInContacts: neo4j.int(10),
     phoneNumber:Pn,
   };
 
@@ -239,7 +237,7 @@ const peopleInContactsProperties = extractProperties(data[0].peopleInContacts);
 // Return both the result and the next page number for paging
 return {
   success: true,
-  page_peopleInContacts: page_peopleInContacts,
+  page_peopleYouMayKnow: page_peopleYouMayKnow,
   Recommendations: { peopleYouMayKnow: peopleYouMayKnowProperties, peopleInContacts: peopleInContactsProperties },
 };
   }
