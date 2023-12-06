@@ -290,7 +290,6 @@ async function GetRecommendationsExploreSection(
          
     // 2. People in contacts
     OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contact)
-    WHERE toLower(contact.fname) CONTAINS toLower($query) // add the condition here
     WITH user, PeopleInSameSchool, COLLECT(contact)[$offset_Contacts..$limit_Contacts] AS contacts
     
     // 3. Friends of user's friends
@@ -319,7 +318,7 @@ async function GetRecommendationsExploreSection(
     const data = Recommendations.value.records[0]._fields;
 
     const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
-    const peopleInContacts = extractProperties(data[0].peopleInContacts).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
+    const peopleInContacts = extractProperties(data[0].peopleInContacts);//.map(user => ({...user, firstname: user.fname, lastname: user.lname}));
     const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
 
    
