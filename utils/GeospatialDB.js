@@ -276,5 +276,23 @@ async function incrementNumberOfStudents(schoolName, db) {
       throw error;
     }
   }
+  async function getNumberOfStudents(schoolName, db) {
+    const collection = db.collection(COLLECTION_NAME);
+    
+    try {
+      const school = await collection.findOne({ name: schoolName }, { projection: { numberOfStudents: 1 } });
+      
+      if (school) {
+        console.log(`Number of students in ${schoolName}: ${school.numberOfStudents}`);
+        return school.numberOfStudents;
+      } else {
+        console.log(`School ${schoolName} not found`);
+        return 0;
+      }
+    } catch (error) {
+      console.error('Error fetching number of students:', error);
+      return 0;
+    }
+}
 
-module.exports = { SetupGeospatialDB, fetchSchools, pushSchools, clearSchools,incrementNumberOfStudents };
+module.exports = { SetupGeospatialDB, fetchSchools, pushSchools, clearSchools, incrementNumberOfStudents, getNumberOfStudents };

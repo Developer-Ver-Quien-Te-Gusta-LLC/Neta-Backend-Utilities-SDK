@@ -70,4 +70,5 @@ module.exports = {
   SetupCassandraClient: SetupCassandra.SetupCassandraClient,
   SetupNeo4jClient: Neo4j.SetupNeo4jClient,
   PublishDelayedNotif:NotificationSystem.PublishDelayedNotif,
+  getNumberOfStudents : GeospatialDB.getNumberOfStudents
 };
