@@ -266,16 +266,15 @@ async function GetRecommendationsExploreSection(
       uid: uid,
       highschool: highschool,
       limit_FriendsOfFriends: neo4j.int(10),
-      limit_SchoolUsers: neo4j.int(10),
+      offset_FriendsOfFriends: neo4j.int((page_FriendsOfFriends - 1) * 10),
       grade: grade,
-      limit_Contacts: neo4j.int(10),
       query: query || '', // add the query parameter
-      offset_FriendsOfFriends: neo4j.int(page_FriendsOfFriends * 10),
       offset_SchoolUsers: neo4j.int((page_SchoolUsers - 1) * 10),
-      offset_Contacts: neo4j.int(page_Contacts * 10),
+      limit_SchoolUsers: neo4j.int(page_SchoolUsers * 10),
+      offset_Contacts: neo4j.int((page_Contacts - 1) * 10),
+      limit_Contacts: neo4j.int(10),
     };
     
-    // Cypher Query
     const cypherQuery = `
     MATCH (user:User {uid: $uid})
     
@@ -285,7 +284,7 @@ async function GetRecommendationsExploreSection(
     OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
     WHERE user <> otherUser
     WITH user, COLLECT(otherUser)[$offset_SchoolUsers..$limit_SchoolUsers] AS PeopleInSameSchool
-         
+    
     // 2. People in contacts
     OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contact)
     WITH user, PeopleInSameSchool, COLLECT(contact)[$offset_Contacts..$limit_Contacts] AS contacts
@@ -294,11 +293,11 @@ async function GetRecommendationsExploreSection(
     OPTIONAL MATCH (user)-[:FRIENDS_WITH]->(:User)-[:FRIENDS_WITH]->(friendsOfFriends:User)
     WHERE NOT (user)-[:FRIENDS_WITH]->(friendsOfFriends) AND user <> friendsOfFriends
     WITH user, PeopleInSameSchool, contacts, COLLECT(DISTINCT friendsOfFriends)[$offset_FriendsOfFriends..$limit_FriendsOfFriends] AS FriendsOfFriends
-        
+    
     // 4. People connected to user with HAS_CONTACT_IN_APP
     OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(hasContactInAppUser:User)
     WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser)[$offset_Contacts..$limit_Contacts] AS ContactsInApp
-        
+    
     RETURN {
       PeopleInSameSchool: PeopleInSameSchool,
       peopleInContacts: contacts,
