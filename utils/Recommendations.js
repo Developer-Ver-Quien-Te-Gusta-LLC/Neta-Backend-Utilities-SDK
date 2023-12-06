@@ -290,6 +290,7 @@ async function GetRecommendationsExploreSection(
          
     // 2. People in contacts
     OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contact)
+    WHERE toLower(contact.fname) CONTAINS toLower($query) // add the condition here
     WITH user, PeopleInSameSchool, COLLECT(contact)[$offset_Contacts..$limit_Contacts] AS contacts
     
     // 3. Friends of user's friends
