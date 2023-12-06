@@ -316,6 +316,8 @@ async function GetRecommendationsExploreSection(
     const result = session.run(cypherQuery, parameters);
     //#endregion
     const [Recommendations] = await Promise.allSettled([result]);
+    console.log("Recommendations--------->",JSON.stringify(Recommendations.value));
+
     const data = Recommendations.value.records[0]._fields;
 
     const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
