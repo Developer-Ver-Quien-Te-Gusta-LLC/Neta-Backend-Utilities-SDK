@@ -265,14 +265,14 @@ async function GetRecommendationsExploreSection(
     const parameters = {
       uid: uid,
       highschool: highschool,
-      limit_FriendsOfFriends: neo4j.int(10),
-      offset_FriendsOfFriends: neo4j.int((page_FriendsOfFriends - 1) * 10),
       grade: grade,
       query: query || '', // add the query parameter
+      offset_FriendsOfFriends: neo4j.int((page_FriendsOfFriends - 1) * 10),
+      limit_FriendsOfFriends: neo4j.int(page_FriendsOfFriends * 10),
       offset_SchoolUsers: neo4j.int((page_SchoolUsers - 1) * 10),
       limit_SchoolUsers: neo4j.int(page_SchoolUsers * 10),
       offset_Contacts: neo4j.int((page_Contacts - 1) * 10),
-      limit_Contacts: neo4j.int(10),
+      limit_Contacts: neo4j.int(page_Contacts * 10),
     };
     
     const cypherQuery = `
