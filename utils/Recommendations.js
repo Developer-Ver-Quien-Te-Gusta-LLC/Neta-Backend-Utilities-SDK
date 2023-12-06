@@ -230,7 +230,7 @@ const [Recommendations] = await Promise.allSettled([
   OnboardingRecommendationsPromise,
 ]);
 
-console.log(JSON.stringify(Recommendations));
+console.log(JSON.stringify(Recommendations.value));
 const data = Recommendations.value.records[0]._fields;
 
 const peopleYouMayKnowProperties = extractProperties(data[0].PeopleYouMayKnow);
