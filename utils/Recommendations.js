@@ -285,22 +285,20 @@ async function GetRecommendationsExploreSection(
     OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
     WHERE school.name = $highschool
     OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
-    WHERE user <> otherUser AND toLower(otherUser.fname) CONTAINS toLower($query) // add the condition here
+    WHERE user <> otherUser
     WITH user, COLLECT(otherUser)[$offset_SchoolUsers..$limit_SchoolUsers] AS PeopleInSameSchool
          
     // 2. People in contacts
     OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contact)
-    WHERE toLower(contact.fname) CONTAINS toLower($query) // add the condition here
     WITH user, PeopleInSameSchool, COLLECT(contact)[$offset_Contacts..$limit_Contacts] AS contacts
     
     // 3. Friends of user's friends
     OPTIONAL MATCH (user)-[:FRIENDS_WITH]->(:User)-[:FRIENDS_WITH]->(friendsOfFriends:User)
-    WHERE NOT (user)-[:FRIENDS_WITH]->(friendsOfFriends) AND user <> friendsOfFriends AND toLower(friendsOfFriends.fname) CONTAINS toLower($query) // add the condition here
+    WHERE NOT (user)-[:FRIENDS_WITH]->(friendsOfFriends) AND user <> friendsOfFriends
     WITH user, PeopleInSameSchool, contacts, COLLECT(DISTINCT friendsOfFriends)[$offset_FriendsOfFriends..$limit_FriendsOfFriends] AS FriendsOfFriends
         
     // 4. People connected to user with HAS_CONTACT_IN_APP
     OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(hasContactInAppUser:User)
-    WHERE toLower(hasContactInAppUser.fname) CONTAINS toLower($query) // add the condition here
     WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser)[$offset_Contacts..$limit_Contacts] AS ContactsInApp
         
     RETURN {
