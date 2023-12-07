@@ -170,17 +170,11 @@ async function GetRecommendationsOnboarding(
   highschool
 ) {
   // Calculate the offset
-  const offset_PeopleYouMayKnow = Math.floor
-    (page_peopleYouMayKnow - 1) * neo4j.int(10);
-  const offset_peopleInContacts = Math.floor
-    (page_peopleInContacts - 1) * neo4j.int(10);
-  // Parameters
-  
+  const offset_PeopleYouMayKnow = (page_peopleYouMayKnow - 1) * 10;
+  const offset_peopleInContacts = (page_peopleInContacts - 1) * 10;
 
   var Pn = await client.execute("SELECT phonenumber FROM users WHERE uid = ?",[uid],{prepare:true});
   Pn = Pn.rows[0].phonenumber;
-
-  console.log("Pn------->",Pn);
 
   const parameters = {
     uid: uid,
@@ -206,40 +200,35 @@ async function GetRecommendationsOnboarding(
     // Find other users attending the same high school
     OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
     WHERE user <> otherUser
-    WITH user, COLLECT(otherUser)[..$limit_PeopleYouMayKnow] AS PeopleYouMayKnow
+    WITH user, COLLECT(otherUser) AS PeopleYouMayKnow
     
     // Fetch all contacts of the contact with the provided phone number
     OPTIONAL MATCH (contact:Contact {phoneNumber: $phoneNumber})-[:HAS_CONTACT]->(otherContact:Contact)
     WITH user, PeopleYouMayKnow, COLLECT(otherContact) AS contacts
 
     RETURN {
-        PeopleYouMayKnow: PeopleYouMayKnow,
-        peopleInContacts: contacts
+        PeopleYouMayKnow: PeopleYouMayKnow[$offset_PeopleYouMayKnow..$limit_PeopleYouMayKnow],
+        peopleInContacts: contacts[$offset_peopleInContacts..$limit_peopleInContacts]
     } AS result
-    SKIP $offset_peopleInContacts
-    LIMIT $limit_peopleInContacts
-  `;
+    `;
 
+    const OnboardingRecommendationsPromise = session.run(cypherQuery, parameters);
 
-const OnboardingRecommendationsPromise = session.run(cypherQuery, parameters);
+    const [Recommendations] = await Promise.allSettled([
+      OnboardingRecommendationsPromise,
+    ]);
 
+    const data = Recommendations.value.records[0]._fields;
 
-const [Recommendations] = await Promise.allSettled([
-  OnboardingRecommendationsPromise,
-]);
+    const peopleYouMayKnowProperties = extractProperties(data[0].PeopleYouMayKnow);
+    const peopleInContactsProperties = extractProperties(data[0].peopleInContacts);
 
-console.log(JSON.stringify(Recommendations.value));
-const data = Recommendations.value.records[0]._fields;
-
-const peopleYouMayKnowProperties = extractProperties(data[0].PeopleYouMayKnow);
-const peopleInContactsProperties = extractProperties(data[0].peopleInContacts);
-
-// Return both the result and the next page number for paging
-return {
-  success: true,
-  page_peopleYouMayKnow: page_peopleYouMayKnow,
-  Recommendations: { peopleYouMayKnow: peopleYouMayKnowProperties, peopleInContacts: peopleInContactsProperties },
-};
+    // Return both the result and the next page number for paging
+    return {
+      success: true,
+      page_peopleYouMayKnow: page_peopleYouMayKnow,
+      Recommendations: { peopleYouMayKnow: peopleYouMayKnowProperties, peopleInContacts: peopleInContactsProperties },
+    };
   }
   catch (err) {
     console.log(err);
