@@ -186,7 +186,7 @@ async function GetRecommendationsOnboarding(
     ContactsWeightOnboarding: ContactsWeightOnboarding,
     PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
     offset_peopleInContacts: neo4j.int(offset_peopleInContacts),
-    limit_peopleInContacts: neo4j.int(10),
+    limit_peopleInContacts: neo4j.int(40),
     phoneNumber:Pn,
   };
 
@@ -257,7 +257,7 @@ async function GetRecommendationsExploreSection(
       grade: grade,
       query: query || '', // add the query parameter
       offset_FriendsOfFriends: neo4j.int((page_FriendsOfFriends - 1) * 10),
-      limit_FriendsOfFriends: neo4j.int(page_FriendsOfFriends * 40),
+      limit_FriendsOfFriends: neo4j.int(page_FriendsOfFriends * 10),
       offset_SchoolUsers: neo4j.int((page_SchoolUsers - 1) * 10),
       limit_SchoolUsers: neo4j.int(page_SchoolUsers * 10),
       offset_Contacts: neo4j.int((page_Contacts - 1) * 10),
