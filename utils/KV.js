@@ -64,7 +64,7 @@ async function fetchRemoteConfig(key) {
                 return null;
             }
         } catch (err) {
-            console.error('Error fetching remote config:', err);
+            console.error('Error fetching remote config While fetching :', key, err);
             if (retries < 2) {
                 console.log('Retrying in 1 minute...');
                 await new Promise(resolve => setTimeout(resolve, 60000));
