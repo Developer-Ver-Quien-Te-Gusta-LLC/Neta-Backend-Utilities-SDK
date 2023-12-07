@@ -391,7 +391,7 @@ RETURN {
   `;
 
     const result = await session.run(cypherQuery, { uid, highschool, grade });
-    let propertiesList = result.records[0]._fields[0].Users.map(user => user.properties);
+    let propertiesList = result.records[0] && result.records[0]._fields ? result.records[0]._fields[0].Users.map(user => user.properties) : [];
 
     // If the number of users is less than 4, add more users with "HAS_CONTACT" relationship
     if (propertiesList.length < 4) {
@@ -452,6 +452,7 @@ async function getAllTopFriends(uid) {
     return relationshipData;
   } catch (error) {
     console.error(error);
+    return [];
   } finally {
     await session.close();
   }
