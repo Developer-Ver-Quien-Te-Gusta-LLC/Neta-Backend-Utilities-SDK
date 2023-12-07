@@ -397,7 +397,6 @@ RETURN {
     if (propertiesList.length < 4) {
       const additionalUsersQuery = `
         MATCH (user:User {uid: $uid})-[:HAS_CONTACT]->(additionalUser:User)
-        WHERE NOT additionalUser IN $existingUsers
         RETURN additionalUser
         LIMIT ${4 - propertiesList.length}
       `;
