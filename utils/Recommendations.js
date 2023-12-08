@@ -291,11 +291,11 @@ async function GetRecommendationsExploreSection(
     WHERE toLower(hasContactInAppUser.fname) CONTAINS toLower(nameParts[0]) AND (size(nameParts) = 1 OR toLower(hasContactInAppUser.lname) CONTAINS toLower(nameParts[1]))
     WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser)[$offset_Contacts..$limit_Contacts] AS ContactsInApp
     
-   // 5. Other users with similar fname and lname
-OPTIONAL MATCH (otherFriends:User)
-WHERE ((toLower(otherFriends.fname) CONTAINS toLower(nameParts[0]) AND size(nameParts) = 1) OR (toLower(otherFriends.lname) CONTAINS toLower(nameParts[1]))) AND user <> otherFriends
-WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, ContactsInApp, COLLECT(DISTINCT otherFriends) AS OtherFriends
-    RETURN {
+    // 5. Other users with similar fname and lname
+    OPTIONAL MATCH (otherFriends:User)
+    WHERE size(nameParts) > 0 AND ((toLower(otherFriends.fname) CONTAINS toLower(nameParts[0]) AND size(nameParts) = 1) OR (toLower(otherFriends.lname) CONTAINS toLower(nameParts[1]))) AND user <> otherFriends
+    WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, ContactsInApp, COLLECT(DISTINCT otherFriends) AS OtherFriends
+     RETURN {
       PeopleInSameSchool: PeopleInSameSchool,
       peopleInContacts: contacts,
       FriendsOfFriends: FriendsOfFriends,
@@ -311,7 +311,7 @@ WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, ContactsInApp, COLLEC
     const [Recommendations] = await Promise.allSettled([result]);
 
 
-    console.log("Recommendations--------->",JSON.stringify(Recommendations));
+    console.log("Recommendations--------->",JSON.stringify(Recommendations.reason));
 
     const data = Recommendations.value.records[0]._fields;
 
