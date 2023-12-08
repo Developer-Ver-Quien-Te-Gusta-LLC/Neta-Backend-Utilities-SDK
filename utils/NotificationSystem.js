@@ -56,6 +56,11 @@ async function publishAlbyMessage(ChannelID, message) {
 }
 
 async function publishFCMMessage(userToken, message) {
+  if (!userToken) {
+    console.error("User token is not provided");
+    return;
+  }
+
   const payload = {
     token: userToken,
     notification: {
@@ -66,15 +71,13 @@ async function publishFCMMessage(userToken, message) {
 
   admin
     .messaging()
-    .send( payload)
+    .send(payload)
     .then((response) => {
       console.log("Notification sent successfully:", response);
     })
     .catch((error) => {
       console.error("Error sending notification:", error);
     });
-
-  
 }
 
 async function SendNotification(uid, payload) {
