@@ -46,12 +46,13 @@ async function publishAlbyMessageNaive(user_id, message) {
 
 async function publishAlbyMessage(ChannelID, message) {
   if (!ChannelID) {
+    console.log("No topic name found for user");
     return { message: "No topic name found for user" };
   }
 
   const channel = ably.channels.get(ChannelID);
   await channel.publish("event",message);
-
+  console.log(`Published a message to the topic: ${ChannelID}`);
   return { message: `Published a message to the topic: ${ChannelID}` };
 }
 
