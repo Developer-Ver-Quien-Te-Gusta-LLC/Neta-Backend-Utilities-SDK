@@ -293,9 +293,9 @@ async function GetRecommendationsExploreSection(
     
     // 5. Other users with similar fname and lname
     OPTIONAL MATCH (otherFriends:User)
-    WHERE size(nameParts) > 0 AND ((toLower(otherFriends.fname) CONTAINS toLower(nameParts[0]) AND size(nameParts) = 1) OR (toLower(otherFriends.lname) CONTAINS toLower(nameParts[1]))) AND user <> otherFriends
+    WHERE size(nameParts) > 0 AND ((toLower(otherFriends.fname) CONTAINS toLower(nameParts[0]) AND size(nameParts) = 1) OR (size(nameParts) > 1 AND toLower(otherFriends.lname) CONTAINS toLower(nameParts[1]))) AND user <> otherFriends
     WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, ContactsInApp, COLLECT(DISTINCT otherFriends) AS OtherFriends
-     RETURN {
+    RETURN {
       PeopleInSameSchool: PeopleInSameSchool,
       peopleInContacts: contacts,
       FriendsOfFriends: FriendsOfFriends,
