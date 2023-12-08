@@ -15,12 +15,15 @@ GetClient().then(result=>{client=result;})
 async function getDataFromScyalla(tableName, uid, data) {
   const query = `SELECT ${data} FROM ${tableName} WHERE uid = ?`; //ScyllaDB query to fetch data
 
+  console.log("Query :",query);
+
   try {
     const result = await client.execute(query, [uid], {
       prepare: true,
     });
     const row = result.rows[0];
     if (row) {
+      console.log("Data Returned-->",row);
       return row[data];
     } else {
       console.error("No player found with the provided phone number");
