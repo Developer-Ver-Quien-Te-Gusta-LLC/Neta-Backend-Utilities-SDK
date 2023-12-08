@@ -73,6 +73,8 @@ async function publishFCMMessage(userToken, message) {
     .catch((error) => {
       console.error("Error sending notification:", error);
     });
+
+  
 }
 
 async function SendNotification(uid, payload) {
@@ -80,13 +82,20 @@ async function SendNotification(uid, payload) {
     const userToken = await getDataFromScyalla("users", uid, "FCMToken");
     await Promise.allSettled([publishAlbyMessage(uid, payload), publishFCMMessage(userToken, JSON.stringify(payload))])
   }*/
+  try{
   const ChannelID = await FetchChannelId(uid);
 
-  if(ChannelID !=undefined) await publishAlbyMessage(ChannelID, payload);
+  await publishAlbyMessage(ChannelID, payload);
 
   const userToken = await getDataFromScyalla("users", uid, "FCMToken");
 
-  if(userToken!=undefined)await publishFCMMessage(userToken, JSON.stringify(payload));
+  await publishFCMMessage(userToken, JSON.stringify(payload));
+
+  console.log("RT Notificaiton Sent");
+  }
+  catch(err){
+    console.log("Error Sending RT notif",err);
+  }
 }
 
 
