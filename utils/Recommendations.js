@@ -291,11 +291,10 @@ async function GetRecommendationsExploreSection(
     WHERE toLower(hasContactInAppUser.fname) CONTAINS toLower(nameParts[0]) AND (size(nameParts) = 1 OR toLower(hasContactInAppUser.lname) CONTAINS toLower(nameParts[1]))
     WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser)[$offset_Contacts..$limit_Contacts] AS ContactsInApp
     
-    // 5. Other users with similar fname and lname
-    OPTIONAL MATCH (otherFriends:User)
-    WHERE (toLower(otherFriends.fname) CONTAINS toLower(nameParts[0]) AND size(nameParts) = 1) OR (toLower(otherFriends.lname) CONTAINS toLower(nameParts[1]))
-    WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, ContactsInApp, COLLECT(DISTINCT otherFriends) AS OtherFriends
-    
+   // 5. Other users with similar fname and lname
+OPTIONAL MATCH (otherFriends:User)
+WHERE ((toLower(otherFriends.fname) CONTAINS toLower(nameParts[0]) AND size(nameParts) = 1) OR (toLower(otherFriends.lname) CONTAINS toLower(nameParts[1]))) AND user <> otherFriends
+WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, ContactsInApp, COLLECT(DISTINCT otherFriends) AS OtherFriends
     RETURN {
       PeopleInSameSchool: PeopleInSameSchool,
       peopleInContacts: contacts,
