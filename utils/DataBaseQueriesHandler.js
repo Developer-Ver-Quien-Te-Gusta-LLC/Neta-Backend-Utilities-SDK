@@ -19,7 +19,7 @@ async function getDataFromScyalla(tableName, uid, data) {
     const result = await client.execute(query, [uid], {
       prepare: true,
     });
-    const row = result.first();
+    const row = result.rows[0];
     if (row) {
       return row[data];
     } else {
