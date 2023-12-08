@@ -65,8 +65,9 @@ async function publishFCMMessage(userToken, message) {
   const payload = {
     token: userToken,
     notification: {
-      title: "tbd",
-      body: typeof(message) == "object" ? message : JSON.stringify(message),
+      title: "Neta",
+      //body: typeof(message) == "object" ? message : JSON.stringify(message),
+      body:"You have an unread notification"
     },
   };
 

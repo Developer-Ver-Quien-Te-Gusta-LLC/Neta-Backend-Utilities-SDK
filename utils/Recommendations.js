@@ -304,7 +304,7 @@ async function GetRecommendationsExploreSection(
     const result = session.run(cypherQuery, parameters);
     //#endregion
     const [Recommendations] = await Promise.allSettled([result]);
-    console.log("Recommendations--------->",JSON.stringify(Recommendations));
+    //console.log("Recommendations--------->",JSON.stringify(Recommendations));
 
     const data = Recommendations.value.records[0]._fields;
 
@@ -404,9 +404,9 @@ RETURN {
    
 
       const additionalUsersResult = await session.run(additionalUsersQuery, { uid, existingUsers: propertiesList });
-      console.log("additionalUsersResult----------------->",JSON.stringify(additionalUsersResult));
+     // console.log("additionalUsersResult----------------->",JSON.stringify(additionalUsersResult));
       const additionalUsers = additionalUsersResult.records.map(record => record.get('additionalUser').properties);
-      console.log("additionalUsers----------------->",JSON.stringify(additionalUsers));
+      //console.log("additionalUsers----------------->",JSON.stringify(additionalUsers));
 
       propertiesList = [...propertiesList, ...additionalUsers];
     }

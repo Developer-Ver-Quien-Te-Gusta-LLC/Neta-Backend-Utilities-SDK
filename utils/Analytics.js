@@ -18,8 +18,6 @@ async function SendEvent(event_name, phoneNumber, value, time) {
     mixpanel.track(event_name, eventData, (err) => {
       if (err) {
         console.error('Failed to send event:', err);
-      } else {
-        console.log('Event sent successfully!');
       }
     });
   } else {
