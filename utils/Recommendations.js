@@ -310,7 +310,9 @@ RETURN {
     const result = session.run(cypherQuery, parameters);
     //#endregion
     const [Recommendations] = await Promise.allSettled([result]);
-    //console.log("Recommendations--------->",JSON.stringify(Recommendations));
+
+
+    console.log("Recommendations--------->",JSON.stringify(Recommendations));
 
     const data = Recommendations.value.records[0]._fields;
 
