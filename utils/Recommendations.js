@@ -300,21 +300,15 @@ async function GetRecommendationsExploreSection(
     `;
 
     const otherFriendsQuery = `
-MATCH (user:User {uid: $uid})
-
-// Split the query into first name and last name
-WITH user, split($query, ' ') AS nameParts
-
-// Find users with the same first name and last name
-MATCH (sameNameUser:User)
-WHERE 
-  CASE 
-    WHEN size(nameParts) = 1 THEN toLower(sameNameUser.fname) = toLower(nameParts[0])
-    WHEN size(nameParts) > 1 THEN toLower(sameNameUser.fname) = toLower(nameParts[0]) AND toLower(sameNameUser.lname) = toLower(nameParts[1])
-    ELSE FALSE
-  END
-
-RETURN sameNameUser AS result
+    WITH split($query, ' ') AS nameParts
+    MATCH (u:User)
+    WHERE 
+      CASE 
+        WHEN size(nameParts) = 1 THEN toLower(u.fname) = toLower(nameParts[0])
+        WHEN size(nameParts) > 1 THEN toLower(u.fname) = toLower(nameParts[0]) AND toLower(u.lname) = toLower(nameParts[1])
+        ELSE FALSE
+      END
+    RETURN u
 `;
 
 
