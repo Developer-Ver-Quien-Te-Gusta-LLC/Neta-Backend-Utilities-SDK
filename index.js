@@ -50,7 +50,6 @@ module.exports = {
   ExtractUsersFromJson: Recommendations.ExtractUsersFromJson,
   WeightArraysUsingProbability: Recommendations.WeightArraysUsingProbability,
   InviteFriends: Recommendations.InviteFriends,
-  FetchFriendsWithSubsActive: Recommendations.FetchFriendsWithSubsActive,
   GetRecommendationsOnboarding: Recommendations.GetRecommendationsOnboarding,
   GetRecommendationsExploreSection: Recommendations.GetRecommendationsExploreSection,
   GetRecommendationsQuestions: Recommendations.GetRecommendationsQuestions,

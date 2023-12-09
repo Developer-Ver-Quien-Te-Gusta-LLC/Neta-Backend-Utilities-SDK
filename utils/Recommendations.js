@@ -88,75 +88,10 @@ function extractProperties(arr) {
   return [];
 }
 // CheckPlayerValidity function
-async function CheckPlayerValidity(username) {
-  const session = driver.session();
-  try {
-    const query = `
-      MATCH (user:User {username: $username})
-      RETURN user
-      LIMIT 1
-    `;
-    const result = await session.run(query, { username: username });
-    const userRecord = result.records[0];
-
-    if (userRecord) {
-      return true;
-    } else {
-      return false;
-    }
-  } catch (error) {
-    session.close();
-    console.error('Error checking player validity:', error);
-    return false;
-  }
-  finally {
-    session.close();
-  }
-}
 
 /// TODO: complete
 // Fetch all the friends which have the coin sub for the poll active
 // Set the index and status of the subscriptions users has active after use
-async function FetchFriendsWithSubsActive(uid) {
-  if (!CheckPlayerValidity(uid)) {
-    return { success: false, data: "User does not exist" };
-  }
-  try {
-    // Get the user
-    const result = await client.execute(
-      "SELECT TempSubCrush, Friends FROM Users WHERE uid = ?",
-      [uid]
-    );
-    const user = result.first();
-
-    // If the user does not exist or TempSubCrush is not true, simply return
-    if (!user || !user.TempSubCrush) {
-      const _result = await client.execute(
-        "SELECT TempSubCrush, Friends FROM Users WHERE uid = ?",
-        [uid]
-      );
-      const _user = result.first();
-      if (!_user || _user.TempSubTop <= 0) {
-        return null;
-      }
-      await client.execute("UPDATE Users SET TempTopCrush = ? WHERE uid = ?", [
-        _user.TempSubTop - 1,
-        uid,
-      ]);
-
-      return _user.username;
-    }
-    // Update TempSubCrush to false
-    await client.execute(
-      "UPDATE Users SET TempSubCrush = false WHERE uid = ?",
-      [uid]
-    );
-
-    return user.username; /// why tf is it returning this
-  } catch (err) {
-    console.error(err);
-  }
-}
 
 
 //#endregion
@@ -362,7 +297,7 @@ async function GetRecommendationsExploreSection(
     const returndata = {
       friendsInSchool: Recommendations.value ? PeopleInSameSchool : [],
       friendsOfFriends: Recommendations.value ? FriendsOfFriends : [],
-      otherFriends: Recommendations.value ? OtherFriends : [],
+      otherFriends: OtherFriends,
       invites: Recommendations.value ? peopleInContacts : [],
       friendsOfFriendsCount: Recommendations.value ? FriendsOfFriends.length : 0,
       friendsInSchoolCount: Recommendations.value ? PeopleInSameSchool.length : 0,
@@ -484,7 +419,6 @@ async function getAllTopFriends(uid) {
 //#endregion
 
 module.exports = {
-  FetchFriendsWithSubsActive,
   GetRecommendationsOnboarding,
   GetRecommendationsExploreSection,
   GetRecommendationsQuestions,
