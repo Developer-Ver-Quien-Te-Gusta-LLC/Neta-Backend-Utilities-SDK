@@ -332,7 +332,7 @@ RETURN {
   ContactsInApp: ContactsInApp
 } AS result`);
 
-logquery = query.replace(/\s+/g, ' ').trim();
+logquery = logquery.replace(/\s+/g, ' ').trim();
 
 console.log(logquery);
     
