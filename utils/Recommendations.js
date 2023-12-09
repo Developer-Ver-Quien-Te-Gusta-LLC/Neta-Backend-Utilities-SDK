@@ -253,6 +253,7 @@ async function GetRecommendationsExploreSection(
     Recommendations.value = Recommendations;
 
     var otherUser = await session.run(otherFriendsQuery,parameters);
+    otherUser = otherUser.records;
 
     console.log("Recommendations--------->",JSON.stringify(otherUser));
     //#endregion
@@ -265,7 +266,12 @@ async function GetRecommendationsExploreSection(
     const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
     let OtherFriends = [];
     try {
-      OtherFriends = otherUser.records[0]._fields[0].OtherFriends.properties;
+      otherUser.forEach(arrayElement => {
+        let friend = arrayElement._fields[0].OtherFriends.properties;
+        friend.firstname = friend.fname;
+        friend.lastname = friend.lname;
+        OtherFriends.push(friend);
+      });
     } catch (error) {
       console.error('Error occurred while fetching OtherFriends: ', error);
     }
@@ -302,7 +308,7 @@ async function GetRecommendationsExploreSection(
       friendsInSchool: Recommendations.value ? PeopleInSameSchool : [],
       friendsOfFriends: Recommendations.value ? FriendsOfFriends : [],
       otherFriends: OtherFriends,
-      overall:otherUser,
+      //overall:otherUser,
       invites: Recommendations.value ? peopleInContacts : [],
       friendsOfFriendsCount: Recommendations.value ? FriendsOfFriends.length : 0,
       friendsInSchoolCount: Recommendations.value ? PeopleInSameSchool.length : 0,
