@@ -291,50 +291,19 @@ async function GetRecommendationsExploreSection(
     WHERE toLower(hasContactInAppUser.fname) CONTAINS toLower(nameParts[0]) AND (size(nameParts) = 1 OR toLower(hasContactInAppUser.lname) CONTAINS toLower(nameParts[1]))
     WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser)[$offset_Contacts..$limit_Contacts] AS ContactsInApp
     
+    // 5. Other random users
+    OPTIONAL MATCH (otherUser:User)
+    WHERE user <> otherUser
+    WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, ContactsInApp, COLLECT(otherUser)[..10] AS OtherFriends
+    
     RETURN {
       PeopleInSameSchool: PeopleInSameSchool,
       peopleInContacts: contacts,
       FriendsOfFriends: FriendsOfFriends,
-      ContactsInApp: ContactsInApp
+      ContactsInApp: ContactsInApp,
+      OtherFriends: OtherFriends
     } AS result
 `;
-
-let logquery = (`MATCH (user:User {uid: ${parameters.uid}})
-
-// Split the query into first name and last name
-WITH user, split(${parameters.query}, ' ') AS nameParts
-
-// 1. People in the same high school
-OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
-WHERE school.name = ${parameters.highschool}
-OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
-WHERE user <> otherUser AND toLower(otherUser.fname) CONTAINS toLower(nameParts[0]) AND (size(nameParts) = 1 OR toLower(otherUser.lname) CONTAINS toLower(nameParts[1]))
-WITH user, nameParts, COLLECT(otherUser)[${parameters.offset_SchoolUsers}..${parameters.limit_SchoolUsers}] AS PeopleInSameSchool
-
-// 2. People in contacts
-OPTIONAL MATCH (user)-[:HAS_CONTACT]->(contact)
-WITH user, nameParts, PeopleInSameSchool, COLLECT(contact)[${parameters.offset_Contacts}..${parameters.limit_Contacts}] AS contacts
-
-// 3. Friends of user's friends
-OPTIONAL MATCH (user)-[:FRIENDS_WITH]->(:User)-[:FRIENDS_WITH]->(friendsOfFriends:User)
-WHERE NOT (user)-[:FRIENDS_WITH]->(friendsOfFriends) AND user <> friendsOfFriends AND toLower(friendsOfFriends.fname) CONTAINS toLower(nameParts[0]) AND (size(nameParts) = 1 OR toLower(friendsOfFriends.lname) CONTAINS toLower(nameParts[1]))
-WITH user, nameParts, PeopleInSameSchool, contacts, COLLECT(DISTINCT friendsOfFriends)[${parameters.offset_FriendsOfFriends}..${parameters.limit_FriendsOfFriends}] AS FriendsOfFriends
-
-// 4. People connected to user with HAS_CONTACT_IN_APP
-OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(hasContactInAppUser:User)
-WHERE toLower(hasContactInAppUser.fname) CONTAINS toLower(nameParts[0]) AND (size(nameParts) = 1 OR toLower(hasContactInAppUser.lname) CONTAINS toLower(nameParts[1]))
-WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser)[${parameters.offset_Contacts}..${parameters.limit_Contacts}] AS ContactsInApp
-
-RETURN {
-  PeopleInSameSchool: PeopleInSameSchool,
-  peopleInContacts: contacts,
-  FriendsOfFriends: FriendsOfFriends,
-  ContactsInApp: ContactsInApp
-} AS result`);
-
-logquery = logquery.replace(/\s+/g, ' ').trim();
-
-console.log(logquery);
     
 
     // Execute the query
@@ -352,7 +321,7 @@ console.log(logquery);
     const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
     const peopleInContacts = extractProperties(data[0].peopleInContacts);//.map(user => ({...user, firstname: user.fname, lastname: user.lname}));
     const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
-   // const OtherFriends = extractProperties(data[0].OtherFriends).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
+    const OtherFriends = extractProperties(data[0].OtherFriends).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
 
    
     peopleInContacts.forEach(person => {
@@ -385,7 +354,7 @@ console.log(logquery);
     const returndata = {
       friendsInSchool: Recommendations.value ? PeopleInSameSchool : [],
       friendsOfFriends: Recommendations.value ? FriendsOfFriends : [],
-     // OtherFriends:Recommendations.value ? OtherFriends : [],
+      OtherFriends:Recommendations.value ? OtherFriends : [],
       invites: Recommendations.value ? peopleInContacts : [],
       friendsOfFriendsCount: Recommendations.value ? FriendsOfFriends.length : 0,
       friendsInSchoolCount: Recommendations.value ? PeopleInSameSchool.length : 0,
