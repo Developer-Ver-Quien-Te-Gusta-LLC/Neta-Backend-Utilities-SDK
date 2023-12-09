@@ -264,7 +264,7 @@ async function GetRecommendationsExploreSection(
     const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
     const peopleInContacts = extractProperties(data[0].peopleInContacts);//.map(user => ({...user, firstname: user.fname, lastname: user.lname}));
     const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
-    const OtherFriends = otherUser[0].OtherFriends.properties.map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
+    const OtherFriends = extractProperties(otherUser[0].OtherFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
 
 
     peopleInContacts.forEach(person => {
@@ -298,6 +298,7 @@ async function GetRecommendationsExploreSection(
       friendsInSchool: Recommendations.value ? PeopleInSameSchool : [],
       friendsOfFriends: Recommendations.value ? FriendsOfFriends : [],
       otherFriends: OtherFriends,
+      overall:otherUser,
       invites: Recommendations.value ? peopleInContacts : [],
       friendsOfFriendsCount: Recommendations.value ? FriendsOfFriends.length : 0,
       friendsInSchoolCount: Recommendations.value ? PeopleInSameSchool.length : 0,
