@@ -362,7 +362,7 @@ RETURN {
     // If the number of users is less than 4, add more users with "HAS_CONTACT" relationship
     if (propertiesList.length < 4) {
       const additionalUsersQuery = `
-        MATCH (user:User {uid: $uid})-[:HAS_CONTACT]->(additionalUser:User)
+        MATCH (user:User {uid: $uid})-[:HAS_CONTACT]->(additionalUser:Contact)
         RETURN additionalUser
         LIMIT ${4 - propertiesList.length}
       `;
