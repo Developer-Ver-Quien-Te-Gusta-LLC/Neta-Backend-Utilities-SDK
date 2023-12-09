@@ -308,7 +308,7 @@ async function GetRecommendationsExploreSection(
         WHEN size(nameParts) > 1 THEN toLower(u.fname) = toLower(nameParts[0]) AND toLower(u.lname) = toLower(nameParts[1])
         ELSE FALSE
       END
-    RETURN u
+    RETURN u AS otherFriends
 `;
 
 
@@ -317,8 +317,8 @@ async function GetRecommendationsExploreSection(
     var Recommendations = await session.run(cypherQuery, parameters);
     Recommendations.value = Recommendations;
 
-    const otherUser = await session.run(otherFriendsQuery,parameters);
-    
+    var otherUser = await session.run(otherFriendsQuery,parameters);
+    //otherUser = otherUser.records[0]._fields;
 
     console.log("Recommendations--------->",JSON.stringify(otherUser));
     //#endregion
@@ -329,7 +329,7 @@ async function GetRecommendationsExploreSection(
     const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
     const peopleInContacts = extractProperties(data[0].peopleInContacts);//.map(user => ({...user, firstname: user.fname, lastname: user.lname}));
     const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
-    const OtherFriends = extractProperties(data[0].OtherFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
+    //const OtherFriends = extractProperties(data[0].OtherFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
 
 
     peopleInContacts.forEach(person => {
