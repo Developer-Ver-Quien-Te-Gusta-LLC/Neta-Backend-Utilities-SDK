@@ -314,16 +314,14 @@ async function GetRecommendationsExploreSection(
 
 
     // Execute the query
-    const result = session.run(cypherQuery, parameters);
+    var Recommendations = await session.run(cypherQuery, parameters);
+    Recommendations.value = Recommendations;
 
     const otherUser = await session.run(otherFriendsQuery,parameters);
     
 
     console.log("Recommendations--------->",JSON.stringify(otherUser));
     //#endregion
-    const [Recommendations] = await Promise.allSettled([result]);
-
-
     
 
     const data = Recommendations.value.records[0]._fields;
