@@ -293,7 +293,7 @@ WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, COLLECT(DISTINCT hasC
 
 // 5. Other random users
 OPTIONAL MATCH (otherUser:User)
-WHERE user <> otherUser AND NOT $query = '' AND toLower(otherUser.fname) CONTAINS toLower(nameParts[0]) AND (size(nameParts) = 1 OR toLower(otherUser.lname) CONTAINS toLower(nameParts[1]))
+WHERE user <> otherUser AND $query <> '' AND toLower(otherUser.fname) CONTAINS toLower(nameParts[0]) AND (size(nameParts) = 1 OR toLower(otherUser.lname) CONTAINS toLower(nameParts[1]))
 WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, ContactsInApp, COLLECT(otherUser)[..10] AS OtherFriends
 
 RETURN {
