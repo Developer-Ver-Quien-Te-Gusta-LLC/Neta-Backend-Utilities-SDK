@@ -318,7 +318,7 @@ async function GetRecommendationsExploreSection(
     Recommendations.value = Recommendations;
 
     var otherUser = await session.run(otherFriendsQuery,parameters);
-    //otherUser = otherUser.records[0]._fields;
+    otherUser = otherUser.records[0]._fields;
 
     console.log("Recommendations--------->",JSON.stringify(otherUser));
     //#endregion
@@ -329,7 +329,7 @@ async function GetRecommendationsExploreSection(
     const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
     const peopleInContacts = extractProperties(data[0].peopleInContacts);//.map(user => ({...user, firstname: user.fname, lastname: user.lname}));
     const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
-    //const OtherFriends = extractProperties(data[0].OtherFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
+    const OtherFriends = extractProperties(otherUser[0].OtherFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
 
 
     peopleInContacts.forEach(person => {
