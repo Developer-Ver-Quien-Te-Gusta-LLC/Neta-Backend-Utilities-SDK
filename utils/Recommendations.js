@@ -299,7 +299,7 @@ async function GetRecommendationsExploreSection(
     } AS result
 `;
 
-console.log("Recommendations------------>"+`MATCH (user:User {uid: ${parameters.uid}})
+let logquery = (`MATCH (user:User {uid: ${parameters.uid}})
 
 // Split the query into first name and last name
 WITH user, split(${parameters.query}, ' ') AS nameParts
@@ -331,6 +331,10 @@ RETURN {
   FriendsOfFriends: FriendsOfFriends,
   ContactsInApp: ContactsInApp
 } AS result`);
+
+logquery = query.replace(/\s+/g, ' ').trim();
+
+console.log(logquery);
     
 
     // Execute the query
