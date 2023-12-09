@@ -366,12 +366,12 @@ RETURN {
       phoneNumber = phoneNumber.rows[0].phonenumber;
 
       const additionalUsersQuery = `
-        MATCH (user:Contact {phoneNumber: $phoneNumber})-[:HAS_CONTACT]->(additionalUser:Contact)
+        MATCH (user:User {uid: $uid})-[:HAS_CONTACT]->(additionalUser:Contact)
         RETURN additionalUser
         LIMIT ${4 - propertiesList.length}
       `;
 
-      const additionalUsersResult = await session.run(additionalUsersQuery, { uid, existingUsers: propertiesList,phoneNumber });
+      const additionalUsersResult = await session.run(additionalUsersQuery, { uid,phoneNumber });
        console.log("additionalUsersResult----------------->",JSON.stringify(additionalUsersResult));
       const additionalUsers = additionalUsersResult.records.map(record => record.get('additionalUser').properties);
       //console.log("additionalUsers----------------->",JSON.stringify(additionalUsers));
