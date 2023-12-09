@@ -301,7 +301,7 @@ RETURN {
   peopleInContacts: contacts,
   FriendsOfFriends: FriendsOfFriends,
   ContactsInApp: ContactsInApp,
-  OtherFriends: CASE WHEN $query = '' THEN null ELSE OtherFriends END
+  OtherFriends: CASE WHEN $query = '' THEN [] ELSE OtherFriends END
 } AS result
 `;
     
