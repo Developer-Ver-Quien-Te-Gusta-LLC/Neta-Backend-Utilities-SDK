@@ -173,7 +173,7 @@ async function GetRecommendationsOnboarding(
   const offset_PeopleYouMayKnow = (page_peopleYouMayKnow - 1) * 10;
   const offset_peopleInContacts = (page_peopleInContacts - 1) * 10;
 
-  var Pn = await client.execute("SELECT phonenumber FROM users WHERE uid = ?",[uid],{prepare:true});
+  var Pn = await client.execute("SELECT phonenumber FROM users WHERE uid = ?", [uid], { prepare: true });
   Pn = Pn.rows[0].phonenumber;
 
   const parameters = {
@@ -187,7 +187,7 @@ async function GetRecommendationsOnboarding(
     PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
     offset_peopleInContacts: neo4j.int(offset_peopleInContacts),
     limit_peopleInContacts: neo4j.int(40),
-    phoneNumber:Pn,
+    phoneNumber: Pn,
   };
 
   const session = driver.session();
@@ -263,7 +263,7 @@ async function GetRecommendationsExploreSection(
       offset_Contacts: neo4j.int((page_Contacts - 1) * 10),
       limit_Contacts: neo4j.int(page_Contacts * 10),
     };
-    
+
     const cypherQuery = `
     MATCH (user:User {uid: $uid})
     
@@ -291,63 +291,73 @@ async function GetRecommendationsExploreSection(
     WHERE toLower(hasContactInAppUser.fname) CONTAINS toLower(nameParts[0]) AND (size(nameParts) = 1 OR toLower(hasContactInAppUser.lname) CONTAINS toLower(nameParts[1]))
     WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser)[$offset_Contacts..$limit_Contacts] AS ContactsInApp
     
-    // 5. Other random users
-    OPTIONAL MATCH (otherUser:User)
-    WHERE user <> otherUser
-    WITH user, PeopleInSameSchool, contacts, FriendsOfFriends, ContactsInApp, COLLECT(otherUser)[..10] AS OtherFriends
-    
     RETURN {
       PeopleInSameSchool: PeopleInSameSchool,
       peopleInContacts: contacts,
       FriendsOfFriends: FriendsOfFriends,
-      ContactsInApp: ContactsInApp,
-      OtherFriends: OtherFriends
+      ContactsInApp: ContactsInApp
     } AS result
+    `;
+
+    const otherFriendsQuery = `
+MATCH (user:User {uid: $uid})
+
+// Split the query into first name and last name
+WITH user, split($query, ' ') AS nameParts
+
+// Find users with the same first name and last name
+MATCH (sameNameUser:User)
+WHERE toLower(sameNameUser.fname) = toLower(nameParts[0]) AND (size(nameParts) = 1 OR toLower(sameNameUser.lname) = toLower(nameParts[1]))
+
+RETURN sameNameUser AS result
 `;
-    
-    
+
+
 
     // Execute the query
     const result = session.run(cypherQuery, parameters);
 
+    const otherUser = session.run(otherFriendsQuery,parameters);
     
+
+
     //#endregion
-    const [Recommendations] = await Promise.allSettled([result]);
+    const [Recommendations,otherUsers] = await Promise.allSettled([result,otherUser]);
 
 
-    //console.log("Recommendations--------->",JSON.stringify(Recommendations));
+    console.log("Recommendations--------->",JSON.stringify(otherUsers));
 
     const data = Recommendations.value.records[0]._fields;
 
-    const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
+    const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
     const peopleInContacts = extractProperties(data[0].peopleInContacts);//.map(user => ({...user, firstname: user.fname, lastname: user.lname}));
-    const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
-    const OtherFriends = extractProperties(data[0].OtherFriends).map(user => ({...user, firstname: user.fname, lastname: user.lname}));
+    const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
+    const OtherFriends = extractProperties(data[0].OtherFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
 
-   
+
     peopleInContacts.forEach(person => {
       person.mutualCount = 0;
     });
 
-    
+
     //const ContactsInApp = extractProperties(data[0].ContactsInApp)
 
-    for(let i = 0; i < PeopleInSameSchool.length; i++) {
+    for (let i = 0; i < PeopleInSameSchool.length; i++) {
       const mutualFriendsQuery = `
         MATCH (user:User {uid: $uid})-[:FRIENDS_WITH]->(mutualFriend:User)<-[:FRIENDS_WITH]-(otherUser:User {uid: $otherUid})
         RETURN COUNT(mutualFriend) AS mutualFriendsCount
       `;
-      const mutualFriendsResult = await session.run(mutualFriendsQuery, {uid: uid, otherUid: PeopleInSameSchool[i].uid});
+      const mutualFriendsResult = await session.run(mutualFriendsQuery, { uid: uid, otherUid: PeopleInSameSchool[i].uid });
       const mutualFriendsCount = mutualFriendsResult.records[0].get('mutualFriendsCount');
       PeopleInSameSchool[i].mutualCount = mutualFriendsCount.high;
     }
 
-    for(let i = 0; i < FriendsOfFriends.length; i++) {
+    for (let i = 0; i < FriendsOfFriends.length; i++) {
       const mutualFriendsQuery = `
         MATCH (user:User {uid: $uid})-[:FRIENDS_WITH]->(mutualFriend:User)<-[:FRIENDS_WITH]-(otherUser:User {uid: $otherUid})
         RETURN COUNT(mutualFriend) AS mutualFriendsCount
       `;
-      const mutualFriendsResult = await session.run(mutualFriendsQuery, {uid: uid, otherUid: FriendsOfFriends[i].uid});
+      const mutualFriendsResult = await session.run(mutualFriendsQuery, { uid: uid, otherUid: FriendsOfFriends[i].uid });
       const mutualFriendsCount = mutualFriendsResult.records[0].get('mutualFriendsCount');
       FriendsOfFriends[i].mutualCount = mutualFriendsCount.high;
     }
@@ -355,7 +365,7 @@ async function GetRecommendationsExploreSection(
     const returndata = {
       friendsInSchool: Recommendations.value ? PeopleInSameSchool : [],
       friendsOfFriends: Recommendations.value ? FriendsOfFriends : [],
-      otherFriends:Recommendations.value ? OtherFriends : [],
+      otherFriends: Recommendations.value ? OtherFriends : [],
       invites: Recommendations.value ? peopleInContacts : [],
       friendsOfFriendsCount: Recommendations.value ? FriendsOfFriends.length : 0,
       friendsInSchoolCount: Recommendations.value ? PeopleInSameSchool.length : 0,
@@ -414,10 +424,10 @@ RETURN {
         LIMIT ${4 - propertiesList.length}
       `;
 
-   
+
 
       const additionalUsersResult = await session.run(additionalUsersQuery, { uid, existingUsers: propertiesList });
-     // console.log("additionalUsersResult----------------->",JSON.stringify(additionalUsersResult));
+      // console.log("additionalUsersResult----------------->",JSON.stringify(additionalUsersResult));
       const additionalUsers = additionalUsersResult.records.map(record => record.get('additionalUser').properties);
       //console.log("additionalUsers----------------->",JSON.stringify(additionalUsers));
 
@@ -427,7 +437,7 @@ RETURN {
     let { rows: [{ crushcount: TempCrushSubCount }] } = await client.execute('SELECT crushCount FROM users WHERE uid = ?', [uid], { prepare: true });
     TempCrushSubCount = parseInt(TempCrushSubCount);
 
-    if(TempCrushSubCount > 0){
+    if (TempCrushSubCount > 0) {
       const topFriends = await getAllTopFriends(uid);
       if (topFriends.length > 0) {
         propertiesList[3] = topFriends[0].Data;
