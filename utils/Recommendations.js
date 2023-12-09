@@ -361,16 +361,15 @@ RETURN {
 
     // If the number of users is less than 4, add more users with "HAS_CONTACT" relationship
     if (propertiesList.length < 4) {
+      console.log("Lenght<4");
       const additionalUsersQuery = `
         MATCH (user:User {uid: $uid})-[:HAS_CONTACT]->(additionalUser:Contact)
         RETURN additionalUser
         LIMIT ${4 - propertiesList.length}
       `;
 
-
-
       const additionalUsersResult = await session.run(additionalUsersQuery, { uid, existingUsers: propertiesList });
-      // console.log("additionalUsersResult----------------->",JSON.stringify(additionalUsersResult));
+       console.log("additionalUsersResult----------------->",JSON.stringify(additionalUsersResult));
       const additionalUsers = additionalUsersResult.records.map(record => record.get('additionalUser').properties);
       //console.log("additionalUsers----------------->",JSON.stringify(additionalUsers));
 
