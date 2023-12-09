@@ -362,7 +362,7 @@ RETURN {
     // If the number of users is less than 4, add more users with "HAS_CONTACT" relationship
     if (propertiesList.length < 4) {
       console.log("Lenght<4");
-      var phoneNumber = await client.execute("SELECT * FROM users WHERE uid = ?",[uid],{prepare:trye});
+      var phoneNumber = await client.execute("SELECT * FROM users WHERE uid = ?",[uid],{prepare:true});
       phoneNumber = phoneNumber.rows[0].phonenumber;
 
       const additionalUsersQuery = `
