@@ -19,8 +19,10 @@ fetchAlby();
 const admin = require("firebase-admin");
 
 let Credentials;
+var NotifTitle;
 async function SetupFCM() {
   PubSubTopic = await FetchFromSecrets("PubSubTopicName");
+  NotifTitle = await getKV("InboxNotificationTitle");
   //import serviceAccount from './credentials/creds.json';
   Credentials = await FetchFromSecrets("FCMAccountCredentials");
   Credentials = JSON.parse(Credentials);
@@ -67,7 +69,7 @@ async function publishFCMMessage(userToken, message) {
     notification: {
       title: "Neta",
       //body: typeof(message) == "object" ? message : JSON.stringify(message),
-      body:"You have an unread notification"
+      body: NotifTitle.replace("{GENDER}",message.askedgender).replace("{SCHOOL}",askedschool)
     },
   };
 
