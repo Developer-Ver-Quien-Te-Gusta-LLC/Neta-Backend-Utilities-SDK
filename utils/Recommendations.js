@@ -307,7 +307,12 @@ WITH user, split($query, ' ') AS nameParts
 
 // Find users with the same first name and last name
 MATCH (sameNameUser:User)
-WHERE toLower(sameNameUser.fname) = toLower(nameParts[0]) AND (size(nameParts) = 1 OR toLower(sameNameUser.lname) = toLower(nameParts[1]))
+WHERE 
+  CASE 
+    WHEN size(nameParts) = 1 THEN toLower(sameNameUser.fname) = toLower(nameParts[0])
+    WHEN size(nameParts) > 1 THEN toLower(sameNameUser.fname) = toLower(nameParts[0]) AND toLower(sameNameUser.lname) = toLower(nameParts[1])
+    ELSE FALSE
+  END
 
 RETURN sameNameUser AS result
 `;
