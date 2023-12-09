@@ -239,8 +239,8 @@ async function GetRecommendationsExploreSection(
     MATCH (u:User)
     WHERE 
       CASE 
-        WHEN size(nameParts) = 1 THEN toLower(u.fname) = toLower(nameParts[0])
-        WHEN size(nameParts) > 1 THEN toLower(u.fname) = toLower(nameParts[0]) AND toLower(u.lname) = toLower(nameParts[1])
+        WHEN size(nameParts) = 1 THEN toLower(u.fname) CONTAINS toLower(nameParts[0])
+        WHEN size(nameParts) > 1 THEN toLower(u.fname) CONTAINS toLower(nameParts[0]) AND toLower(u.lname) CONTAINS toLower(nameParts[1])
         ELSE FALSE
       END
     RETURN {OtherFriends:u} AS result
