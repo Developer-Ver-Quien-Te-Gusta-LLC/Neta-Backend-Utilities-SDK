@@ -264,7 +264,7 @@ async function GetRecommendationsExploreSection(
     const PeopleInSameSchool = extractProperties(data[0].PeopleInSameSchool).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
     const peopleInContacts = extractProperties(data[0].peopleInContacts);//.map(user => ({...user, firstname: user.fname, lastname: user.lname}));
     const FriendsOfFriends = extractProperties(data[0].FriendsOfFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
-    const OtherFriends = extractProperties(otherUser[0].OtherFriends).map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
+    const OtherFriends = extractProperties(otherUser[0].OtherFriends)//.map(user => ({ ...user, firstname: user.fname, lastname: user.lname }));
 
 
     peopleInContacts.forEach(person => {
