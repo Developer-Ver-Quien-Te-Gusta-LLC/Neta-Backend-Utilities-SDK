@@ -308,7 +308,7 @@ async function GetRecommendationsExploreSection(
         WHEN size(nameParts) > 1 THEN toLower(u.fname) = toLower(nameParts[0]) AND toLower(u.lname) = toLower(nameParts[1])
         ELSE FALSE
       END
-    RETURN u AS otherFriends
+    RETURN {OtherFriends:u} AS result
 `;
 
 
