@@ -121,7 +121,7 @@ async function GetRecommendationsOnboarding(
     ContactsWeightOnboarding: ContactsWeightOnboarding,
     PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
     offset_peopleInContacts: neo4j.int(offset_peopleInContacts),
-    limit_peopleInContacts: neo4j.int(40),
+    limit_peopleInContacts: neo4j.int(10),
     phoneNumber: Pn,
   };
 
@@ -138,7 +138,7 @@ async function GetRecommendationsOnboarding(
     WITH user, COLLECT(otherUser) AS PeopleYouMayKnow
     
     // Fetch all contacts of the contact with the provided phone number
-    OPTIONAL MATCH (contact:User {phoneNumber: $phoneNumber})-[:HAS_CONTACT]->(otherContact:Contact)
+    OPTIONAL MATCH (contact:User {phoneNumber: $phoneNumber})-[:HAS_CONTACT_IN_APP]->(otherContact:Contact)
     WITH user, PeopleYouMayKnow, COLLECT(otherContact) AS contacts
 
     RETURN {
