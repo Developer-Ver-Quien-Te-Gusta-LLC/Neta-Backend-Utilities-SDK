@@ -158,7 +158,7 @@ async function GetRecommendationsOnboarding(
     const peopleYouMayKnowProperties = extractProperties(data[0].PeopleYouMayKnow);
     const peopleInContactsProperties = extractProperties(data[0].peopleInContacts);
 
-    peopleInContactsProperties.forEach(person => {
+    peopleYouMayKnowProperties.forEach(person => {
       person.mutualCount = 0;});
 
     // Return both the result and the next page number for paging
