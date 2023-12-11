@@ -69,7 +69,7 @@ async function publishFCMMessage(userToken, message) {
     notification: {
       title: "Neta",
       //body: typeof(message) == "object" ? message : JSON.stringify(message),
-      body: NotifTitle.replace("{GENDER}",message.askedgender).replace("{SCHOOL}",askedschool)
+      body: NotifTitle.replace("{GENDER}",message.askedgender).replace("{SCHOOL}",message.askedschool)
     },
   };
 
