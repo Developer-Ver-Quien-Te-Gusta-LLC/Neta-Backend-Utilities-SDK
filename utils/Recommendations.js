@@ -258,7 +258,7 @@ async function GetRecommendationsExploreSection(
     var otherUser = await session.run(otherFriendsQuery,parameters);
     otherUser = otherUser.records;
 
-    console.log("Recommendations--------->",JSON.stringify(otherUser));
+    //console.log("Recommendations--------->",JSON.stringify(otherUser));
     //#endregion
     
 
