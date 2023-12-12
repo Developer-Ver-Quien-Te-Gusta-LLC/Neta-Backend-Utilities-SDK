@@ -96,7 +96,7 @@ async function SendNotification(uid, payload) {
 
   const userToken = await getDataFromScyalla("users", uid, "FCMToken");
 
-  await publishFCMMessage(userToken, JSON.stringify(payload));
+  await publishFCMMessage(userToken, payload);
 
   console.log("RT Notificaiton Sent");
   }
