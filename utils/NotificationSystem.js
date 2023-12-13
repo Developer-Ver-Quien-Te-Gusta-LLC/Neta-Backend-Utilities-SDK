@@ -72,9 +72,13 @@ async function publishFCMMessage(userToken, message,intent) {
 
   console.log("Notification Data ---->",payload.notification.body);
 
+  const options = {
+    timeToLive: 60 * 60, // 1 hour in seconds
+  };
+  
   admin
     .messaging()
-    .send(payload)
+    .send(payload, options)
     .then((response) => {
       //console.log("Notification sent successfully:", response);
     })
