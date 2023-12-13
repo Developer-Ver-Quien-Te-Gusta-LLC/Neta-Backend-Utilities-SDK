@@ -66,9 +66,11 @@ async function publishFCMMessage(userToken, message,intent) {
     token: userToken,
     notification: {
       title: "Neta",
-      body: intent == "poll" ? message.username + " Send you a Friend Request" : NotifTitle.replace("{GENDER}", message.askedgender).replace("{SCHOOL}", message.askedschool)
+      body: intent == "poll" ? NotifTitle.replace("{GENDER}", message.askedgender).replace("{SCHOOL}", message.askedschool) : intent == "request" ? message.username + " Send you a Friend Request" : ""
     },
   };
+
+  console.log("Notification Data ---->",payload.notification.body);
 
   admin
     .messaging()
