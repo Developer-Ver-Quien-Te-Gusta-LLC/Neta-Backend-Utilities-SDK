@@ -6,7 +6,6 @@ var ably;
 const AWS = require("aws-sdk");
 
 const emojiRegex = require("emoji-regex");
-const { getKV } = require("./KV");
 const { SendEvent } = require("./Analytics");
 const uuid = require("uuid");
 const fs = require("fs");
@@ -297,8 +296,8 @@ async function DeleteUser(uid, deleteVerification = false) {
 
 var weight, EmojiContactsWeight;
 async function getWeights() {
-  weight = await getKV("ContactsWeightOnboarding");
-  EmojiContactsWeight = await getKV("EmojiContactsWeightOnboarding");
+  weight = await FetchFromSecrets("ContactsWeightOnboarding");
+  EmojiContactsWeight = await FetchFromSecrets("EmojiContactsWeightOnboarding");
   return { weight, EmojiContactsWeight };
 }
 getWeights();

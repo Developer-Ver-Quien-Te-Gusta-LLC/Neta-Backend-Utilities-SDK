@@ -1,7 +1,6 @@
 const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 const FetchChannelId = require("./AlbyToken.js").FetchChannelId;
 const getDataFromScyalla = require("./DataBaseQueriesHandler.js").getDataFromScyalla;
-const getKV = require('./KV.js').getKV
 
 const Ably = require('ably');
 
@@ -9,10 +8,9 @@ const Ably = require('ably');
 var ably;
 let PubSubTopic;
 async function fetchAlby() {
-  const key = await getKV("AblyAPIKey");
+  const key = await FetchFromSecrets("AblyAPIKey");
   ably = new Ably.Realtime({ key: key });
   await ably.connection.once("connected");
-  //sendRedundantly = getKV("RedundantNotifications")
 }
 fetchAlby();
 
@@ -22,7 +20,7 @@ let Credentials;
 var NotifTitle;
 async function SetupFCM() {
   PubSubTopic = await FetchFromSecrets("PubSubTopicName");
-  NotifTitle = await getKV("InboxNotificationTitle");
+  NotifTitle = await FetchFromSecrets("InboxNotificationTitle");
   //import serviceAccount from './credentials/creds.json';
   Credentials = await FetchFromSecrets("FCMAccountCredentials");
   Credentials = JSON.parse(Credentials);

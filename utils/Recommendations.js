@@ -1,4 +1,4 @@
-const { getKV } = require("./KV.js");
+const { FetchFromSecrets } = require("./AwsSecrets.js");
 const cassandra = require("./SetupCassandra.js");
 const Setupneo4j = require("./Setupneo4j.js");
 var driver;
@@ -44,19 +44,19 @@ async function fetchWeights() {
     TopFriendsWeightsQuestions_,
     FriendsOfFriendsWeightQuestions_,
   ] = await Promise.allSettled([
-    getKV(["SameGradeWeightOnboarding"]),
-    getKV(["SameHighSchoolWeightOnboarding"]),
-    getKV(["PhotoContactsWeightOnboarding"]),
-    getKV(["EmojiContactsWeightOnboarding"]),
-    getKV(["ContactsWeightOnboarding"]),
-    getKV(["EmojiContactsWeightQuestions"]),
-    getKV(["ContactsWeightQuestions"]),
-    getKV(["PhotoContactsWeightQuestions"]),
-    getKV(["SameHighSchoolWeightQuestions"]),
-    getKV(["FriendsWeightQuestions"]),
-    getKV(["SameGradeWeightQuestions"]),
-    getKV(["TopFriendsWeightsQuestions"]),
-    getKV(["FriendsOfFriendsWeightQuestions"]),
+    FetchFromSecrets(["SameGradeWeightOnboarding"]),
+    FetchFromSecrets(["SameHighSchoolWeightOnboarding"]),
+    FetchFromSecrets(["PhotoContactsWeightOnboarding"]),
+    FetchFromSecrets(["EmojiContactsWeightOnboarding"]),
+    FetchFromSecrets(["ContactsWeightOnboarding"]),
+    FetchFromSecrets(["EmojiContactsWeightQuestions"]),
+    FetchFromSecrets(["ContactsWeightQuestions"]),
+    FetchFromSecrets(["PhotoContactsWeightQuestions"]),
+    FetchFromSecrets(["SameHighSchoolWeightQuestions"]),
+    FetchFromSecrets(["FriendsWeightQuestions"]),
+    FetchFromSecrets(["SameGradeWeightQuestions"]),
+    FetchFromSecrets(["TopFriendsWeightsQuestions"]),
+    FetchFromSecrets(["FriendsOfFriendsWeightQuestions"]),
   ]);
 
   // Assign weights to the initialized vars

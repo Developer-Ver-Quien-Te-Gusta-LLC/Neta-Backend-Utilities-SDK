@@ -5,7 +5,6 @@ const ngeohash = require('ngeohash');
 const crypto = require('crypto');
 const fs = require('fs');
 const request = require('request');
-const getKV = require('./KV.js').getKV
 
 // Constants
 const COLLECTION_NAME = 'schools';
@@ -13,7 +12,7 @@ let MaxDistance;
 
 async function SetupGeospatialDB() {
     const connectionString = await FetchFromSecrets("CosmosDBSpatialEndpoint");
-    MaxDistance = parseInt(await getKV("MaxDistance"));
+    MaxDistance = parseInt(await FetchFromSecrets("MaxDistance"));
     try {
         const client = await MongoClient.connect(connectionString, {
             socketTimeoutMS: 60000 // 1 minute

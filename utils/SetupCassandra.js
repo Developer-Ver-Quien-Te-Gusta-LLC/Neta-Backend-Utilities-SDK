@@ -1,6 +1,5 @@
 const cassandra = require("cassandra-driver");
 const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
-const { getKV } = require("./KV.js");
 
 
 let client;

@@ -1,6 +1,5 @@
 const { Client } = require('cassandra-driver');
 const { FetchFromSecrets } = require("./AwsSecrets.js").FetchFromSecrets;
-const { getKV } = require("./KV.js").getKV;
 const {GetClient} = require("./SetupCassandra.js");
 
 let client, considerExpiryDate;
