@@ -105,8 +105,8 @@ async function GetRecommendationsOnboarding(
   highschool
 ) {
   // Calculate the offset
-  const offset_PeopleYouMayKnow = (page_peopleYouMayKnow - 1) * 10;
-  const offset_peopleInContacts = (page_peopleInContacts - 1) * 10;
+  const offset_PeopleYouMayKnow = (page_peopleYouMayKnow - 1) * 20;
+  const offset_peopleInContacts = (page_peopleInContacts - 1) * 20;
 
   var Pn = await client.execute("SELECT phonenumber FROM users WHERE uid = ?", [uid], { prepare: true });
   Pn = Pn.rows[0].phonenumber;
@@ -115,13 +115,13 @@ async function GetRecommendationsOnboarding(
     uid: uid,
     highschool: highschool,
     offset_PeopleYouMayKnow: neo4j.int(offset_PeopleYouMayKnow),
-    limit_PeopleYouMayKnow: neo4j.int(10),
+    limit_PeopleYouMayKnow: neo4j.int(20),
     grade: grade,
     EmojiContactsWeightOnboarding: EmojiContactsWeightOnboarding,
     ContactsWeightOnboarding: ContactsWeightOnboarding,
     PhotoContactsWeightOnboarding: PhotoContactsWeightOnboarding,
     offset_peopleInContacts: neo4j.int(offset_peopleInContacts),
-    limit_peopleInContacts: neo4j.int(10),
+    limit_peopleInContacts: neo4j.int(20),
     phoneNumber: Pn,
   };
 
@@ -194,12 +194,12 @@ async function GetRecommendationsExploreSection(
       highschool: highschool,
       grade: grade,
       query: query || '', // add the query parameter
-      offset_FriendsOfFriends: neo4j.int((page_FriendsOfFriends - 1) * 10),
-      limit_FriendsOfFriends: neo4j.int(page_FriendsOfFriends * 10),
-      offset_SchoolUsers: neo4j.int((page_SchoolUsers - 1) * 10),
-      limit_SchoolUsers: neo4j.int(page_SchoolUsers * 10),
-      offset_Contacts: neo4j.int((page_Contacts - 1) * 10),
-      limit_Contacts: neo4j.int(page_Contacts * 10),
+      offset_FriendsOfFriends: neo4j.int((page_FriendsOfFriends - 1) * 20),
+      limit_FriendsOfFriends: neo4j.int(page_FriendsOfFriends * 20),
+      offset_SchoolUsers: neo4j.int((page_SchoolUsers - 1) * 20),
+      limit_SchoolUsers: neo4j.int(page_SchoolUsers * 20),
+      offset_Contacts: neo4j.int((page_Contacts - 1) * 20),
+      limit_Contacts: neo4j.int(page_Contacts * 20),
     };
 
     const cypherQuery = `
