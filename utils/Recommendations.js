@@ -333,30 +333,34 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
   const session = driver.session();
   try {
     const cypherQuery = `
-  MATCH (user:User {uid: $uid})
+    MATCH (user:User {uid: $uid})
 
-// 1. People in the same high school
-OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
-WHERE school.name = $highschool
-OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
-WHERE user <> otherUser
-WITH user, COLLECT(otherUser) AS PeopleInSameSchool
+    // 1. People in the same high school
+    OPTIONAL MATCH (user)-[:ATTENDS_SCHOOL]->(school)
+    WHERE school.name = $highschool
+    OPTIONAL MATCH (otherUser:User)-[:ATTENDS_SCHOOL]->(school)
+    WHERE user <> otherUser
+    WITH user, COLLECT(otherUser) AS PeopleInSameSchool
     
-// 3. Friends of user's friends
-OPTIONAL MATCH (user)-[:FRIENDS_WITH]->(:User)-[:FRIENDS_WITH]->(friendsOfFriends:User)
-WHERE NOT (user)-[:FRIENDS_WITH]->(friendsOfFriends) AND user <> friendsOfFriends
-WITH user, PeopleInSameSchool, COLLECT(DISTINCT friendsOfFriends) AS FriendsOfFriends
+    // 2. Friends of the user
+    OPTIONAL MATCH (user)-[:FRIENDS_WITH]->(friend:User)
+    WITH user, PeopleInSameSchool, COLLECT(friend) AS Friends
     
-// 4. People connected to user with HAS_CONTACT_IN_APP
-OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(hasContactInAppUser:User)
-WITH user, PeopleInSameSchool, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser) AS ContactsInApp
+    // 3. Friends of user's friends
+    OPTIONAL MATCH (user)-[:FRIENDS_WITH]->(:User)-[:FRIENDS_WITH]->(friendsOfFriends:User)
+    WHERE NOT (user)-[:FRIENDS_WITH]->(friendsOfFriends) AND user <> friendsOfFriends
+    WITH user, PeopleInSameSchool, Friends, COLLECT(DISTINCT friendsOfFriends) AS FriendsOfFriends
     
-// Combine all the lists and pick 4 users randomly
-WITH user, 
-     PeopleInSameSchool + FriendsOfFriends + ContactsInApp AS allPossibleConnections
-RETURN {
-  Users: apoc.coll.randomItems(allPossibleConnections, 4)
-} AS result
+    // 4. People connected to user with HAS_CONTACT_IN_APP
+    OPTIONAL MATCH (user)-[:HAS_CONTACT_IN_APP]->(hasContactInAppUser:User)
+    WITH user, PeopleInSameSchool, Friends, FriendsOfFriends, COLLECT(DISTINCT hasContactInAppUser) AS ContactsInApp
+    
+    // Combine all the lists and pick 4 users randomly
+    WITH user, 
+         PeopleInSameSchool + Friends + FriendsOfFriends + ContactsInApp AS allPossibleConnections
+    RETURN {
+      Users: apoc.coll.randomItems(allPossibleConnections, 4)
+    } AS result
   `;
 
     const result = await session.run(cypherQuery, { uid, highschool, grade });
