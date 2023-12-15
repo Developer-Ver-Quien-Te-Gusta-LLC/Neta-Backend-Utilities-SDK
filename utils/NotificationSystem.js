@@ -62,11 +62,25 @@ async function publishFCMMessage(userToken, message,intent) {
     return;
   }
 
+  var body ;
+
+  switch(intent) {
+    case "poll":
+      body = NotifTitle.replace("{GENDER}", message.askedgender).replace("{SCHOOL}", message.askedschool);
+      break;
+    case "request":
+      body = message.username + " Send you a Friend Request";
+      break;
+    default:
+      body = "You have unread notification";
+      break;
+  }
+
   const payload = {
     token: userToken,
     notification: {
       title: "Neta",
-      body: intent == "poll" ? NotifTitle.replace("{GENDER}", message.askedgender).replace("{SCHOOL}", message.askedschool) : intent == "request" ? message.username + " Send you a Friend Request" : ""
+      body:body
     },
   };
 
