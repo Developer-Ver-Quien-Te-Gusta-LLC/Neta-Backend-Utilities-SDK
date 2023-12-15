@@ -74,6 +74,7 @@ async function publishFCMMessage(userToken, message,intent) {
 
   const options = {
     timeToLive: 60 * 60, // 1 hour in seconds
+     dryRun: false 
   };
   
   admin
