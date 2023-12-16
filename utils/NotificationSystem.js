@@ -66,7 +66,11 @@ async function publishFCMMessage(userToken, message,intent) {
 
   switch(intent) {
     case "poll":
-      body = NotifTitle.replace("{GENDER}", message.askedgender).replace("{SCHOOL}", message.askedschool);
+      if (message.askedschool == undefined || message.askedschool == null) {
+        body = "someone from no school";
+      } else {
+        body = NotifTitle.replace("{GENDER}", message.askedgender).replace("{SCHOOL}", message.askedschool);
+      }
       break;
     case "request":
       body = message.username + " Send you a Friend Request";
