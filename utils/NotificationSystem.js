@@ -83,7 +83,7 @@ async function publishFCMMessage(userToken, message,intent) {
       body: body
     },
     data: {
-      id: 10
+      id: '10'
     }
   };
 
