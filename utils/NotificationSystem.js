@@ -80,8 +80,11 @@ async function publishFCMMessage(userToken, message,intent) {
     token: userToken,
     notification: {
       title: "Neta",
-      body:body
+      body: body
     },
+    data: {
+      id: 10
+    }
   };
 
   console.log("Notification Data ---->",payload.notification.body);
