@@ -66,6 +66,17 @@ async function publishFCMMessage(userToken, message,intent) {
 
   switch(intent) {
     case "poll":
+      if(message.askedgender == "Female"){
+        message.askedgender = chica;
+
+      }
+      else if(message.askedgender == "Male"){
+        message.askedgender = chico;
+
+      }
+      else{
+        message.askedgender = estudiante;
+      }
       if (message.askedschool == undefined || message.askedschool == null) {
         body = "someone from no school";
       } else {
