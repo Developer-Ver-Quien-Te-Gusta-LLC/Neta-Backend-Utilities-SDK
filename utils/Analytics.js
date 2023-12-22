@@ -9,7 +9,7 @@ async function init () {
 init()
 
 async function SendEvent(event_name, phoneNumber, value, time) {
-  const eventData = {
+  /*const eventData = {
     distinct_id: !phoneNumber ? uuidv4() : phoneNumber,
     ...value
   };
@@ -22,7 +22,7 @@ async function SendEvent(event_name, phoneNumber, value, time) {
     });
   } else {
     console.log('Mixpanel not initialized');
-  }
+  }*/
 }
 
 //SendEvent("AAA","+8989830517","Ookokok",null);
