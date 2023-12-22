@@ -161,6 +161,16 @@ async function GetRecommendationsOnboarding(
     peopleYouMayKnowProperties.forEach(person => {
       person.mutualCount = 0;});
 
+    const pfpQuery = `SELECT pfpsmall,numberofreveals FROM users WHERE uid = ?`;
+
+    for (let person of peopleYouMayKnowProperties) {
+      const pfpResult = await client.execute(pfpQuery, [person.uid], { prepare: true });
+      if (pfpResult.rowLength > 0) {
+        person.pfpsmall = pfpResult.rows[0].pfpsmall;
+        person.numberofreveals = pfpResult.rows[0].numberofreveals;
+      }
+    }
+
     // Return both the result and the next page number for paging
     return {
       success: true,
