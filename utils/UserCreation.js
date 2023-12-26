@@ -28,13 +28,8 @@ Cassandraclient.SetupCassandraClient(client).then((result) => {
   client = result;
 });
 
-const{SetupGeospatialDB,incrementNumberOfStudents} = require("./GeospatialDB.js");
+const{incrementNumberOfStudents} = require("./GeospatialDB.js");
 let mongoClient, db;
-async function fetchMongoClient() {
-  mongoClient = await SetupGeospatialDB()
-  db = mongoClient.db();
-}
-fetchMongoClient();
 
 const {OnUserCreationFailed,handleTransactionCompletion,onTransactionStart} = require("./UserCreationTransactionHandling.js");
 
@@ -235,7 +230,7 @@ async function StartUserCreation(UserParams){
   await CreateScyllaUser(UserParams);
   await createNeptuneUser(UserParams);
   await CreateFirebaseUser(UserParams);
-  await incrementNumberOfStudents(UserParams.highschool,db);
+  await incrementNumberOfStudents(UserParams.highschool);
 }
 async function CreateMixPanelUser(UserParams) {
   mixpanel.people.set(UserParams.username, {
