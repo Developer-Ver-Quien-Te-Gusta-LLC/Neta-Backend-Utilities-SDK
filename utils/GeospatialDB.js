@@ -10,12 +10,11 @@ async function fetchSchools(latitude, longitude, pageKey, query) {
   ORDER BY distance ASC
   LIMIT 10 OFFSET ${startFrom}
   `;
-
   if (query) {
     sqlQuery = `
     SELECT num_students AS numberOfStudents, school_name AS name, ST_DISTANCE(ST_GEOGPOINT(longitude, latitude), ST_GEOGPOINT(${longitude}, ${latitude})) as distance
     FROM \`highschools.SchoolsData\`
-    WHERE school_name LIKE '%${query}%'
+    WHERE school_name LIKE '${query}%'
     ORDER BY distance ASC
     LIMIT 10 OFFSET ${startFrom}
     `;
