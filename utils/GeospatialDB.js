@@ -2,16 +2,27 @@ const { BigQuery } = require('@google-cloud/bigquery');
 const bigquery = new BigQuery();
 
 
-async function fetchSchools(latitude, longitude, pageKey) {
+async function fetchSchools(latitude, longitude, pageKey, query) {
   const startFrom = pageKey || 0;
-  const query = `
-  SELECT num_students AS numberOfStudents,school_name AS name, ST_DISTANCE(ST_GEOGPOINT(longitude, latitude), ST_GEOGPOINT(${longitude}, ${latitude})) as distance
+  let sqlQuery = `
+  SELECT num_students AS numberOfStudents, school_name AS name, ST_DISTANCE(ST_GEOGPOINT(longitude, latitude), ST_GEOGPOINT(${longitude}, ${latitude})) as distance
   FROM \`highschools.SchoolsData\`
   ORDER BY distance ASC
   LIMIT 10 OFFSET ${startFrom}
   `;
+
+  if (query) {
+    sqlQuery = `
+    SELECT num_students AS numberOfStudents, school_name AS name, ST_DISTANCE(ST_GEOGPOINT(longitude, latitude), ST_GEOGPOINT(${longitude}, ${latitude})) as distance
+    FROM \`highschools.SchoolsData\`
+    WHERE school_name LIKE '%${query}%'
+    ORDER BY distance ASC
+    LIMIT 10 OFFSET ${startFrom}
+    `;
+  }
+
   const options = {
-    query: query,
+    query: sqlQuery,
     location: 'US',
   };
 
@@ -23,7 +34,7 @@ async function fetchSchools(latitude, longitude, pageKey) {
   const [rows] = await job.getQueryResults();
 
   // Return the next page key
-  return {rows,nextPageToken:startFrom+10};
+  return {rows, nextPageToken: startFrom + 10};
 }
 
 
