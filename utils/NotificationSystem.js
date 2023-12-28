@@ -58,7 +58,7 @@ async function publishAlbyMessage(ChannelID, message,intent) {
 
 async function publishFCMMessage(userToken, message,intent) {
   if (!userToken) {
-    console.error("User token is not provided");
+    //console.error("User token is not provided");
     return;
   }
 
@@ -102,7 +102,7 @@ async function publishFCMMessage(userToken, message,intent) {
     }
   };
 
-  console.log("Notification Data ---->",payload.notification.body);
+  //console.log("Notification Data ---->",payload.notification.body);
 
   admin
     .messaging()
@@ -121,7 +121,7 @@ async function SendNotification(uid, payload, intent) {
     await publishAlbyMessage(ChannelID, payload,intent);
     const userToken = await getDataFromScyalla("users", uid, "FCMToken");
     await publishFCMMessage(userToken, payload,intent);
-    console.log("RT Notificaiton Sent");
+   // console.log("RT Notificaiton Sent");
   }
   catch (err) {
     console.error(`Error Sending RT notif: ${err}`);
