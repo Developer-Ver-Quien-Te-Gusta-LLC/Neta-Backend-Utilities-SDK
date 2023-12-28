@@ -57,6 +57,29 @@ async function incrementNumberOfStudents(schoolName, db) {
 
   console.log(`Number of students incremented for ${schoolName}`);
   }
+
+async function getNumberOfStudents(schoolName) {
+    const query = `
+    SELECT num_students AS numberOfStudents
+    FROM \`highschools.SchoolsData\`
+    WHERE school_name = "${schoolName}"
+  `;
+  const options = {
+    query: query,
+    location: 'US',
+  };
+
+  // Run the query as a job
+  const [job] = await bigquery.createQueryJob(options);
+  console.log(`Job ${job.id} started.`);
+
+  // Wait for the query to finish
+  const [rows] = await job.getQueryResults();
+
+  // Return the number of students
+  return rows[0].numberOfStudents;
+}
+
   
 
-module.exports = {incrementNumberOfStudents, fetchSchools };
+module.exports = {incrementNumberOfStudents, fetchSchools,getNumberOfStudents };
