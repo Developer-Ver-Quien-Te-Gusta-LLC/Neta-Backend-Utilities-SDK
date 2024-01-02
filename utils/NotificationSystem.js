@@ -2,8 +2,11 @@ const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 const FetchChannelId = require("./AlbyToken.js").FetchChannelId;
 const getDataFromScyalla = require("./DataBaseQueriesHandler.js").getDataFromScyalla;
 
-const Ably = require('ably');
+const {CloudTasksClient} = require('@google-cloud/tasks');
+const client = new CloudTasksClient();
 
+
+const Ably = require('ably');
 
 var ably;
 let PubSubTopic;
@@ -133,18 +136,39 @@ const { PubSub } = require('@google-cloud/pubsub');
 const pubSubClient = new PubSub();
 
 
-async function PublishDelayedNotif(data, Timeout) { //make sure data is string and Timeout is minutes
-  try {
-    const dataBuffer = Buffer.from(data);
-    const messageId = await pubSubClient
-      .topic(PubSubTopic)
-      .publish(dataBuffer, {
-        publishTime: new Date(Date.now() + Timeout * 60 * 1000).toISOString(), // 60 minutes delay
-      });
+async function PublishDelayedNotif(data, Timeout,title,token) { //make sure data is string and Timeout is minutes
+  const project = 'massive-boulder-403908';
+  const queue = 'Notifications';
+  const location = 'us-east-1';
+  const url = 'https://us-central1-massive-boulder-403908.cloudfunctions.net/sendFCMNotification';
+  const payload = {
+    token: token,
+    title: title,
+    body: data,
+  };
 
-    console.log(`Message ${messageId} published.`);
-  } catch (error) {
-    console.error(`Error publishing message: ${error}`);
-  }
+  const parent = client.queuePath(project, location, queue);
+
+  const task = {
+    httpRequest: {
+      httpMethod: 'POST',
+      url,
+      body: Buffer.from(JSON.stringify(payload)).toString('base64'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    },
+    scheduleTime: {
+      seconds: Timeout + Date.now() / 1000,
+    },
+  };
+
+  const request = {
+    parent,
+    task,
+  };
+
+  const [response] = await client.createTask(request);
+  console.log(`Created task ${response.name}`);
 }
 module.exports = { SendNotification, publishFCMMessage, publishAlbyMessage, publishAlbyMessageNaive, PublishDelayedNotif };
