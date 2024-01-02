@@ -3,7 +3,7 @@ const CassandraClient = require("./SetupCassandra");
 const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 const FetchChannelId = require('./AlbyToken.js').FetchChannelId;
 
-const {SendNotification} = require("./NotificationSystem.js");
+const {SendNotification,PublishDelayedNotif} = require("./NotificationSystem.js");
 const uuidv4 = require('uuid').v4;
 const Ably = require('ably');
 var ably;
@@ -94,7 +94,17 @@ async function OnUserCreationComplete(transactionId, phoneNumber,uid) {
     }
   });
 
-  await SendNotification(uid,undefined,"onboarding");
+  var userdata = await client.execute("SELECT firstname,lastname,highschool,grade,fcmtoken FROM users WHERE uid = ?",[uid],{prepare:true});
+  userdata = userdata.rows[0];
+  
+  const users = await client.execute("SELECT uid FROM users WHERE highschool = ? AND grade = ? ALLOW FILTERING", [userdata.highschool, userdata.grade], { prepare: true });
+
+  for(let user of users.rows) {
+    await SendNotification(user.uid,{name:userdata.firstname + " "+ userdata.lastname},"notify-classmates");
+  }
+  
+  await PublishDelayedNotif("Hope you're liking Neta, please leave us a review!!!",12*60*60,"Neta",userdata.fcmtoken);
+  
 }
 
 async function OnUserCreationFailed(transactionId) {
