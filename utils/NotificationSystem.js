@@ -145,7 +145,7 @@ const pubSubClient = new PubSub();
 async function PublishDelayedNotif(data, Timeout,title,token) { //make sure data is string and Timeout is minutes
   const project = 'massive-boulder-403908';
   const queue = 'Notifications';
-  const location = 'us-east-1';
+  const location = 'us-east1';
   const url = 'https://us-central1-massive-boulder-403908.cloudfunctions.net/sendFCMNotification';
   const payload = {
     token: token,
