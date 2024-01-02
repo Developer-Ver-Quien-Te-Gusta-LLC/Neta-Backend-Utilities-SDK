@@ -89,6 +89,10 @@ async function publishFCMMessage(userToken, message,intent) {
     case "request":
       body = message.username + " Send you a Friend Request";
       break;
+    case "try-reveal":
+      body = "Someone tried to reveal your poll";
+    case "reveal":
+      body = "Someone revealed your poll";
     default:
       body = "You have unread notification";
       break;
