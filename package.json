@@ -21,6 +21,7 @@
     "@google-cloud/bigquery": "^7.3.0",
     "@google-cloud/pubsub": "^4.0.7",
     "@google-cloud/secret-manager": "^5.0.1",
+    "@google-cloud/tasks": "^4.0.1",
     "ably": "^1.2.42",
     "aws-sdk": "^2.1431.0",
     "aws-xray-sdk-core": "^3.5.1",
