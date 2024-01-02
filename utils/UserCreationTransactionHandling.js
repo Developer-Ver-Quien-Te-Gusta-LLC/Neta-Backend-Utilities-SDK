@@ -2,6 +2,8 @@
 const CassandraClient = require("./SetupCassandra");
 const FetchFromSecrets = require("./AwsSecrets.js").FetchFromSecrets;
 const FetchChannelId = require('./AlbyToken.js').FetchChannelId;
+
+const {SendNotification} = require("./NotificationSystem.js");
 const uuidv4 = require('uuid').v4;
 const Ably = require('ably');
 var ably;
@@ -91,6 +93,8 @@ async function OnUserCreationComplete(transactionId, phoneNumber,uid) {
       console.log("published to ably");
     }
   });
+
+  await SendNotification(uid,undefined,"onboarding");
 }
 
 async function OnUserCreationFailed(transactionId) {

@@ -93,6 +93,8 @@ async function publishFCMMessage(userToken, message,intent) {
       body = "Someone tried to reveal your poll";
     case "reveal":
       body = "Someone revealed your poll";
+    case "onboarding":
+      body = "Hope you like the app! Please leave a review"
     default:
       body = "You have unread notification";
       break;
