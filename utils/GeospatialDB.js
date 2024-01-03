@@ -33,7 +33,7 @@ async function fetchSchools(latitude, longitude, pageKey, query) {
   const [rows] = await job.getQueryResults();
 
   // Return the next page key
-  return {rows, nextPageToken: startFrom + 10};
+  return {rows, nextPageToken: parseInt(startFrom) + 10};
 }
 
 
