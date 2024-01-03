@@ -29,15 +29,11 @@ Cassandraclient.SetupCassandraClient(client).then((result) => {
 });
 
 const{incrementNumberOfStudents} = require("./GeospatialDB.js");
-let mongoClient, db;
+
 
 const {OnUserCreationFailed,handleTransactionCompletion,onTransactionStart} = require("./UserCreationTransactionHandling.js");
 
-async function handleTransactionError(
-  reason,
-  params,
-  uid
-) {
+async function handleTransactionError(reason,params,uid) {
   await DeleteUser(uid);
 }
 
@@ -46,61 +42,41 @@ async function CreateScyllaUser(UserParams) {
     username,
     phoneNumber,
     platform,
-    transactionId,
-    encryptionKey,
     uid,
     gender,
     highschool,
     grade,
     firstName,
     lastName,
-    school,
-    age
+    age,
+    invitesLeft = 0
   } = UserParams;
-
-  const invitesLeft = UserParams.invitesLeft || 0;
 
   try {
     const UserCreationQuery = `
       INSERT INTO users (
-        age,username, phoneNumber, coins, invitesLeft, 
+        age, username, phoneNumber, coins, invitesLeft, 
         pollIndex, numberOfStars, platform, gender, highschool, grade, uid,
         albyTopicName, anonymousMode, firstName, lastName,  lastPollTime, numberOfPolls, pfp, 
-        pfpHash, pfpMedium, pfpMediumHash, pfpSmall, pfpSmallHash,numberofreveals
-      ) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`;
+        pfpHash, pfpMedium, pfpMediumHash, pfpSmall, pfpSmallHash, numberofreveals
+      ) VALUES (?, ?, ?, 0, ?, -1, 0, ?, ?, ?, ?, ?, null, false, ?, ?, null, 0, null, null, null, null, null, null, 0)`;
 
     const params = [
       age,
       username,
       phoneNumber,
-      0, // coins
       invitesLeft,
-      -1, // pollIndex
-      0, // numberOfStars
       platform,
       gender,
       highschool,
       grade,
       uid,
-      null, // albyTopicName
-      false, // anonymousMode
       firstName,
-      lastName,
-      null, // lastPollTime
-      0, // numberOfPolls
-      null, // pfp
-      null, // pfpHash
-      null, // pfpMedium
-      null, // pfpMediumHash
-      null, // pfpSmall
-      null, // pfpSmallHash
-      0 //num of reveals
+      lastName
     ];
 
     await client.execute(UserCreationQuery, params, { prepare: true });
-
     await handleTransactionCompletion(uid, phoneNumber);
-
     return true;
   } catch (err) {
     console.log(err);
@@ -232,12 +208,7 @@ async function StartUserCreation(UserParams){
   await CreateFirebaseUser(UserParams);
   await incrementNumberOfStudents(UserParams.highschool);
 }
-async function CreateMixPanelUser(UserParams) {
-  mixpanel.people.set(UserParams.username, {
-    $first_name: UserParams.firstname,
-    $last_name: UserParams.lastname
-  });
-}
+
 async function DeleteUser(uid, deleteVerification = false) {
   const promises = [];
   const queries = [];
@@ -289,6 +260,8 @@ async function DeleteUser(uid, deleteVerification = false) {
   await Promise.all(promises);
 }
 
+
+//#region Contact Sync
 var weight, EmojiContactsWeight;
 async function getWeights() {
   weight = await FetchFromSecrets("ContactsWeightOnboarding");
@@ -428,12 +401,13 @@ async function uploadUserContacts(req, res) {
   }
 }
 
+//#endregion
+
 module.exports = {
   CreateScyllaUser,
   createNeptuneUser,
   CreateFirebaseUser,
   DeleteUser,
   uploadUserContacts,
-  CreateMixPanelUser,
   StartUserCreation
 };

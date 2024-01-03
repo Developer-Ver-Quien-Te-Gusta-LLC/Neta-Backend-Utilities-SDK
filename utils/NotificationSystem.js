@@ -95,6 +95,8 @@ async function publishFCMMessage(userToken, message,intent) {
       body = "Someone revealed your poll";
     case "notify-classmates":
       body = `Your classmate ${message.name} is on Neta!!!`
+    case "contact":
+      body = `Your contact ${message.name} is on Neta!!!`
     default:
       body = "You have unread notification";
       break;
@@ -136,10 +138,6 @@ async function SendNotification(uid, payload, intent) {
     console.error(`Error Sending RT notif: ${err}`);
   }
 }
-
-
-const { PubSub } = require('@google-cloud/pubsub');
-const pubSubClient = new PubSub();
 
 
 async function PublishDelayedNotif(data, Timeout,title,token) { //make sure data is string and Timeout is minutes
