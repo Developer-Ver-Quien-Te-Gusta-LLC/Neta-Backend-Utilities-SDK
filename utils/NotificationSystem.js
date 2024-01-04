@@ -20,10 +20,10 @@ fetchAlby();
 const admin = require("firebase-admin");
 
 let Credentials;
-var NotifTitle;
+//var NotifTitle;
 async function SetupFCM() {
   PubSubTopic = await FetchFromSecrets("PubSubTopicName");
-  NotifTitle = await FetchFromSecrets("InboxNotificationTitle");
+  //NotifTitle = await FetchFromSecrets("InboxNotificationTitle");
   //import serviceAccount from './credentials/creds.json';
   Credentials = await FetchFromSecrets("FCMAccountCredentials");
   Credentials = JSON.parse(Credentials);
@@ -61,42 +61,48 @@ async function publishAlbyMessage(ChannelID, message,intent) {
 
 async function publishFCMMessage(userToken, message,intent) {
   if (!userToken) {
-    //console.error("User token is not provided");
     return;
   }
 
-  var body ;
+  var body;
 
   switch(intent) {
     case "poll":
       if(message.askedgender == "Female"){
-        message.askedgender = chica;
-
+        message.askedgender = "chica";
       }
       else if(message.askedgender == "Male"){
-        message.askedgender = chico;
-
+        message.askedgender = "chico";
       }
       else{
-        message.askedgender = estudiante;
+        message.askedgender = "estudiante";
       }
       if (message.askedschool == undefined || message.askedschool == null) {
         body = "someone from no school";
       } else {
-        body = NotifTitle.replace("{GENDER}", message.askedgender).replace("{SCHOOL}", message.askedschool);
+        body = await FetchFromSecrets("InboxNotificationTitle");
+        body = body.replace("{GENDER}", message.askedgender).replace("{SCHOOL}", message.askedschool);
       }
       break;
     case "request":
-      body = message.username + " Send you a Friend Request";
+      body = await FetchFromSecrets("Notification_FriendRequest");
+      body = body.replace("USERNAME", message.username);
+      //body = message.username + " Send you a Friend Request";
       break;
     case "try-reveal":
-      body = "Someone tried to reveal your poll";
+      body = await FetchFromSecrets("Notification_Try_Reveal");
+     // body = "Someone tried to reveal your poll";
     case "reveal":
-      body = "Someone revealed your poll";
+      body = await FetchFromSecrets("Notification_PollReveal");
+      //body = "Someone revealed your poll";
     case "notify-classmates":
-      body = `Your classmate ${message.name} is on Neta!!!`
+      body = await FetchFromSecrets("Notification_Notify_Classmates");
+      body = body.replace("NAME", message.name);
+      //body = `Your classmate ${message.name} is on Neta!!!`
     case "contact":
-      body = `Your contact ${message.name} is on Neta!!!`
+      body = await FetchFromSecrets("Notification_Notify_Contacts");
+      body = body.replace("NAME",message.name);
+      //body = `Your contact ${message.name} is on Neta!!!`
     default:
       body = "You have unread notification";
       break;
