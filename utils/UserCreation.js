@@ -343,15 +343,23 @@ async function uploadUserContacts(req, res) {
       }
 
       let contactQuery = `
+      // Match the user
+      MATCH (u:User {uid: $useruid})
+      
+      // Match the existing contact
+      OPTIONAL MATCH (u)-[r:HAS_CONTACT]->(c:Contact {phoneNumber: $contactPhone})
+      
+      // Replace the existing HAS_CONTACT relationship with HAS_CONTACT_OLD
+      FOREACH (ignoreMe IN CASE WHEN r IS NOT NULL THEN [1] ELSE [] END
+        DELETE r
+        CREATE (u)-[:HAS_CONTACT_OLD]->(c)
+      )
+      
       // Merge the contact
       MERGE (c:Contact {phoneNumber: $contactPhone})
       ON CREATE SET c.fav = $isFavorite, c.weight = $weight, c.photo = $uploadResult, c.uid = $uid
       
-      // Match the user
-      WITH c
-      MATCH (u:User {uid: $useruid})
-      
-      // Merge the HAS_CONTACT relationship
+      // Merge the new HAS_CONTACT relationship
       WITH u, c
       MERGE (u)-[r:HAS_CONTACT]->(c)
     `;
