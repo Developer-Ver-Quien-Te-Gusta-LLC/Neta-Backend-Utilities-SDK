@@ -360,12 +360,12 @@ CALL apoc.do.when(size(rels) > 0,
 CREATE (u)-[:HAS_CONTACT_OLD]->(c)
 
 // Merge the contact
-MERGE (c:Contact {phoneNumber: $contactPhone})
-ON CREATE SET c.fav = $isFavorite, c.weight = $weight, c.photo = $uploadResult, c.uid = $uid
+MERGE (c2:Contact {phoneNumber: $contactPhone})
+ON CREATE SET c2.fav = $isFavorite, c2.weight = $weight, c2.photo = $uploadResult, c2.uid = $uid
 
 // Merge the new HAS_CONTACT relationship
-WITH u, c
-MERGE (u)-[r:HAS_CONTACT]->(c)
+WITH u, c2
+MERGE (u)-[r:HAS_CONTACT]->(c2)
     `;
     
     contactQueries.push({
