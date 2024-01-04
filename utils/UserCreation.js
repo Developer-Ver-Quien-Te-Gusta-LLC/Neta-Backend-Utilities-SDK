@@ -342,22 +342,18 @@ async function uploadUserContacts(req, res) {
         weight = isFavorite ? EmojiContactsWeight : weight;
       }
 
-      let contactQuery = `MATCH (u:User {uid: $useruid})
-      OPTIONAL MATCH (u)-[r:HAS_CONTACT]->(c:Contact {phoneNumber: $contactPhone})
-      WITH u, c, collect(r) as rels
-      CALL apoc.do.when(size(rels) > 0, 
-        'WITH rels[0] as r DELETE r', 
-        '', 
-        {rels: rels}) YIELD value
+      let contactQuery = `
+      // Merge the contact
+      MERGE (c:Contact {phoneNumber: $contactPhone})
+      ON CREATE SET c.fav = $isFavorite, c.weight = $weight, c.photo = $uploadResult, c.uid = $uid
+      
+      // Match the user
+      WITH c
+      MATCH (u:User {uid: $useruid})
+      
+      // Merge the HAS_CONTACT relationship
       WITH u, c
-      CALL apoc.do.when(c IS NOT NULL, 
-        'CREATE (u)-[:HAS_CONTACT_OLD]->(c)', 
-        '', 
-        {u: u, c: c}) YIELD value
-      MERGE (c2:Contact {phoneNumber: $contactPhone})
-      ON CREATE SET c2.fav = $isFavorite, c2.weight = $weight, c2.photo = $uploadResult, c2.uid = $uid
-      WITH u, c2
-      MERGE (u)-[r:HAS_CONTACT]->(c2)
+      MERGE (u)-[r:HAS_CONTACT]->(c)
     `;
     
     contactQueries.push({
@@ -372,7 +368,7 @@ async function uploadUserContacts(req, res) {
         }
     });
 
-      console.log("contact edge added---->",contact.phoneNumber,"Self PhoneNumber--->",phoneNumber);
+      //console.log("contact edge added---->",contact.phoneNumber,"Self PhoneNumber--->",phoneNumber);
     }
 
     // Run all queries in a single transaction
@@ -404,6 +400,7 @@ async function uploadUserContacts(req, res) {
     session.close();
   }
 }
+
 
 //#endregion
 
