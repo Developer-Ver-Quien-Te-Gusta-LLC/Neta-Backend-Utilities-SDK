@@ -94,7 +94,7 @@ async function OnUserCreationComplete(transactionId, phoneNumber,uid) {
     }
   });
 
-  var userdata = await client.execute("SELECT firstname,lastname,highschool,grade,fcmtoken FROM users WHERE uid = ?",[uid],{prepare:true});
+  var userdata = await client.execute("SELECT gender,firstname,lastname,highschool,grade,fcmtoken FROM users WHERE uid = ?",[uid],{prepare:true});
   userdata = userdata.rows[0];
   
   const users = await client.execute("SELECT uid FROM users WHERE highschool = ? AND grade = ? ALLOW FILTERING", [userdata.highschool, userdata.grade], { prepare: true });
@@ -104,6 +104,20 @@ async function OnUserCreationComplete(transactionId, phoneNumber,uid) {
   }
   
   await PublishDelayedNotif("Hope you're liking Neta, please leave us a review!!!",12*60*60,"Neta",userdata.fcmtoken);
+  var body;
+  body = await FetchFromSecrets("InboxNotificationTitle");
+
+  if(userdata.gender == "Female"){
+    body = body.replace("{GENDER}", "chico").replace("{SCHOOL}", message.askedschool);
+  }
+  else if(userdata.gender == "Male"){
+    body = body.replace("{GENDER}", "chica").replace("{SCHOOL}", message.askedschool);
+  }
+  else{
+    body = body.replace("{GENDER}", "estudiante").replace("{SCHOOL}", message.askedschool);
+  }
+  
+  await PublishDelayedNotif(body,60*30,"Neta",userdata.fcmtoken,uid,true);
   
 }
 

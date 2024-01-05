@@ -78,7 +78,7 @@ async function publishFCMMessage(userToken, message,intent) {
         message.askedgender = "estudiante";
       }
       if (message.askedschool == undefined || message.askedschool == null) {
-        body = "someone from no school";
+        body = "someone from no school sent you a message";
       } else {
         body = await FetchFromSecrets("InboxNotificationTitle");
         body = body.replace("{GENDER}", message.askedgender).replace("{SCHOOL}", message.askedschool);
@@ -146,7 +146,7 @@ async function SendNotification(uid, payload, intent) {
 }
 
 
-async function PublishDelayedNotif(data, Timeout,title,token) { //make sure data is string and Timeout is minutes
+async function PublishDelayedNotif(data, Timeout,title,token,uid,scylla) { //make sure data is string and Timeout is minutes
   const project = 'massive-boulder-403908';
   const queue = 'Notifications';
   const location = 'us-east1';
@@ -155,6 +155,8 @@ async function PublishDelayedNotif(data, Timeout,title,token) { //make sure data
     token: token,
     title: title,
     body: data,
+    uid: uid,
+    scylla: scylla
   };
 
   const parent = client.queuePath(project, location, queue);
