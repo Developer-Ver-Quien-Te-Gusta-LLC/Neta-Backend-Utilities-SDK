@@ -378,7 +378,7 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
 
     // If the number of users is less than 4, add more users with "HAS_CONTACT" relationship
     if (propertiesList.length < 4) {
-      console.log("Lenght<4");
+      //console.log("Lenght<4");
       var phoneNumber = await client.execute("SELECT * FROM users WHERE uid = ?",[uid],{prepare:true});
       phoneNumber = phoneNumber.rows[0].phonenumber;
 
@@ -389,9 +389,8 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
       `;
 
       const additionalUsersResult = await session.run(additionalUsersQuery, { uid,phoneNumber });
-       console.log("additionalUsersResult----------------->",JSON.stringify(additionalUsersResult));
       const additionalUsers = additionalUsersResult.records.map(record => record.get('additionalUser').properties);
-      //console.log("additionalUsers----------------->",JSON.stringify(additionalUsers));
+      console.log("additionalUsers----------------->",JSON.stringify(additionalUsers));
 
       propertiesList = [...propertiesList, ...additionalUsers];
     }
