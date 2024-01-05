@@ -100,7 +100,7 @@ async function OnUserCreationComplete(transactionId, phoneNumber,uid) {
   const users = await client.execute("SELECT uid FROM users WHERE highschool = ? AND grade = ? ALLOW FILTERING", [userdata.highschool, userdata.grade], { prepare: true });
 
   for(let user of users.rows) {
-    await SendNotification(user.uid,{name:userdata.firstname + " "+ userdata.lastname},"notify-classmates");
+    await SendNotification(user.uid.toString(),{name:userdata.firstname + " "+ userdata.lastname},"notify-classmates");
   }
   
   await PublishDelayedNotif("Hope you're liking Neta, please leave us a review!!!",12*60*60,"Neta",userdata.fcmtoken);
@@ -108,13 +108,13 @@ async function OnUserCreationComplete(transactionId, phoneNumber,uid) {
   body = await FetchFromSecrets("InboxNotificationTitle");
 
   if(userdata.gender == "Female"){
-    body = body.replace("{GENDER}", "chico").replace("{SCHOOL}", message.askedschool);
+    body = body.replace("{GENDER}", "chico").replace("{SCHOOL}",userdata.highschool);
   }
   else if(userdata.gender == "Male"){
-    body = body.replace("{GENDER}", "chica").replace("{SCHOOL}", message.askedschool);
+    body = body.replace("{GENDER}", "chica").replace("{SCHOOL}", userdata.highschool);
   }
   else{
-    body = body.replace("{GENDER}", "estudiante").replace("{SCHOOL}", message.askedschool);
+    body = body.replace("{GENDER}", "estudiante").replace("{SCHOOL}", userdata.highschool);
   }
   
   await PublishDelayedNotif(body,60*30,"Neta",userdata.fcmtoken,uid,true);
