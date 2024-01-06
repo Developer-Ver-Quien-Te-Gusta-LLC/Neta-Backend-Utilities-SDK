@@ -150,7 +150,7 @@ async function PublishDelayedNotif(data, Timeout,title,token,uid,scylla) { //mak
   const project = 'massive-boulder-403908';
   const queue = 'Notifications';
   const location = 'us-east1';
-  const url = 'https://us-central1-massive-boulder-403908.cloudfunctions.net/sendFCMNotification';
+  const url = 'https://us-east1-massive-boulder-403908.cloudfunctions.net/sendFCMNotification';
   const payload = {
     token: token,
     title: title,
