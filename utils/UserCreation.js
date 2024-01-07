@@ -132,6 +132,7 @@ async function createNeptuneUser(UserParams) {
     `;
     const ContactVertex = await session.run(checkContactQuery, { phoneNumber });
 
+    console.log("Record Length--->",JSON.parse(ContactVertex));
 
     if (!ContactVertex.records.length) {
       // If contact vertex for the user does not exist, create it
