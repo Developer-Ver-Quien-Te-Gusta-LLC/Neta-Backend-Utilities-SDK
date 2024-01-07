@@ -319,7 +319,7 @@ async function uploadUserContacts(req, res) {
     let contactQueries = [];
     for (let i = 0; i < contactsList.length; i++) {
       let contact = contactsList[i];
-      contact.phoneNumber = contact.phoneNumber.replace(/[^0-9]/g, '');
+      //contact.phoneNumber = contact.phoneNumber.replace(/[^0-9]/g, '');
       let uploadResult = null;
 
       if (req.files && req.files[i]) {
