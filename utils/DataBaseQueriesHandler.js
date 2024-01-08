@@ -15,7 +15,7 @@ GetClient().then(result=>{client=result;})
 async function getDataFromScyalla(tableName, uid, data) {
   const query = `SELECT ${data} FROM ${tableName} WHERE uid = ?`; //ScyllaDB query to fetch data
 
-  console.log("Query :",query);
+  //console.log("Query :",query);
 
   try {
     const result = await client.execute(query, [uid], {
