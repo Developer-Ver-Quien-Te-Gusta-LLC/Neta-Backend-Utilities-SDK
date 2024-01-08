@@ -127,14 +127,15 @@ async function CreateNeo4jUser(UserParams) {
 
     // Check if contact for user vertex exists anywhere
     let checkContactQuery = `
-      MATCH (c:Contact {phoneNumber: $phoneNumber}) 
-      RETURN c
-    `;
+    MATCH (c:Contact) 
+    WHERE c.phoneNumber CONTAINS $phoneNumber
+    RETURN c
+  `;
     const ContactVertex = await session.run(checkContactQuery, { phoneNumber });
 
     console.log("Record Length--->",(ContactVertex));
 
-    if (!ContactVertex.records.length) {
+    if (ContactVertex.records.length == 0) {
       // If contact vertex for the user does not exist, create it
       let addContactQuery = `
         CREATE (c:Contact {phoneNumber: $phoneNumber, uid: $uid})
