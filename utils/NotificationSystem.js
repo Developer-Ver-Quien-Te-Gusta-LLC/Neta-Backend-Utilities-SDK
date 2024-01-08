@@ -78,7 +78,7 @@ async function publishFCMMessage(userToken, message,intent) {
         message.askedgender = "estudiante";
       }
       if (message.askedschool == undefined || message.askedschool == null) {
-        body = "someone from no school sent you a message";
+        body = "alguien de ninguna escuela te envió un mensaje";
       } else {
         body = await FetchFromSecrets("InboxNotificationTitle");
         body = body.replace("{GENDER}", message.askedgender).replace("{SCHOOL}", message.askedschool);
@@ -104,7 +104,7 @@ async function publishFCMMessage(userToken, message,intent) {
       body = body.replace("NAME",message.name);
       //body = `Your contact ${message.name} is on Neta!!!`
     default:
-      body = "You have unread notification";
+      body = "Tienes notificaciones no leídas";
       break;
   }
 

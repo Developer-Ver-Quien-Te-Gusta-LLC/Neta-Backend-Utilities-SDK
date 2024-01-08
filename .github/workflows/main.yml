@@ -20,9 +20,15 @@ jobs:
           token: ${{ secrets.PAT }} # Personal Access Token
           repository: Developer-Ver-Quien-Te-Gusta-LLC/Neta-Microservices-social-graph # Replace with your username and other repository name
           event-type: sdk-update
-      - name: Repository Dispatch to Social Graph
+      - name: Repository Dispatch to Contact Sync
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.PAT }} # Personal Access Token
           repository: Developer-Ver-Quien-Te-Gusta-LLC/Neta-Microservices-contact-sync # Replace with your username and other repository name
-          event-type: sdk-update```
+          event-type: sdk-update
+      - name: Repository Dispatch to Friends
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.PAT }} # Personal Access Token
+          repository: Developer-Ver-Quien-Te-Gusta-LLC/Neta-Microservices-friends # Replace with your username and other repository name
+          event-type: sdk-update
