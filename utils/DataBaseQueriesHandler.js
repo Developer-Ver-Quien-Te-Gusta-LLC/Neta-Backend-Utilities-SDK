@@ -23,7 +23,7 @@ async function getDataFromScyalla(tableName, uid, data) {
     });
     const row = result.rows[0];
     if (row) {
-      console.log("Data Returned-->",row[data.toLowerCase()]);
+      //console.log("Data Returned-->",row[data.toLowerCase()]);
       return row[data.toLowerCase()];
     } else {
       console.error("No player found with the provided phone number");

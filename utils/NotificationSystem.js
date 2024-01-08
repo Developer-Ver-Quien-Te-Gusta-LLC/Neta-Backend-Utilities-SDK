@@ -181,6 +181,6 @@ async function PublishDelayedNotif(data, Timeout,title,token,uid,scylla) { //mak
   };
 
   const [response] = await client.createTask(request);
-  console.log(`Created task ${response.name}`);
+  //console.log(`Created task ${response.name}`);
 }
 module.exports = { SendNotification, publishFCMMessage, publishAlbyMessage, publishAlbyMessageNaive, PublishDelayedNotif };
