@@ -297,11 +297,10 @@ async function uploadUserContacts(req, res) {
   if(useruid.Success==false){
     return res.send("No Jwt Token Included");
   }
-
-  
   const { phoneNumber, contactsList } = req.body;
 
-  console.log("ContactsList---------->",JSON.stringify(contactsList));
+  console.log(phoneNumber,"Uploaded his/her contacts");
+  //console.log("ContactsList---------->",JSON.stringify(contactsList));
   const regex = emojiRegex();
 
   // Helper function to check if a string has any emoji characters using the emoji-regex package
