@@ -1,0 +1,17 @@
+name: Dispatch update event
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.PAT }} # Personal Access Token
+          repository: Developer-Ver-Quien-Te-Gusta-LLC/Neta-Microservices-onboarding # Replace with your username and other repository name
+          event-type: sdk-update
