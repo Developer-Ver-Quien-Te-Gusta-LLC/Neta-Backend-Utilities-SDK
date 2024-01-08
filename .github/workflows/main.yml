@@ -9,9 +9,15 @@ jobs:
   dispatch:
     runs-on: ubuntu-latest
     steps:
-      - name: Repository Dispatch
+      - name: Repository Dispatch to Onboarding
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.PAT }} # Personal Access Token
           repository: Developer-Ver-Quien-Te-Gusta-LLC/Neta-Microservices-onboarding # Replace with your username and other repository name
+          event-type: sdk-update
+      - name: Repository Dispatch to Social Graph
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.PAT }} # Personal Access Token
+          repository: Developer-Ver-Quien-Te-Gusta-LLC/Neta-Microservices-social-graph # Replace with your username and other repository name
           event-type: sdk-update
