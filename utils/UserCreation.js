@@ -86,7 +86,7 @@ async function CreateScyllaUser(UserParams) {
   }
 }
 
-async function createNeptuneUser(UserParams) {
+async function CreateNeo4jUser(UserParams) {
   const session = driver.session();
   for (let key in UserParams) {
     if (UserParams[key] === undefined) {
@@ -186,7 +186,7 @@ async function createNeptuneUser(UserParams) {
 }
 
 async function CreateFirebaseUser(UserParams) {
-  var { username, uid, transactionId, encryptionKey, phoneNumber } = UserParams;
+  var {uid, phoneNumber } = UserParams;
  
   try {
     const customToken = jwt.sign({ uid: uid }, secretKey);
@@ -205,7 +205,7 @@ async function CreateFirebaseUser(UserParams) {
 async function StartUserCreation(UserParams){
   await onTransactionStart(UserParams.transactionId,UserParams.phoneNumber);
   await CreateScyllaUser(UserParams);
-  await createNeptuneUser(UserParams);
+  await CreateNeo4jUser(UserParams);
   await CreateFirebaseUser(UserParams);
   await incrementNumberOfStudents(UserParams.highschool);
 }
@@ -215,13 +215,11 @@ async function DeleteUser(uid, deleteVerification = false) {
   const queries = [];
 
   // Fill the array with query objects
-  const highschoolQuery =
-    "SELECT highschool, phoneNumber FROM users WHERE uid = ?";
-  const highschoolResult = await client.execute(highschoolQuery, [uid], {
-    prepare: true,
-  });
+  const highschoolQuery = "SELECT highschool, phoneNumber FROM users WHERE uid = ? ALLOW FILTERING";
+  const highschoolResult = await client.execute(highschoolQuery, [uid], {prepare: true});
+ 
   const highschool = highschoolResult.rows[0].highschool;
-  const phoneNumber = highschoolResult.rows[0].phoneNumber;
+  const phoneNumber = highschoolResult.rows[0].phonenumber;
 
 
   queries.push({
@@ -230,32 +228,31 @@ async function DeleteUser(uid, deleteVerification = false) {
   });
 
   queries.push({
-    query: "DELETE FROM inbox WHERE uid = ?",
+    query: "DELETE FROM inbox WHERE uid = ? ALLOW FILTERING",
     params: [uid],
   });
 
   queries.push({
-    query: "DELETE FROM userPolls WHERE uid = ?",
+    query: "DELETE FROM userPolls WHERE uid = ? ALLOW FILTERING",
     params: [uid],
   });
 
-
+  queries.push({
+    query: "DELETE FROM tokens WHERE phoneNumber = ? ALLOW FILTERING",
+    params: [phoneNumber],
+  });
 
   if (deleteVerification) {
     queries.push({
-      query: "DELETE FROM verification WHERE phoneNumber = ?",
+      query: "DELETE FROM verification WHERE phoneNumber = ? ALLOW FILTERING",
       params: [phoneNumber],
     });
   }
 
   const DeleteUserScyllaPromise = client.batch(queries, { prepare: true });
 
-  promises.push(DeleteUserScyllaPromise);
 
-  // Gremlin query to delete the vertex 'User' using the phoneNumber given
-  const gremlinQuery = `g.hasV().has('User', 'uid', ${phoneNumber}).drop()`;
-  const DeleteUserGremlinPromise = g.execute(gremlinQuery);
-  promises.push(DeleteUserGremlinPromise);
+  promises.push(DeleteUserScyllaPromise);
 
   // Wait for all promises to resolve
   await Promise.all(promises);
@@ -408,7 +405,7 @@ async function uploadUserContacts(req, res) {
 
 module.exports = {
   CreateScyllaUser,
-  createNeptuneUser,
+  createNeptuneUser: CreateNeo4jUser,
   CreateFirebaseUser,
   DeleteUser,
   uploadUserContacts,
