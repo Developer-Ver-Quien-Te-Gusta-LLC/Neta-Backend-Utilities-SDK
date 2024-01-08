@@ -138,8 +138,8 @@ async function GetRecommendationsOnboarding(
     WITH user, COLLECT(otherUser) AS PeopleYouMayKnow
     
     // Fetch all contacts of the contact with the provided phone number
-    OPTIONAL MATCH (contact:User {phoneNumber: $phoneNumber})-[:HAS_CONTACT_IN_APP]->(otherContact:Contact)
-    WITH user, PeopleYouMayKnow, COLLECT(otherContact) AS contacts
+    OPTIONAL MATCH (contact:User)-[:HAS_CONTACT_IN_APP]->(otherContact:Contact{phoneNumber:$phoneNumber})
+    WITH user, PeopleYouMayKnow, COLLECT(contact) AS contacts
 
     RETURN {
         PeopleYouMayKnow: PeopleYouMayKnow[$offset_PeopleYouMayKnow..$limit_PeopleYouMayKnow],
