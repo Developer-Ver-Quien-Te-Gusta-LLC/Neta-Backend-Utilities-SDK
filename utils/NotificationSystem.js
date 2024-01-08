@@ -91,17 +91,21 @@ async function publishFCMMessage(userToken, message,intent) {
       break;
     case "try-reveal":
       body = await FetchFromSecrets("Notification_Try_Reveal");
+      break;
      // body = "Someone tried to reveal your poll";
     case "reveal":
       body = await FetchFromSecrets("Notification_PollReveal");
+      break;
       //body = "Someone revealed your poll";
     case "notify-classmates":
       body = await FetchFromSecrets("Notification_Notify_Classmates");
       body = body.replace("NAME", message.name);
+      break;
       //body = `Your classmate ${message.name} is on Neta!!!`
     case "contact":
       body = await FetchFromSecrets("Notification_Notify_Contacts");
       body = body.replace("NAME",message.name);
+      break;
       //body = `Your contact ${message.name} is on Neta!!!`
     default:
       body = "Tienes notificaciones no leídas";
