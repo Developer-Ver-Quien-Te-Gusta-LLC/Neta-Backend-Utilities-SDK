@@ -21,19 +21,19 @@ fetchAlby();
 const Setupneo4j = require("./Setupneo4j.js");
 
 var driver;
-Setupneo4j.SetupNeo4jClient().then(result =>{driver = result});
+Setupneo4j.SetupNeo4jClient().then(result => { driver = result });
 
 let client;
 Cassandraclient.SetupCassandraClient(client).then((result) => {
   client = result;
 });
 
-const{incrementNumberOfStudents} = require("./GeospatialDB.js");
+const { incrementNumberOfStudents } = require("./GeospatialDB.js");
 
 
-const {OnUserCreationFailed,handleTransactionCompletion,onTransactionStart} = require("./UserCreationTransactionHandling.js");
+const { OnUserCreationFailed, handleTransactionCompletion, onTransactionStart } = require("./UserCreationTransactionHandling.js");
 
-async function handleTransactionError(reason,params,uid) {
+async function handleTransactionError(reason, params, uid) {
   await DeleteUser(uid);
 }
 
@@ -133,12 +133,23 @@ async function CreateNeo4jUser(UserParams) {
   `;
     const ContactVertex = await session.run(checkContactQuery, { phoneNumber });
 
-    
+
 
     if (ContactVertex.records.length == 0) {
       // If contact vertex for the user does not exist, create it
       let addContactQuery = `CREATE (c:Contact {phoneNumber: $phoneNumber, uid: $uid})`;
       await session.run(addContactQuery, UserParams);
+
+
+      // Add/Update contact
+      let contactQuery = `
+    MERGE (c:Contact {phoneNumber: $phoneNumber})
+    ON CREATE SET c.uid = $uid
+    WITH c
+    MATCH (u:User {uid: $uid})
+    MERGE (u)-[:SELF_CONTACT]->(c)
+  `;
+      await session.run(contactQuery, UserParams);
     } else {
       // If contact vertex exists, create an edge from all the users connected as "HAS_CONTACT" to "HAS_CONTACT_IN_APP"
       let replaceEdgeQuery = `
@@ -153,15 +164,6 @@ async function CreateNeo4jUser(UserParams) {
       );
     }
 
-    // Add/Update contact
-    let contactQuery = `
-   MERGE (c:Contact {phoneNumber: $phoneNumber})
-   ON CREATE SET c.uid = $uid
-   WITH c
-   MATCH (u:User {uid: $uid})
-   MERGE (u)-[:SELF_CONTACT]->(c)
- `;
-    await session.run(contactQuery, UserParams);
 
     // For school
     let schoolQuery = `
@@ -180,18 +182,18 @@ async function CreateNeo4jUser(UserParams) {
     await handleTransactionError("neptune", UserParams, uid);
     await OnUserCreationFailed(UserParams.transactionId);
     return false;
-  }finally{
+  } finally {
     session.close();
   }
 }
 
 async function CreateFirebaseUser(UserParams) {
-  var {uid, phoneNumber } = UserParams;
- 
+  var { uid, phoneNumber } = UserParams;
+
   try {
     const customToken = jwt.sign({ uid: uid }, secretKey);
     const query = 'INSERT INTO tokens (phoneNumber,jwt) VALUES (?,?)';
-    await client.execute(query,[phoneNumber,customToken]);
+    await client.execute(query, [phoneNumber, customToken]);
     await handleTransactionCompletion(uid, phoneNumber);
     return true;
   } catch (err) {
@@ -202,8 +204,8 @@ async function CreateFirebaseUser(UserParams) {
   }
 }
 
-async function StartUserCreation(UserParams){
-  await onTransactionStart(UserParams.transactionId,UserParams.phoneNumber);
+async function StartUserCreation(UserParams) {
+  await onTransactionStart(UserParams.transactionId, UserParams.phoneNumber);
   await CreateScyllaUser(UserParams);
   await CreateNeo4jUser(UserParams);
   await CreateFirebaseUser(UserParams);
@@ -216,8 +218,8 @@ async function DeleteUser(uid, deleteVerification = false) {
 
   // Fill the array with query objects
   const highschoolQuery = "SELECT highschool, phoneNumber FROM users WHERE uid = ? ALLOW FILTERING";
-  const highschoolResult = await client.execute(highschoolQuery, [uid], {prepare: true});
- 
+  const highschoolResult = await client.execute(highschoolQuery, [uid], { prepare: true });
+
   const highschool = highschoolResult.rows[0].highschool;
   const phoneNumber = highschoolResult.rows[0].phonenumber;
 
@@ -294,12 +296,12 @@ InitializeS3();
 
 async function uploadUserContacts(req, res) {
   const useruid = await AuthHandler.GetUserDataFromJWT(req);
-  if(useruid.Success==false){
+  if (useruid.Success == false) {
     return res.send("No Jwt Token Included");
   }
   const { phoneNumber, contactsList } = req.body;
 
-  console.log(phoneNumber,"Uploaded his/her contacts");
+  console.log(phoneNumber, "Uploaded his/her contacts");
   //console.log("ContactsList---------->",JSON.stringify(contactsList));
   const regex = emojiRegex();
 
@@ -353,18 +355,18 @@ async function uploadUserContacts(req, res) {
       WITH u, c
       MERGE (u)-[r:HAS_CONTACT]->(c)
     `;
-    
-    contactQueries.push({
+
+      contactQueries.push({
         query: contactQuery,
         parameters: {
-            contactPhone: contact.phoneNumber,
-            useruid: useruid.uid,
-            isFavorite: isFavorite,
-            weight: weight,
-            uploadResult: uploadResult ? uploadResult.Location : null,  // Assuming Location stores the URL of the uploaded file
-            uid: uuid.v4()
+          contactPhone: contact.phoneNumber,
+          useruid: useruid.uid,
+          isFavorite: isFavorite,
+          weight: weight,
+          uploadResult: uploadResult ? uploadResult.Location : null,  // Assuming Location stores the URL of the uploaded file
+          uid: uuid.v4()
         }
-    });
+      });
 
       //console.log("contact edge added---->",contact.phoneNumber,"Self PhoneNumber--->",phoneNumber);
     }
@@ -394,7 +396,7 @@ async function uploadUserContacts(req, res) {
     session.close();
     res.status(500).json({ Success: false, Error: err });
   }
-  finally{
+  finally {
     session.close();
   }
 }
