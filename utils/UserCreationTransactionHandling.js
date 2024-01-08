@@ -78,8 +78,8 @@ async function OnUserCreationComplete(transactionId, phoneNumber,uid) {
     status: "success",
     token: String(token.rows[0].jwt)
   };
-
-  console.log(transactionId);
+  
+  console.log("JWT returned--->",token.rows[0].jwt);
 
   const insertInboxQuery = "INSERT INTO inbox (messageuid, pushedtime, read, inboxindex,uid) VALUES (?, ?, ?, ?,?)";
   const inboxParams = [uuidv4(), new Date(), false, 0,uid];
@@ -89,9 +89,7 @@ async function OnUserCreationComplete(transactionId, phoneNumber,uid) {
     if (err) {
       console.log("Unable to publish message; err = " + err.message);
     }
-    else{
-      console.log("published to ably");
-    }
+    
   });
 
   var userdata = await client.execute("SELECT gender,firstname,lastname,highschool,grade,fcmtoken FROM users WHERE uid = ?",[uid],{prepare:true});
