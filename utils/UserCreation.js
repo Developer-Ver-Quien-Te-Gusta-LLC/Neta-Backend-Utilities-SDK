@@ -133,7 +133,7 @@ async function CreateNeo4jUser(UserParams) {
   `;
     const ContactVertex = await session.run(checkContactQuery, { phoneNumber });
 
-    console.log("Record Length--->",(ContactVertex));
+    
 
     if (ContactVertex.records.length == 0) {
       // If contact vertex for the user does not exist, create it
