@@ -137,14 +137,13 @@ async function CreateNeo4jUser(UserParams) {
 
     if (ContactVertex.records.length == 0) {
       // If contact vertex for the user does not exist, create it
-      let addContactQuery = `
-        CREATE (c:Contact {phoneNumber: $phoneNumber, uid: $uid})
-      `;
+      let addContactQuery = `CREATE (c:Contact {phoneNumber: $phoneNumber, uid: $uid})`;
       await session.run(addContactQuery, UserParams);
     } else {
       // If contact vertex exists, create an edge from all the users connected as "HAS_CONTACT" to "HAS_CONTACT_IN_APP"
       let replaceEdgeQuery = `
-        MATCH (u:User)-[oldEdge:HAS_CONTACT]->(c:Contact {phoneNumber: $phoneNumber})
+        MATCH (u:User)-[oldEdge:HAS_CONTACT]->(c:Contact)
+        WHERE c.phoneNumber CONTAINS $phoneNumber
         DELETE oldEdge
         CREATE (u)-[:HAS_CONTACT_IN_APP]->(c)
       `;
