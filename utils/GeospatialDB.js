@@ -11,18 +11,19 @@ async function fetchSchools(latitude, longitude, pageKey, query) {
   LIMIT 10 OFFSET ${startFrom}
   `;
   if (query) {
-    query = query.replace(/n/gi, '[ñn]')
-    
+    // Replace 'n' and 'N' with a character class that includes 'n' and 'ñ'
+    query = query.replace(/n/gi, '[nñ]');
     sqlQuery = `
     SELECT num_students AS numberOfStudents, 
-       school_name AS name, 
-       ST_DISTANCE(ST_GEOGPOINT(longitude, latitude), ST_GEOGPOINT(${longitude}, ${latitude})) as distance
-FROM \`highschools.SchoolsData\`
-WHERE REGEXP_CONTAINS(UPPER(school_name), '${query}')
-ORDER BY distance ASC
-LIMIT 10 OFFSET ${startFrom}
+           school_name AS name, 
+           ST_DISTANCE(ST_GEOGPOINT(longitude, latitude), ST_GEOGPOINT(${longitude}, ${latitude})) as distance
+    FROM \`highschools.SchoolsData\`
+    WHERE REGEXP_CONTAINS(UPPER(school_name), r'${query}')
+    ORDER BY distance ASC
+    LIMIT 10 OFFSET ${startFrom}
     `;
-  }
+}
+
 
   const options = {
     query: sqlQuery,
