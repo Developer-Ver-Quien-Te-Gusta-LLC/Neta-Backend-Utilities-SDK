@@ -11,13 +11,14 @@ async function fetchSchools(latitude, longitude, pageKey, query) {
   LIMIT 10 OFFSET ${startFrom}
   `;
   if (query) {
-    query = query.toUpperCase()
+    query = query.replace(/n/gi, '[ñn]')
+    
     sqlQuery = `
     SELECT num_students AS numberOfStudents, 
        school_name AS name, 
        ST_DISTANCE(ST_GEOGPOINT(longitude, latitude), ST_GEOGPOINT(${longitude}, ${latitude})) as distance
 FROM \`highschools.SchoolsData\`
-WHERE UPPER(school_name) LIKE '%${query}%'
+WHERE REGEXP_CONTAINS(UPPER(school_name), '${query}')
 ORDER BY distance ASC
 LIMIT 10 OFFSET ${startFrom}
     `;
