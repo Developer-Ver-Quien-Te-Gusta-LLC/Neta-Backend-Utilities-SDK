@@ -11,6 +11,7 @@ async function fetchSchools(latitude, longitude, pageKey, query) {
   LIMIT 10 OFFSET ${startFrom}
   `;
   if (query) {
+    query = query.toLowerCase()
     sqlQuery = `
     SELECT num_students AS numberOfStudents, school_name AS name, ST_DISTANCE(ST_GEOGPOINT(longitude, latitude), ST_GEOGPOINT(${longitude}, ${latitude})) as distance
     FROM \`highschools.SchoolsData\`
