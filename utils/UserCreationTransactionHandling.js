@@ -101,7 +101,8 @@ async function OnUserCreationComplete(transactionId, phoneNumber,uid) {
     await SendNotification(user.uid.toString(),{name:userdata.firstname + " "+ userdata.lastname},"notify-classmates");
   }
   
-  await PublishDelayedNotif("Hope you're liking Neta, please leave us a review!!!",12*60*60,"Neta",userdata.fcmtoken);
+  var ReviewNotificationDelay = await FetchFromSecrets("ReviewNotificationTime");
+  await PublishDelayedNotif("Hope you're liking Neta, please leave us a review!!!",parseInt(ReviewNotificationDelay),"Neta",userdata.fcmtoken);
   var body;
   body = await FetchFromSecrets("InboxNotificationTitle");
 
