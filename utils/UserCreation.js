@@ -213,51 +213,56 @@ async function StartUserCreation(UserParams) {
 }
 
 async function DeleteUser(uid, deleteVerification = false) {
-  const promises = [];
-  const queries = [];
+  try {
+    const promises = [];
+    const queries = [];
 
-  // Fill the array with query objects
-  const highschoolQuery = "SELECT highschool, phoneNumber FROM users WHERE uid = ? ALLOW FILTERING";
-  const highschoolResult = await client.execute(highschoolQuery, [uid], { prepare: true });
+    // Fill the array with query objects
+    const highschoolQuery = "SELECT highschool, phoneNumber FROM users WHERE uid = ? ALLOW FILTERING";
+    const highschoolResult = await client.execute(highschoolQuery, [uid], { prepare: true });
 
-  const highschool = highschoolResult.rows[0].highschool;
-  const phoneNumber = highschoolResult.rows[0].phonenumber;
+    const highschool = highschoolResult.rows[0].highschool;
+    const phoneNumber = highschoolResult.rows[0].phonenumber;
 
 
-  queries.push({
-    query: "DELETE FROM users WHERE uid = ?",
-    params: [uid],
-  });
-
-  queries.push({
-    query: "DELETE FROM inbox WHERE uid = ? ALLOW FILTERING",
-    params: [uid],
-  });
-
-  queries.push({
-    query: "DELETE FROM userPolls WHERE uid = ? ALLOW FILTERING",
-    params: [uid],
-  });
-
-  queries.push({
-    query: "DELETE FROM tokens WHERE phoneNumber = ? ALLOW FILTERING",
-    params: [phoneNumber],
-  });
-
-  if (deleteVerification) {
     queries.push({
-      query: "DELETE FROM verification WHERE phoneNumber = ? ALLOW FILTERING",
+      query: "DELETE FROM users WHERE uid = ?",
+      params: [uid],
+    });
+
+    queries.push({
+      query: "DELETE FROM inbox WHERE uid = ? ALLOW FILTERING",
+      params: [uid],
+    });
+
+    queries.push({
+      query: "DELETE FROM userPolls WHERE uid = ? ALLOW FILTERING",
+      params: [uid],
+    });
+
+    queries.push({
+      query: "DELETE FROM tokens WHERE phoneNumber = ? ALLOW FILTERING",
       params: [phoneNumber],
     });
+
+    if (deleteVerification) {
+      queries.push({
+        query: "DELETE FROM verification WHERE phoneNumber = ? ALLOW FILTERING",
+        params: [phoneNumber],
+      });
+    }
+
+    const DeleteUserScyllaPromise = client.batch(queries, { prepare: true });
+
+
+    promises.push(DeleteUserScyllaPromise);
+
+    // Wait for all promises to resolve
+    await Promise.all(promises);
   }
-
-  const DeleteUserScyllaPromise = client.batch(queries, { prepare: true });
-
-
-  promises.push(DeleteUserScyllaPromise);
-
-  // Wait for all promises to resolve
-  await Promise.all(promises);
+  catch (err) {
+    console.log(err);
+  }
 }
 
 
