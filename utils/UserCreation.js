@@ -224,6 +224,17 @@ async function DeleteUser(uid, deleteVerification = false) {
     const highschool = highschoolResult.rows[0].highschool;
     const phoneNumber = highschoolResult.rows[0].phonenumber;
 
+    var messages = await client.execute("SELECT * FROM inbox WHERE uid = ? ORDER BY pushedtime DESC ALLOW FILTERING",[uid],{prepare:true});
+    messages = messages.rows;
+
+    for(let message of messages) {
+      queries.push({
+        query: "DELETE FROM neta.inbox WHERE uid = ? AND pushedtime = ?",
+        params: [uid, message.pushedtime],
+      });
+    }
+    
+
 
     queries.push({
       query: "DELETE FROM users WHERE uid = ?",
@@ -231,31 +242,26 @@ async function DeleteUser(uid, deleteVerification = false) {
     });
 
     queries.push({
-      query: "DELETE FROM inbox WHERE uid = ? ALLOW FILTERING",
-      params: [uid],
-    });
-
-    queries.push({
-      query: "DELETE FROM userPolls WHERE uid = ? ALLOW FILTERING",
-      params: [uid],
-    });
-
-    queries.push({
-      query: "DELETE FROM tokens WHERE phoneNumber = ? ALLOW FILTERING",
+      query: "DELETE FROM tokens WHERE phoneNumber = ?",
       params: [phoneNumber],
     });
 
     if (deleteVerification) {
       queries.push({
-        query: "DELETE FROM verification WHERE phoneNumber = ? ALLOW FILTERING",
+        query: "DELETE FROM verification WHERE phoneNumber = ?",
         params: [phoneNumber],
       });
     }
 
     const DeleteUserScyllaPromise = client.batch(queries, { prepare: true });
 
+    const session = driver.session();
+    const deleteUserNeo4jQuery = 'MATCH (u:User {uid: $uid}) DETACH DELETE u';
+    const DeleteUserNeo4jPromise = session.run(deleteUserNeo4jQuery, { uid: uid });
+
 
     promises.push(DeleteUserScyllaPromise);
+    promises.push(DeleteUserNeo4jPromise);
 
     // Wait for all promises to resolve
     await Promise.all(promises);
