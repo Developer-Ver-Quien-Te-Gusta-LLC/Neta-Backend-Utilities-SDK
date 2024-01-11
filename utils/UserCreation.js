@@ -218,7 +218,7 @@ async function DeleteUser(uid, deleteVerification = false) {
     const queries = [];
 
     // Fill the array with query objects
-    const highschoolQuery = "SELECT highschool, phoneNumber FROM users WHERE uid = ? ALLOW FILTERING";
+    const highschoolQuery = "SELECT highschool, phonenumber FROM users WHERE uid = ?";
     const highschoolResult = await client.execute(highschoolQuery, [uid], { prepare: true });
 
     const highschool = highschoolResult.rows[0].highschool;
