@@ -43,4 +43,4 @@ jobs:
         with:
           token: ${{ secrets.PAT }} # Personal Access Token
           repository: Developer-Ver-Quien-Te-Gusta-LLC/Neta-Backend-Webhooks # Replace with your username and other repository name
-          event-type: sdk-update```
+          event-type: sdk-update
