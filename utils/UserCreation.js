@@ -227,14 +227,27 @@ async function DeleteUser(uid, deleteVerification = false) {
     var messages = await client.execute("SELECT * FROM inbox WHERE uid = ? ORDER BY pushedtime DESC ALLOW FILTERING",[uid],{prepare:true});
     messages = messages.rows;
 
-    for(let message of messages) {
-      queries.push({
-        query: "DELETE FROM neta.inbox WHERE uid = ? AND pushedtime = ?",
-        params: [uid, message.pushedtime],
-      });
-    }
-    
+    var transactions = await client.execute("SELECT * FROM transactions WHERE phonenumber = ?",[phoneNumber],{prepare:true});
 
+    transactions = transactions.rows;
+
+    if(Array.isArray(transactions)) {
+      for(let transaction of transactions) {
+        queries.push({
+          query: "DELETE FROM transactions WHERE pk = ?",
+          params: [transaction.pk],
+        });
+      }
+    }
+
+    if(Array.isArray(messages)) {
+      for(let message of messages) {
+        queries.push({
+          query: "DELETE FROM neta.inbox WHERE uid = ? AND pushedtime = ?",
+          params: [uid, message.pushedtime],
+        });
+      }
+    }
 
     queries.push({
       query: "DELETE FROM users WHERE uid = ?",

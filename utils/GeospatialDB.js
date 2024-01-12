@@ -42,24 +42,28 @@ LIMIT 10 OFFSET ${startFrom}
 
 
 async function incrementNumberOfStudents(schoolName, db) {
-    const query = `
-    UPDATE \`highschools.SchoolsData\`
-    SET num_students = num_students + 1
-    WHERE school_name = "${schoolName}"
-  `;
-  const options = {
-    query: query,
-    location: 'US',
-  };
+    try {
+      const query = `
+      UPDATE \`highschools.SchoolsData\`
+      SET num_students = num_students + 1
+      WHERE school_name = "${schoolName}"
+      `;
+      const options = {
+        query: query,
+        location: 'US',
+      };
 
-  // Run the query as a job
-  const [job] = await bigquery.createQueryJob(options);
-  //console.log(`Job ${job.id} started.`);
+      // Run the query as a job
+      const [job] = await bigquery.createQueryJob(options);
+      //console.log(`Job ${job.id} started.`);
 
-  // Wait for the query to finish
-  const [rows] = await job.getQueryResults();
+      // Wait for the query to finish
+      const [rows] = await job.getQueryResults();
 
-  console.log(`Number of students incremented for ${schoolName}`);
+      console.log(`Number of students incremented for ${schoolName}`);
+    } catch (error) {
+      console.error(`Failed to increment number of students for ${schoolName}: ${JSON.stringify(error)}`);
+    }
   }
 
 async function getNumberOfStudents(schoolName) {
