@@ -6,6 +6,9 @@ function formatPhoneNumber(phoneNumber) {
     if (cleanedNumber.length === 12) {
         cleanedNumber = cleanedNumber.substring(2);
     }
+    else if(cleanedNumber.length === 11){
+        cleanedNumber = cleanedNumber.substring(1);
+    }
 
     return cleanedNumber;
 }
