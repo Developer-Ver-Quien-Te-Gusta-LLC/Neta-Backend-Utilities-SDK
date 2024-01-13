@@ -224,15 +224,15 @@ async function DeleteUser(uid, deleteVerification = false) {
     const highschool = highschoolResult.rows[0].highschool;
     const phoneNumber = highschoolResult.rows[0].phonenumber;
 
-    var messages = await client.execute("SELECT * FROM inbox WHERE uid = ? ORDER BY pushedtime DESC ALLOW FILTERING",[uid],{prepare:true});
+    var messages = await client.execute("SELECT * FROM inbox WHERE uid = ? ORDER BY pushedtime DESC ALLOW FILTERING", [uid], { prepare: true });
     messages = messages.rows;
 
-    var transactions = await client.execute("SELECT * FROM transactions WHERE phonenumber = ?",[phoneNumber],{prepare:true});
+    var transactions = await client.execute("SELECT * FROM transactions WHERE phonenumber = ?", [phoneNumber], { prepare: true });
 
     transactions = transactions.rows;
 
-    if(Array.isArray(transactions)) {
-      for(let transaction of transactions) {
+    if (Array.isArray(transactions)) {
+      for (let transaction of transactions) {
         queries.push({
           query: "DELETE FROM transactions WHERE pk = ?",
           params: [transaction.pk],
@@ -240,8 +240,8 @@ async function DeleteUser(uid, deleteVerification = false) {
       }
     }
 
-    if(Array.isArray(messages)) {
-      for(let message of messages) {
+    if (Array.isArray(messages)) {
+      for (let message of messages) {
         queries.push({
           query: "DELETE FROM neta.inbox WHERE uid = ? AND pushedtime = ?",
           params: [uid, message.pushedtime],
@@ -336,6 +336,23 @@ async function uploadUserContacts(req, res) {
 
   const session = driver.session();
 
+  let deleteOldRelationQuery = `
+      // Match the user and all contacts
+      MATCH (u:User {uid: $useruid})-[r:HAS_CONTACT]->(c:Contact)
+      
+      // Delete the old relationships
+      DELETE r
+      
+      // Create new relationships
+      CREATE (u)-[r:OLD_CONTACT]->(c)
+      `;
+
+  // Execute the query without pushing it to the contactQueries array
+  await session.run(deleteOldRelationQuery, {
+    useruid: useruid.uid
+  });
+
+
   try {
     let uploadAndPushPromises = [];
     let contactQueries = [];
@@ -365,6 +382,8 @@ async function uploadUserContacts(req, res) {
       if (uploadResult) {
         weight = isFavorite ? EmojiContactsWeight : weight;
       }
+
+
 
       let contactQuery = `
       // Merge the contact
