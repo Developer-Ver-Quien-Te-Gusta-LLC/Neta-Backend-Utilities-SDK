@@ -325,7 +325,7 @@ async function uploadUserContacts(req, res) {
   }
   const { phoneNumber, contactsList } = req.body;
 
-  console.log(phoneNumber, "Uploaded his/her contacts");
+ 
   //console.log("ContactsList---------->",JSON.stringify(contactsList));
   const regex = emojiRegex();
 
@@ -337,14 +337,14 @@ async function uploadUserContacts(req, res) {
   const session = driver.session();
 
   let deleteOldRelationQuery = `
-      // Match the user and all contacts
-      MATCH (u:User {uid: $useruid})-[r:HAS_CONTACT]->(c:Contact)
-      
-      // Delete the old relationships
-      DELETE r
-      
-      // Create new relationships
-      CREATE (u)-[r:OLD_CONTACT]->(c)
+  // Match the user and all contacts
+  MATCH (u:User {uid: $useruid})-[r:HAS_CONTACT]->(c:Contact)
+  
+  // Delete the old relationships
+  DELETE r
+  
+  // Create new relationships
+  CREATE (u)-[r2:OLD_CONTACT]->(c)
       `;
 
   // Execute the query without pushing it to the contactQueries array
@@ -426,6 +426,7 @@ async function uploadUserContacts(req, res) {
       console.log(error);
       await transaction.rollback();
     } finally {
+      console.log(phoneNumber, "Uploaded his/her contacts");
       session.close();
     }
 
