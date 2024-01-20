@@ -384,14 +384,12 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
 
       const additionalUsersQuery = `
         MATCH (user:User {uid: $uid})-[:HAS_CONTACT]->(additionalUser:Contact)
-        WITH COLLECT(additionalUser) AS allContacts
-        RETURN {
-          additionalUsers: apoc.coll.randomItems(allContacts, ${4 - propertiesList.length})
-        } AS result
+        RETURN additionalUser
+        LIMIT ${4 - propertiesList.length}
       `;
 
       const additionalUsersResult = await session.run(additionalUsersQuery, { uid,phoneNumber });
-      const additionalUsers = additionalUsersResult.records.map(record => record.get('additionalUsers').properties);
+      const additionalUsers = additionalUsersResult.records.map(record => record.get('additionalUser').properties);
       console.log("additionalUsers----------------->",JSON.stringify(additionalUsers));
 
       propertiesList = [...propertiesList, ...additionalUsers];
