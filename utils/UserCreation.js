@@ -373,15 +373,14 @@ async function uploadUserContacts(req, res) {
         uploadResult = await s3.upload(uploadParams).promise();
       }
 
-      // Check if the contact is implicitly a favorite based on the presence of emojis
       const isFavorite =
         uploadResult && (hasEmoji(contact.Fname) || hasEmoji(contact.Lname));
 
-      // Using Gremlin to add contact vertex and edge
-
+      
       if (uploadResult) {
         weight = isFavorite ? EmojiContactsWeight : weight;
       }
+      contact.phoneNumber = contact.phoneNumber.replace(/\s/g, '');
 
 
 
@@ -410,8 +409,6 @@ async function uploadUserContacts(req, res) {
           uid: uuid.v4()
         }
       });
-
-      //console.log("contact edge added---->",contact.phoneNumber,"Self PhoneNumber--->",phoneNumber);
     }
 
     // Run all queries in a single transaction
@@ -429,11 +426,6 @@ async function uploadUserContacts(req, res) {
       console.log(phoneNumber, "Uploaded his/her contacts");
       session.close();
     }
-
-    await SendEvent("upload_user_contacts", phoneNumber, {
-      num: contactsList.length,
-    });
-
     res.status(200).json({ Success: true });
   } catch (err) {
     console.log(err);
