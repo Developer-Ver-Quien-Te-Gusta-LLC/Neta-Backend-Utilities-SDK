@@ -390,7 +390,7 @@ async function GetRecommendationsQuestions(uid, highschool, grade) {
 
       const additionalUsersResult = await session.run(additionalUsersQuery, { uid,phoneNumber });
       const additionalUsers = additionalUsersResult.records.map(record => record.get('additionalUser').properties);
-      console.log("additionalUsers----------------->",JSON.stringify(additionalUsers));
+      //console.log("additionalUsers----------------->",JSON.stringify(additionalUsers));
 
       propertiesList = [...propertiesList, ...additionalUsers];
     }
